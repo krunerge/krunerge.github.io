@@ -17,8 +17,8 @@
 <meta property="og:description" content="问题 同事给了一个任务，habor想使用cephfs做后端存储，同时想使用storageclass动态分配pv  步骤 下载external-storage1# go get github.com/kubernetes-incubator/external-storage   创建cephfs命名空间12345678910# cat namespace.yamlapiVersion: v1kind">
 <meta property="og:locale" content="default">
 <meta property="og:image" content="http://yoursite.com/2018/09/28/k8s%20use%20cephfs%20as%20StorageClass/1.png">
-<meta property="og:image" content="http://yoursite.com/2018/09/28/k8s%20use%20cephfs%20as%20StorageClass/1.png">
-<meta property="og:updated_time" content="2018-09-28T12:54:08.191Z">
+<meta property="og:image" content="http://yoursite.com/2018/09/28/k8s%20use%20cephfs%20as%20StorageClass/2.png">
+<meta property="og:updated_time" content="2018-09-28T13:07:18.986Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="k8s use cephfs as StorageClass">
 <meta name="twitter:description" content="问题 同事给了一个任务，habor想使用cephfs做后端存储，同时想使用storageclass动态分配pv  步骤 下载external-storage1# go get github.com/kubernetes-incubator/external-storage   创建cephfs命名空间12345678910# cat namespace.yamlapiVersion: v1kind">
@@ -200,7 +200,7 @@
 <li>创建完pvc的时候会有pv创建，并且在cephfs中会有相应的目录创建<br><img src="1.png" alt="aa"><br>在cephfs根目录下的volumes/kubernetes/kubernetes这个文件夹下</li>
 </ul>
 <h2 id="使用pvc创建pod"><a href="#使用pvc创建pod" class="headerlink" title="使用pvc创建pod"></a>使用pvc创建pod</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"># cat pod_with_cephfs_pvc.yaml</span><br><span class="line"></span><br><span class="line">kind: Pod</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: test-pod1</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: test-pod1</span><br><span class="line">    image: docker.io/nginx</span><br><span class="line">    imagePullPolicy: IfNotPresent</span><br><span class="line">    volumeMounts:</span><br><span class="line">      - name: pvc-3</span><br><span class="line">        mountPath: &quot;/mnt&quot;</span><br><span class="line">  restartPolicy: &quot;Never&quot;</span><br><span class="line">  volumes:</span><br><span class="line">    - name: pvc-3</span><br><span class="line">      persistentVolumeClaim:</span><br><span class="line">        claimName: pvc-3</span><br><span class="line"></span><br><span class="line"># kubectl create –f pod_with_cephfs_pvc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
-<p><img src="1.png" alt="bb"><br>mount可以看到这个挂载关系</p>
+<p><img src="2.png" alt="bb"><br>mount可以看到这个挂载关系</p>
 <h2 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h2><p>之前pod一直创建不起来，打开了mds的日志看了一下，说client少FILE_LAYOUT_V2这个特性<br>解决办法传送门：<br><a href="https://stackoverflow.com/questions/48026677/ceph-luminous-rbd-map-hangs-forever?rq=1" target="_blank" rel="noopener">https://stackoverflow.com/questions/48026677/ceph-luminous-rbd-map-hangs-forever?rq=1</a><br>用内核挂载文件系统内核有版本要求，我目前是3.10，我升到了最新的4.18，然后就ok了。</p>
 
       
@@ -463,6 +463,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
@@ -471,15 +475,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
             
             <div class="clearfix"></div>
