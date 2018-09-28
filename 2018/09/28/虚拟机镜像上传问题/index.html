@@ -6,20 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>glance本地镜像补齐到ceph | 小甲师兄</title>
+  <title>虚拟机镜像上传问题 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="问题  由于同事的openstack部署脚本每次都会先部署本地存储的glance，然后上传一个镜像，测试创建虚拟机功能，然后在glance配置ceph后端存储，这会导致之前上传上去的镜像不能使用来创建虚拟机。 解决办法通过补齐镜像到ceph来实现，有一下几个步骤：1.在安装glance的机器上面找到镜像的本地存储1234# cd /var/lib/glance/images/# lltotal 1">
-<meta name="keywords" content="openstack glance">
+  <meta name="description" content="问题 环境P版在虚拟机创建快照的时候，上传镜像的时候出现如下错误信息：1ImageNotAuthorized: Not authorized for image 4fb7c773-0ab3-4123-a6cc-2a9e38373793   解决办法 本人在之前对glance设置了一个配置show_image_direct_url，用来支持虚拟机从镜像秒启动，跟踪了错误日志 123456789101">
+<meta name="keywords" content="openstack nova glance">
 <meta property="og:type" content="article">
-<meta property="og:title" content="glance本地镜像补齐到ceph">
-<meta property="og:url" content="http://yoursite.com/2018/09/27/glance本地镜像补齐到ceph/index.html">
+<meta property="og:title" content="虚拟机镜像上传问题">
+<meta property="og:url" content="http://yoursite.com/2018/09/28/虚拟机镜像上传问题/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="问题  由于同事的openstack部署脚本每次都会先部署本地存储的glance，然后上传一个镜像，测试创建虚拟机功能，然后在glance配置ceph后端存储，这会导致之前上传上去的镜像不能使用来创建虚拟机。 解决办法通过补齐镜像到ceph来实现，有一下几个步骤：1.在安装glance的机器上面找到镜像的本地存储1234# cd /var/lib/glance/images/# lltotal 1">
+<meta property="og:description" content="问题 环境P版在虚拟机创建快照的时候，上传镜像的时候出现如下错误信息：1ImageNotAuthorized: Not authorized for image 4fb7c773-0ab3-4123-a6cc-2a9e38373793   解决办法 本人在之前对glance设置了一个配置show_image_direct_url，用来支持虚拟机从镜像秒启动，跟踪了错误日志 123456789101">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-09-27T10:06:50.532Z">
+<meta property="og:updated_time" content="2018-09-28T11:14:17.328Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="glance本地镜像补齐到ceph">
-<meta name="twitter:description" content="问题  由于同事的openstack部署脚本每次都会先部署本地存储的glance，然后上传一个镜像，测试创建虚拟机功能，然后在glance配置ceph后端存储，这会导致之前上传上去的镜像不能使用来创建虚拟机。 解决办法通过补齐镜像到ceph来实现，有一下几个步骤：1.在安装glance的机器上面找到镜像的本地存储1234# cd /var/lib/glance/images/# lltotal 1">
+<meta name="twitter:title" content="虚拟机镜像上传问题">
+<meta name="twitter:description" content="问题 环境P版在虚拟机创建快照的时候，上传镜像的时候出现如下错误信息：1ImageNotAuthorized: Not authorized for image 4fb7c773-0ab3-4123-a6cc-2a9e38373793   解决办法 本人在之前对glance设置了一个配置show_image_direct_url，用来支持虚拟机从镜像秒启动，跟踪了错误日志 123456789101">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,32 +153,39 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-glance本地镜像补齐到ceph" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-虚拟机镜像上传问题" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      glance本地镜像补齐到ceph
+      虚拟机镜像上传问题
     </h1>
   
 
         
-        <a href="/2018/09/27/glance本地镜像补齐到ceph/" class="archive-article-date">
-  	<time datetime="2018-09-27T09:11:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-27</time>
+        <a href="/2018/09/28/虚拟机镜像上传问题/" class="archive-article-date">
+  	<time datetime="2018-09-28T09:21:06.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>  由于同事的openstack部署脚本每次都会先部署本地存储的glance，然后上传一个镜像，测试创建虚拟机功能，然后在glance配置ceph后端存储，这会导致之前上传上去的镜像不能使用来创建虚拟机。</p>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>通过补齐镜像到ceph来实现，有一下几个步骤：<br>1.在安装glance的机器上面找到镜像的本地存储<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># cd /var/lib/glance/images/</span><br><span class="line"># ll</span><br><span class="line">total 12892</span><br><span class="line">-rw-r----- 1 glance glance 13200896 Sep 25 09:32 09913ab8-5b38-4fcb-880a-4efa23bb229a</span><br></pre></td></tr></table></figure></p>
-<p>2.上传镜像到ceph<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rbd import 09913ab8-5b38-4fcb-880a-4efa23bb229a  images/09913ab8-5b38-4fcb-880a-4efa23bb229a</span><br></pre></td></tr></table></figure></p>
-<p>3.创建镜像快照snap<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rbd snap create --image images/09913ab8-5b38-4fcb-880a-4efa23bb229a --snap snap images/09913ab8-5b38-4fcb-880a-4efa23bb229a@snap</span><br></pre></td></tr></table></figure></p>
-<p>4.修改glance数据库<br>glance数据库中有一个image_locations记录了glance的位置，是本地存储file，还是ceph rbd存储<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update image_locations set value=&quot;rbd://dc21b052-eae7-46bb-a90d-4818a029a99c/images/09913ab8-5b38-4fcb-880a-4efa23bb229a/snap&quot; where image_id = &quot;09913ab8-5b38-4fcb-880a-4efa23bb229a&quot;;</span><br></pre></td></tr></table></figure></p>
-<p>OK，大功告成</p>
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
+<li>环境P版在虚拟机创建快照的时候，上传镜像的时候出现如下错误信息：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ImageNotAuthorized: Not authorized for image 4fb7c773-0ab3-4123-a6cc-2a9e38373793</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><ul>
+<li><p>本人在之前对glance设置了一个配置show_image_direct_url，用来支持虚拟机从镜像秒启动，跟踪了错误日志</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server Traceback (most recent call last):</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_messaging/rpc/server.py&quot;, line 160, in _process_incoming</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     res = self.dispatcher.dispatch(message)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_messaging/rpc/dispatcher.py&quot;, line 213, in dispatch</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return self._do_dispatch(endpoint, method, ctxt, args)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_messaging/rpc/dispatcher.py&quot;, line 183, in _do_dispatch</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     result = func(ctxt, **new_args)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/exception_wrapper.py&quot;, line 76, in wrapped</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     function_name, call_dict, binary)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/exception_wrapper.py&quot;, line 67, in wrapped</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return f(self, context, *args, **kw)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 191, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     &quot;Error: %s&quot;, e, instance=instance)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 161, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return function(self, context, *args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 219, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     kwargs[&apos;instance&apos;], e, sys.exc_info())</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 207, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return function(self, context, *args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 248, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     image_id, instance=instance)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 235, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     *args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 3221, in snapshot_instance</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     task_states.IMAGE_SNAPSHOT)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 3253, in _snapshot_instance</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     update_task_state)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/virt/libvirt/driver.py&quot;, line 1827, in snapshot</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     ignore_errors=True)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/virt/libvirt/driver.py&quot;, line 1768, in snapshot</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     purge_props=False)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/api.py&quot;, line 132, in update</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     purge_props=purge_props)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 503, in update</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     _reraise_translated_image_exception(image_id)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 820, in _reraise_translated_image_exception</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(type(new_exc), new_exc, exc_trace)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 501, in update</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     image = self._update_v2(context, sent_service_image_meta, data)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 515, in _update_v2</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     image = self._add_location(context, image_id, location)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 400, in _add_location</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     location, &#123;&#125;)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 166, in call</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     result = getattr(controller, method)(*args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/v2/images.py&quot;, line 368, in add_location</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     response = self._send_image_update_request(image_id, add_patch)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/common/utils.py&quot;, line 545, in inner</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return RequestIdProxy(wrapped(*args, **kwargs))</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/v2/images.py&quot;, line 352, in _send_image_update_request</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     data=json.dumps(patch_body))</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/keystoneauth1/adapter.py&quot;, line 300, in patch</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return self.request(url, &apos;PATCH&apos;, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/common/http.py&quot;, line 349, in request</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return self._handle_response(resp)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/common/http.py&quot;, line 98, in _handle_response</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     raise exc.from_response(resp, resp.content)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server ImageNotAuthorized: Not authorized for image 4fb7c773-0ab3-4123-a6cc-2a9e38373793.</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>在代码里面看到这段注释</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">/usr/lib/python2<span class="number">.7</span>/site-packages/nova/image/glance.py</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_add_location</span><span class="params">(self, context, image_id, location)</span>:</span></span><br><span class="line">        <span class="comment"># 'show_multiple_locations' must be enabled in glance api conf file.</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> self._client.call(context, <span class="number">2</span>, <span class="string">'add_location'</span>, image_id,</span><br><span class="line">                                     location, &#123;&#125;)</span><br><span class="line">        <span class="keyword">except</span> glanceclient.exc.HTTPBadRequest:</span><br><span class="line">            _reraise_translated_exception()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>需要打开show_multiple_locations配置，打开之后就OK了</p>
 
       
 
@@ -213,7 +220,7 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack glance</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack nova glance</a>
         		</li>
       		
 		</ul>
@@ -269,7 +276,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/09/27/glance本地镜像补齐到ceph/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/09/28/虚拟机镜像上传问题/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -283,18 +290,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2018/09/28/k8s使用cephfs/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          k8s使用cephfs
-        
-      </div>
-    </a>
   
-  
-    <a href="/2018/09/26/nova-Pike-changelog分析/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">nova Pike changelog分析</div>
+    <a href="/2018/09/28/张磊k8s学习-16/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">张磊k8s学习(16)</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -322,7 +320,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="glance本地镜像补齐到ceph" data-title="glance本地镜像补齐到ceph" data-url="http://yoursite.com/2018/09/27/glance本地镜像补齐到ceph/"></div>
+	<div class="ds-thread" data-thread-key="虚拟机镜像上传问题" data-title="虚拟机镜像上传问题" data-url="http://yoursite.com/2018/09/28/虚拟机镜像上传问题/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">

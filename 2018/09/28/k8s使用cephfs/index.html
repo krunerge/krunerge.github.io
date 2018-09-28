@@ -6,20 +6,23 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>glance本地镜像补齐到ceph | 小甲师兄</title>
+  <title>k8s使用cephfs | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="问题  由于同事的openstack部署脚本每次都会先部署本地存储的glance，然后上传一个镜像，测试创建虚拟机功能，然后在glance配置ceph后端存储，这会导致之前上传上去的镜像不能使用来创建虚拟机。 解决办法通过补齐镜像到ceph来实现，有一下几个步骤：1.在安装glance的机器上面找到镜像的本地存储1234# cd /var/lib/glance/images/# lltotal 1">
-<meta name="keywords" content="openstack glance">
+  <meta name="description" content="问题 同事给了一个任务，habor想使用cephfs做后端存储，同时想使用storageclass动态分配pv  步骤 下载external-storage 1go get github.com/kubernetes-incubator/external-storage  创建cephfs命名空间 12345678910cat namespace.yamlapiVersion: v1kind: N">
+<meta name="keywords" content="k8s cephfs">
 <meta property="og:type" content="article">
-<meta property="og:title" content="glance本地镜像补齐到ceph">
-<meta property="og:url" content="http://yoursite.com/2018/09/27/glance本地镜像补齐到ceph/index.html">
+<meta property="og:title" content="k8s使用cephfs">
+<meta property="og:url" content="http://yoursite.com/2018/09/28/k8s使用cephfs/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="问题  由于同事的openstack部署脚本每次都会先部署本地存储的glance，然后上传一个镜像，测试创建虚拟机功能，然后在glance配置ceph后端存储，这会导致之前上传上去的镜像不能使用来创建虚拟机。 解决办法通过补齐镜像到ceph来实现，有一下几个步骤：1.在安装glance的机器上面找到镜像的本地存储1234# cd /var/lib/glance/images/# lltotal 1">
+<meta property="og:description" content="问题 同事给了一个任务，habor想使用cephfs做后端存储，同时想使用storageclass动态分配pv  步骤 下载external-storage 1go get github.com/kubernetes-incubator/external-storage  创建cephfs命名空间 12345678910cat namespace.yamlapiVersion: v1kind: N">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-09-27T10:06:50.532Z">
+<meta property="og:image" content="http://yoursite.com/2018/09/28/k8s使用cephfs/markdown-img-paste-2018092819360941.png">
+<meta property="og:image" content="http://yoursite.com/2018/09/28/k8s使用cephfs/markdown-img-paste-20180928194223800.png">
+<meta property="og:updated_time" content="2018-09-28T11:43:44.349Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="glance本地镜像补齐到ceph">
-<meta name="twitter:description" content="问题  由于同事的openstack部署脚本每次都会先部署本地存储的glance，然后上传一个镜像，测试创建虚拟机功能，然后在glance配置ceph后端存储，这会导致之前上传上去的镜像不能使用来创建虚拟机。 解决办法通过补齐镜像到ceph来实现，有一下几个步骤：1.在安装glance的机器上面找到镜像的本地存储1234# cd /var/lib/glance/images/# lltotal 1">
+<meta name="twitter:title" content="k8s使用cephfs">
+<meta name="twitter:description" content="问题 同事给了一个任务，habor想使用cephfs做后端存储，同时想使用storageclass动态分配pv  步骤 下载external-storage 1go get github.com/kubernetes-incubator/external-storage  创建cephfs命名空间 12345678910cat namespace.yamlapiVersion: v1kind: N">
+<meta name="twitter:image" content="http://yoursite.com/2018/09/28/k8s使用cephfs/markdown-img-paste-2018092819360941.png">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,32 +156,66 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-glance本地镜像补齐到ceph" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-k8s使用cephfs" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      glance本地镜像补齐到ceph
+      k8s使用cephfs
     </h1>
   
 
         
-        <a href="/2018/09/27/glance本地镜像补齐到ceph/" class="archive-article-date">
-  	<time datetime="2018-09-27T09:11:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-27</time>
+        <a href="/2018/09/28/k8s使用cephfs/" class="archive-article-date">
+  	<time datetime="2018-09-28T05:16:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>  由于同事的openstack部署脚本每次都会先部署本地存储的glance，然后上传一个镜像，测试创建虚拟机功能，然后在glance配置ceph后端存储，这会导致之前上传上去的镜像不能使用来创建虚拟机。</p>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>通过补齐镜像到ceph来实现，有一下几个步骤：<br>1.在安装glance的机器上面找到镜像的本地存储<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># cd /var/lib/glance/images/</span><br><span class="line"># ll</span><br><span class="line">total 12892</span><br><span class="line">-rw-r----- 1 glance glance 13200896 Sep 25 09:32 09913ab8-5b38-4fcb-880a-4efa23bb229a</span><br></pre></td></tr></table></figure></p>
-<p>2.上传镜像到ceph<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rbd import 09913ab8-5b38-4fcb-880a-4efa23bb229a  images/09913ab8-5b38-4fcb-880a-4efa23bb229a</span><br></pre></td></tr></table></figure></p>
-<p>3.创建镜像快照snap<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rbd snap create --image images/09913ab8-5b38-4fcb-880a-4efa23bb229a --snap snap images/09913ab8-5b38-4fcb-880a-4efa23bb229a@snap</span><br></pre></td></tr></table></figure></p>
-<p>4.修改glance数据库<br>glance数据库中有一个image_locations记录了glance的位置，是本地存储file，还是ceph rbd存储<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update image_locations set value=&quot;rbd://dc21b052-eae7-46bb-a90d-4818a029a99c/images/09913ab8-5b38-4fcb-880a-4efa23bb229a/snap&quot; where image_id = &quot;09913ab8-5b38-4fcb-880a-4efa23bb229a&quot;;</span><br></pre></td></tr></table></figure></p>
-<p>OK，大功告成</p>
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
+<li>同事给了一个任务，habor想使用cephfs做后端存储，同时想使用storageclass动态分配pv</li>
+</ul>
+<h1 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h1><ul>
+<li><p>下载external-storage</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get github.com/kubernetes-incubator/external-storage</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建cephfs命名空间</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">cat namespace.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Namespace</span><br><span class="line">metadata:</span><br><span class="line">   name: cephfs</span><br><span class="line">   labels:</span><br><span class="line">     name: cephfs</span><br><span class="line"></span><br><span class="line">kubectl create –f namespace.yaml</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>部署external-storage<br>链接<br><a href="https://github.com/kubernetes-incubator/external-storage/blob/master/ceph/cephfs/deploy/README.md" target="_blank" rel="noopener">https://github.com/kubernetes-incubator/external-storage/blob/master/ceph/cephfs/deploy/README.md</a></p>
+</li>
+</ul>
+<p>使用rbac role的 provider<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># cd $GOPATH/src/github.com/kubernetes-incubator/external-storage/ceph/cephfs/deploy</span><br><span class="line"># NAMESPACE=cephfs</span><br><span class="line"># sed -r -i &quot;s/namespace: [^ ]+/namespace: $NAMESPACE/g&quot; ./rbac/*.yaml</span><br><span class="line"># kubectl -n $NAMESPACE apply -f ./rbac –n cephfs</span><br></pre></td></tr></table></figure></p>
+<p>注：使用没有rbac部署的external-storage创建的pvc失败，后面再研究一下<br>这个会在cephfs命名空间下面创建一个pod，这个pod不会去调用cephfs创建pv</p>
+<ul>
+<li>创建cephfs的secret<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># cat ceph-secret.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-secret</span><br><span class="line">data:</span><br><span class="line">  key: QVFCZDJIeGIyWmF6TlJBQTV4MnhvNDFuYU91VkhtUmJaTkEvOGc9PQ==</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># kubectl create –f ceph-secret.yaml –n cephfs</span><br></pre></td></tr></table></figure>
+<ul>
+<li>创建StorageClass<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># cat sc.yaml</span><br><span class="line"></span><br><span class="line">kind: StorageClass</span><br><span class="line">apiVersion: storage.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: cephfs</span><br><span class="line">provisioner: ceph.com/cephfs</span><br><span class="line">parameters:</span><br><span class="line">    monitors: 10.125.224.26:6789</span><br><span class="line">    adminId: admin</span><br><span class="line">    adminSecretName: ceph-secret</span><br><span class="line">adminSecretNamespace: &quot;cephfs&quot;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># kubectl create –f sc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
+<ul>
+<li>创建pvc<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># cat pvc_with_sc.yaml</span><br><span class="line"></span><br><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: pvc-3</span><br><span class="line">  annotations:</span><br><span class="line">    volume.beta.kubernetes.io/storage-class: &quot;cephfs&quot;</span><br><span class="line">spec:</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 1Gi</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># kubectl create –f pvc_with_sc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
+<p>创建完pvc的时候会有pv创建，并且在cephfs中会有相应的目录创建<br><img src="markdown-img-paste-2018092819360941.png" alt="aa"><br>在cephfs根目录下的volumes/kubernetes/kubernetes这个文件夹下</p>
+<ul>
+<li>使用pvc创建pod<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"># cat pod_with_cephfs_pvc.yaml</span><br><span class="line"></span><br><span class="line">kind: Pod</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: test-pod1</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: test-pod1</span><br><span class="line">    image: docker.io/nginx</span><br><span class="line">    imagePullPolicy: IfNotPresent</span><br><span class="line">    volumeMounts:</span><br><span class="line">      - name: pvc-3</span><br><span class="line">        mountPath: &quot;/mnt&quot;</span><br><span class="line">  restartPolicy: &quot;Never&quot;</span><br><span class="line">  volumes:</span><br><span class="line">    - name: pvc-3</span><br><span class="line">      persistentVolumeClaim:</span><br><span class="line">        claimName: pvc-3</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># kubectl create –f pod_with_cephfs_pvc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
+<p><img src="markdown-img-paste-20180928194223800.png" alt="bb"><br>mount可以看到这个挂载关系</p>
+<ul>
+<li>遇到的问题<br>之前pod一直创建不起来，打开了mds的日志看了一下，说client少FILE_LAYOUT_V2这个特性<br>解决办法传送门：<br><a href="https://stackoverflow.com/questions/48026677/ceph-luminous-rbd-map-hangs-forever?rq=1" target="_blank" rel="noopener">https://stackoverflow.com/questions/48026677/ceph-luminous-rbd-map-hangs-forever?rq=1</a><br>用内核挂载文件系统内核由版本要求，我目前是3.10，我升到了最新的4.18，然后就ok了。</li>
+</ul>
 
       
 
@@ -213,7 +250,7 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack glance</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">k8s cephfs</a>
         		</li>
       		
 		</ul>
@@ -269,7 +306,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/09/27/glance本地镜像补齐到ceph/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/09/28/k8s使用cephfs/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -283,18 +320,18 @@
   
 <nav id="article-nav">
   
-    <a href="/2018/09/28/k8s使用cephfs/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2018/09/28/张磊k8s学习-16/" id="article-nav-newer" class="article-nav-link-wrap">
       <i class="icon-circle-left"></i>
       <div class="article-nav-title">
         
-          k8s使用cephfs
+          张磊k8s学习(16)
         
       </div>
     </a>
   
   
-    <a href="/2018/09/26/nova-Pike-changelog分析/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">nova Pike changelog分析</div>
+    <a href="/2018/09/27/glance本地镜像补齐到ceph/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">glance本地镜像补齐到ceph</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -322,7 +359,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="glance本地镜像补齐到ceph" data-title="glance本地镜像补齐到ceph" data-url="http://yoursite.com/2018/09/27/glance本地镜像补齐到ceph/"></div>
+	<div class="ds-thread" data-thread-key="k8s使用cephfs" data-title="k8s使用cephfs" data-url="http://yoursite.com/2018/09/28/k8s使用cephfs/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
