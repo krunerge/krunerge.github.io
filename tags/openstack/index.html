@@ -6,20 +6,15 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>nova Pike changelog分析 | 小甲师兄</title>
+  <title>Tag: openstack | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="nova-16.0.1修改 Enable custom certificates for keystone communication允许keystone通信的自定义认证 Add @targets_cell for live_migrate_instance method in conductorlive_migrate_instance增加了一个装饰器 Set error state after">
-<meta name="keywords" content="openstack nova">
-<meta property="og:type" content="article">
-<meta property="og:title" content="nova Pike changelog分析">
-<meta property="og:url" content="http://yoursite.com/2018/09/26/nova-Pike-changelog分析/index.html">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="小甲师兄">
+<meta property="og:url" content="http://yoursite.com/tags/openstack/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="nova-16.0.1修改 Enable custom certificates for keystone communication允许keystone通信的自定义认证 Add @targets_cell for live_migrate_instance method in conductorlive_migrate_instance增加了一个装饰器 Set error state after">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-09-27T12:38:18.553Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="nova Pike changelog分析">
-<meta name="twitter:description" content="nova-16.0.1修改 Enable custom certificates for keystone communication允许keystone通信的自定义认证 Add @targets_cell for live_migrate_instance method in conductorlive_migrate_instance增加了一个装饰器 Set error state after">
+<meta name="twitter:title" content="小甲师兄">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,214 +148,60 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-nova-Pike-changelog分析" class="article article-type-post " itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
+            
   
-    <h1 class="article-title" itemprop="name">
-      nova Pike changelog分析
+  
+    
+    
+      
+      
+      <section class="archives-wrap">
+        <div class="archive-year-wrap">
+          <a href="/archives/2018" class="archive-year">2018</a>
+        </div>
+        <div class="archives">
+    
+    <article class="archive-article archive-type-post">
+  <div class="archive-article-inner">
+    <header class="archive-article-header">
+      	<div class="article-meta">
+	      	<a href="/2018/09/29/modify-openstack-code-then-make-rpm-package/" class="archive-article-date">
+  	<time datetime="2018-09-29T12:18:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-29</time>
+</a>
+        </div>
+    	 
+  
+    <h1 itemprop="name">
+      <a class="archive-article-title" href="/2018/09/29/modify-openstack-code-then-make-rpm-package/">修改openstack源码之后如何做rpm包</a>
     </h1>
   
 
-        
-        <a href="/2018/09/26/nova-Pike-changelog分析/" class="archive-article-date">
-  	<time datetime="2018-09-26T08:14:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="nova-16-0-1修改"><a href="#nova-16-0-1修改" class="headerlink" title="nova-16.0.1修改"></a><strong>nova-16.0.1修改</strong></h1><ul>
-<li><strong>Enable custom certificates for keystone communication</strong><br>允许keystone通信的自定义认证</li>
-<li><strong>Add @targets_cell for live_migrate_instance method in conductor</strong><br>live_migrate_instance增加了一个装饰器</li>
-<li><strong>Set error state after failed evacuation</strong><br>疏散失败的虚拟机设置成”error”状态，原来是”accepted”状态，如果这个状态的话在nova-compute重启之后会有问题</li>
-<li><strong>Functional test for regression bug #1713783</strong><br>增加功能测试，在没有机器可以疏散的时候设置虚拟机状态为”error”</li>
-<li><strong>Call terminate_connection when shelve_offloading</strong><br>增加虚拟机断开连接卷的处理，因为虚拟机在做了shelve操作之后进行unshelve的时候不一定还会调度到相同的机器上</li>
-<li><strong>Handle keypair not found from metadata server using cells</strong><br>修复bug <a href="https://bugs.launchpad.net/nova/+bug/1592167" target="_blank" rel="noopener">https://bugs.launchpad.net/nova/+bug/1592167</a><br>在使用cell的时候，如果删除了创建虚拟机时的keypair，那么在检索虚拟机的时候会报400错误</li>
-<li><strong>Target context when setting instance to ERROR when over quota</strong><br>通知虚拟机所在的cell，当虚拟机设置为error的时候</li>
-<li><strong>Move hash ring initialization to init_host() for ironic</strong><br>把hash环的初始化移到了ironic的init_host函数中</li>
-<li><strong>Remove dest node allocation if evacuate MoveClaim fails</strong><br>当疏散失败之后，需要移除目标机器的资源分配量，因为资源tracker不会自动去释放</li>
-<li><strong>De-duplicate two delete_allocation_for_* methods</strong><br>抽取迁移和疏散函数内部的公共代码部分，属于代码重构</li>
-<li><strong>Add a test to make sure failed evacuate cleans up dest allocation</strong><br>增加功能测试来验证在疏散操作失败之后会清理目的机器分配资源的清空</li>
-<li><strong>Add recreate test for evacuate claim failure</strong><br>增加重建功能测试，在目的主机MoveClaim失败之后上面的资源清空失败</li>
-<li><strong>Create allocations against forced dest host during evacuate</strong><br>在疏散操作期间，如果指定了目的主机，则忽略掉调度select_destinations()过程</li>
-<li><strong>Refactor out claim_resources_on_destination into a utility</strong><br>把claim_resources_on_destination函数提取出来放入到scheduler的工具文件中，属于代码重构</li>
-<li><strong>Add recreate test for forced host evacuate not setting dest allocations</strong><br>指定目标主机的疏散的功能测试</li>
-<li><strong>Provide hints when nova-manage db sync fails to sync cell0</strong><br>增加数据库同步cell0错误提示</li>
-<li><strong>Ensure instance mapping is updated in case of quota recheck fails</strong></li>
-</ul>
-<h1 id="nova-16-0-2修改"><a href="#nova-16-0-2修改" class="headerlink" title="nova-16.0.2修改"></a><strong>nova-16.0.2修改</strong></h1>
-      
-
-      
-        <div class="page-reward">
-          <a href="javascript:;" class="page-reward-btn tooltip-top">
-            <div class="tooltip tooltip-east">
-            <span class="tooltip-item">
-              赏
-            </span>
-            <span class="tooltip-content">
-              <span class="tooltip-text">
-                <span class="tooltip-inner">
-                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
-                  <div class="reward-box">
-                    
-                    
-                  </div>
-                </span>
-              </span>
-            </span>
-          </div>
-          </a>
-        </div>
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
+        <div class="article-info info-on-right">
+          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack</a>
         		</li>
       		
 		</ul>
 	</div>
 
-      
+          
 
-      
-
-      
-        
-<div class="share-btn share-icons tooltip-left">
-  <div class="tooltip tooltip-east">
-    <span class="tooltip-item">
-      <a href="javascript:;" class="share-sns share-outer">
-        <i class="icon icon-share"></i>
-      </a>
-    </span>
-    <span class="tooltip-content">
-      <div class="share-wrap">
-        <div class="share-icons">
-          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
-            <i class="icon icon-weibo"></i>
-          </a>
-          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
-            <i class="icon icon-weixin"></i>
-          </a>
-          <a class="qq share-sns" href="javascript:;" data-type="qq">
-            <i class="icon icon-qq"></i>
-          </a>
-          <a class="douban share-sns" href="javascript:;" data-type="douban">
-            <i class="icon icon-douban"></i>
-          </a>
-          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
-            <i class="icon icon-qzone"></i>
-          </a>
-          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
-            <i class="icon icon-facebook"></i>
-          </a>
-          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
-            <i class="icon icon-twitter"></i>
-          </a>
-          <a class="google share-sns" href="javascript:;" data-type="google">
-            <i class="icon icon-google"></i>
-          </a>
         </div>
-      </div>
-    </span>
-  </div>
-</div>
-
-<div class="page-modal wx-share js-wx-box">
-    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
-    <p>扫一扫，分享到微信</p>
-    <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/09/26/nova-Pike-changelog分析/" alt="微信分享二维码">
-    </div>
-</div>
-
-<div class="mask js-mask"></div>
-      
-      <div class="clearfix"></div>
-    </div>
+        <div class="clearfix"></div>
+    </header>
   </div>
 </article>
-
-  
-<nav id="article-nav">
-  
-    <a href="/2018/09/27/glance local image add to ceph/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          glance本地镜像补齐到ceph
-        
-      </div>
-    </a>
   
   
-    <a href="/2018/09/21/每天5分钟go-2/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">每天5分钟go(2)</div>
-      <i class="icon-circle-right"></i>
-    </a>
-  
-</nav>
-
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-  
-  <div class="duoshuo">
-	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="nova-Pike-changelog分析" data-title="nova Pike changelog分析" data-url="http://yoursite.com/2018/09/26/nova-Pike-changelog分析/"></div>
-	<!-- 多说评论框 end -->
-	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
-	<script type="text/javascript">
-	var duoshuoQuery = {short_name:"true"};
-	(function() {
-		var ds = document.createElement('script');
-		ds.type = 'text/javascript';ds.async = true;
-		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-		ds.charset = 'UTF-8';
-		(document.getElementsByTagName('head')[0] 
-		 || document.getElementsByTagName('body')[0]).appendChild(ds);
-	})();
-	</script>
-	<!-- 多说公共JS代码 end -->
-</div>
-
-  
-  
+    </div></section>
   
 
-  
-
-  
-
-  
+    
 
 
           </div>
@@ -383,9 +224,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: true,
+		isPost: false,
 		isArchive: false,
-		isTag: false,
+		isTag: true,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: true,
