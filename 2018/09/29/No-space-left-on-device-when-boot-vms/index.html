@@ -6,15 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Archives | 小甲师兄</title>
+  <title>从镜像和卷启动虚拟机遇到No space left on device问题 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="小甲师兄">
-<meta property="og:url" content="http://yoursite.com/archives/index.html">
+  <meta name="description" content="问题 使用windows的qcow2镜像从镜像和卷启动虚拟机的时候，出现No space left on device问题，由于公司环境的机器分配下来之后，根目录都是20G，so small  解决办法分别对镜像启动和卷启动两种情况进行解决： 镜像启动 原因分析从镜像启动虚拟机按理来说在glance配置开启了show_image_direct_url配置之后应该可以秒级启动虚拟机，即对glance">
+<meta name="keywords" content="openstack nova cinder">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从镜像和卷启动虚拟机遇到No space left on device问题">
+<meta property="og:url" content="http://yoursite.com/2018/09/29/No-space-left-on-device-when-boot-vms/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="问题 使用windows的qcow2镜像从镜像和卷启动虚拟机的时候，出现No space left on device问题，由于公司环境的机器分配下来之后，根目录都是20G，so small  解决办法分别对镜像启动和卷启动两种情况进行解决： 镜像启动 原因分析从镜像启动虚拟机按理来说在glance配置开启了show_image_direct_url配置之后应该可以秒级启动虚拟机，即对glance">
 <meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2018-09-29T12:04:33.563Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄">
+<meta name="twitter:title" content="从镜像和卷启动虚拟机遇到No space left on device问题">
+<meta name="twitter:description" content="问题 使用windows的qcow2镜像从镜像和卷启动虚拟机的时候，出现No space left on device问题，由于公司环境的机器分配下来之后，根目录都是20G，so small  解决办法分别对镜像启动和卷启动两种情况进行解决： 镜像启动 原因分析从镜像启动虚拟机按理来说在glance配置开启了show_image_direct_url配置之后应该可以秒级启动虚拟机，即对glance">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -148,36 +153,69 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-No-space-left-on-device-when-boot-vms" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2018" class="archive-year">2018</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/29/No-space-left-on-device-when-boot-vms/" class="archive-article-date">
-  	<time datetime="2018-09-29T11:39:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-29</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/29/No-space-left-on-device-when-boot-vms/">从镜像和卷启动虚拟机遇到No space left on device问题</a>
+    <h1 class="article-title" itemprop="name">
+      从镜像和卷启动虚拟机遇到No space left on device问题
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2018/09/29/No-space-left-on-device-when-boot-vms/" class="archive-article-date">
+  	<time datetime="2018-09-29T11:39:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-29</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
+<li>使用windows的qcow2镜像从镜像和卷启动虚拟机的时候，出现No space left on device问题，由于公司环境的机器分配下来之后，根目录都是20G，so small</li>
+</ul>
+<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>分别对镜像启动和卷启动两种情况进行解决：</p>
+<h2 id="镜像启动"><a href="#镜像启动" class="headerlink" title="镜像启动"></a>镜像启动</h2><ul>
+<li>原因分析<br>从镜像启动虚拟机按理来说在glance配置开启了show_image_direct_url配置之后应该可以秒级启动虚拟机，即对glance池里面镜像的rbd最快照snap，然后clone到vms池作为虚拟机的系统盘，但是这里有一个前提，ceph只支持raw格式的虚拟机镜像，如果是qcow2格式的镜像需要先从ceph的images池把镜像下载到本地目录（/var/lib/nova/instances/_base），然后使用qemu镜像镜像格式的转化，而我使用的镜像正好的qcow2格式的，而且是windows，这个转化成raw格式的镜像需要50G，已经超过了根目录的大小，所以会报上面的No space left on device的错误。</li>
+<li>cephfs解决<br>ceph也提高文件系统功能，我们可以把这个cephfs挂载各个计算节点的/var/lib/nova/instances/_base目录，还能达到共享存储的效果，不过一个问题，ceph mon的level数据存储默认是在根目录，而我们的根目录只有20G，所以往往会把ceph mon撑爆（我们测试环境一般计算节点也是存储节点），mon挂了之后会导致ceph的命令都不能用，由于我们把cephfs挂载了本地目录，会导致df命令不能使用，出现一脸懵逼，发生了什么</li>
+<li>软连接数据盘<br>幸亏公司的机器还是有其他数据盘的，数据盘的容量还是慷慨的，我们可以在数据建个软连接过去<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># mkdir /data/base</span><br><span class="line"># ln -s /data/base /var/lib/nova/instances/_base</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="卷启动虚拟机"><a href="#卷启动虚拟机" class="headerlink" title="卷启动虚拟机"></a>卷启动虚拟机</h2><ul>
+<li>从卷启动类型也需要先下载到本地进行转化，不过卷启动会先创建一个空的rbd卷在volumes池，然后把转化后的本地镜像通过rbd import命令导入到rbd卷中，这里的本地转化发生在/var/lib/cinder/conversion目录下，也是在根目录，解决方法更上面类似</li>
+</ul>
+<p>我用的是软连接，ok问题解决</p>
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
@@ -189,301 +227,126 @@
 		</ul>
 	</div>
 
-          
+      
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/09/29/No-space-left-on-device-when-boot-vms/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/28/虚拟机镜像上传问题/" class="archive-article-date">
-  	<time datetime="2018-09-28T09:21:06.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2018/09/28/虚拟机镜像上传问题/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">虚拟机快照镜像上传问题</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/28/虚拟机镜像上传问题/">虚拟机快照镜像上传问题</a>
-    </h1>
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="No-space-left-on-device-when-boot-vms" data-title="从镜像和卷启动虚拟机遇到No space left on device问题" data-url="http://yoursite.com/2018/09/29/No-space-left-on-device-when-boot-vms/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+  
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack nova glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/28/k8s learn(16)/" class="archive-article-date">
-  	<time datetime="2018-09-28T05:18:39.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/28/k8s learn(16)/">张磊k8s学习(16)</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/28/k8s use cephfs as StorageClass/" class="archive-article-date">
-  	<time datetime="2018-09-28T05:16:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/28/k8s use cephfs as StorageClass/">k8s use cephfs as StorageClass</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">k8s cephfs</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/27/glance local image add to ceph/" class="archive-article-date">
-  	<time datetime="2018-09-27T09:11:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-27</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/27/glance local image add to ceph/">glance本地镜像补齐到ceph</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/26/nova-Pike-changelog分析/" class="archive-article-date">
-  	<time datetime="2018-09-26T08:14:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-26</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/26/nova-Pike-changelog分析/">nova Pike changelog分析</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/21/每天5分钟go-2/" class="archive-article-date">
-  	<time datetime="2018-09-20T23:13:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-21</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/21/每天5分钟go-2/">每天5分钟go(2)</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/20/每天5分钟go-1/" class="archive-article-date">
-  	<time datetime="2018-09-19T23:22:19.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-20</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/20/每天5分钟go-1/">每天5分钟go(1)</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/01/hello-world/" class="archive-article-date">
-  	<time datetime="2018-09-01T11:41:05.954Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-01</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/01/hello-world/">Hello World</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
-
-    
 
 
           </div>
@@ -506,8 +369,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,
