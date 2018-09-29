@@ -187,7 +187,7 @@
 <li>制作rpm包<br>在SOURCES同目录下还有一个SPECS，这个下面有一个spec文件，这个文件就是用来生成rpm包的<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 48</span><br><span class="line">-rw-rw-r--. 1 root root 14614 9月  29 16:46 openstack-cinder.spec</span><br><span class="line">-rw-rw-r--. 1 root root 29641 6月   4 23:10 openstack-nova.spec</span><br><span class="line"># rpmbuild -ba openstack-cinder.spec</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
-<p>命令之后会在RPMS目录下面生成相关的rpm包<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ll</span><br><span class="line">总用量 11012</span><br><span class="line">-rw-r--r--. 1 root root   60636 9月  29 19:21 openstack-cinder-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 3943300 9月  29 19:21 openstack-cinder-doc-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 4229080 9月  29 19:21 python-cinder-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 3038588 9月  29 19:21 python-cinder-tests-11.1.1-1.el7_tstack.noarch.rpm</span><br></pre></td></tr></table></figure></p>
+<p>命令之后会在RPMS目录下面生成相关的rpm包<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 11012</span><br><span class="line">-rw-r--r--. 1 root root   60636 9月  29 19:21 openstack-cinder-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 3943300 9月  29 19:21 openstack-cinder-doc-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 4229080 9月  29 19:21 python-cinder-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 3038588 9月  29 19:21 python-cinder-tests-11.1.1-1.el7_tstack.noarch.rpm</span><br></pre></td></tr></table></figure></p>
 <p>注:原生的tar解压的时候最好不要在windows下面操作，因为有些文件的执行权限会没有，大爱linux</p>
 
       
@@ -1082,11 +1082,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1095,10 +1099,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
