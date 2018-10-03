@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="1.程序跟进程 程序是静态的 进程是动态的  2.容器是一种进程1int pid = clone(main_function, stack_size, CLONE_NEWPID | SIGCHLD, NULL) 通过Cgroups 技术是用来制造约束的主要手段， 而Namespace 技术则是用来修改进程视图的主要方法提供6种命令空间：123456PIDMountUTSIPCNetworkUser">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-03T07:48:54.056Z">
+<meta property="og:updated_time" content="2018-10-03T07:49:40.447Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="k8s learn(5) 从进程说起:容器到底是怎么一回事">
 <meta name="twitter:description" content="1.程序跟进程 程序是静态的 进程是动态的  2.容器是一种进程1int pid = clone(main_function, stack_size, CLONE_NEWPID | SIGCHLD, NULL) 通过Cgroups 技术是用来制造约束的主要手段， 而Namespace 技术则是用来修改进程视图的主要方法提供6种命令空间：123456PIDMountUTSIPCNetworkUser">
@@ -298,6 +298,15 @@
   
 <nav id="article-nav">
   
+    <a href="/2018/10/03/k8s-learn-6/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          k8s learn(6) 隔离与限制
+        
+      </div>
+    </a>
+  
   
     <a href="/2018/09/29/modify-openstack-code-then-make-rpm-package/" id="article-nav-older" class="article-nav-link-wrap">
       <div class="article-nav-title">修改openstack源码之后如何做rpm包</div>
@@ -446,10 +455,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
@@ -462,11 +467,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -475,6 +480,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
             
             <div class="clearfix"></div>
