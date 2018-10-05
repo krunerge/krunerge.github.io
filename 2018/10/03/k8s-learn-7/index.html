@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="Mount namespace 容器进程在启动之前要做一下mount操作，要不文件系统的视角还是宿主机的 chroot可以改变进程的视角 mount namespace就是对chroot不断改良的结果 容器进程一般会重新挂载/目录 挂载在容器根目录上，用来为容器进程提供隔离后执行环境的文件系统，就是所谓的”容器镜像”,也叫做rootfs  rootfsrootfs(容器镜像)一般包含如下的文件和目">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-04T07:36:54.531Z">
+<meta property="og:updated_time" content="2018-10-04T07:38:37.421Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="k8s learn(7)深入理解容器镜像">
 <meta name="twitter:description" content="Mount namespace 容器进程在启动之前要做一下mount操作，要不文件系统的视角还是宿主机的 chroot可以改变进程的视角 mount namespace就是对chroot不断改良的结果 容器进程一般会重新挂载/目录 挂载在容器根目录上，用来为容器进程提供隔离后执行环境的文件系统，就是所谓的”容器镜像”,也叫做rootfs  rootfsrootfs(容器镜像)一般包含如下的文件和目">
@@ -308,6 +308,15 @@
   
 <nav id="article-nav">
   
+    <a href="/2018/10/05/four-cases-when-boot-from-volume/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          卷启动虚拟机的四种情况
+        
+      </div>
+    </a>
+  
   
     <a href="/2018/10/03/k8s-learn-6/" id="article-nav-older" class="article-nav-link-wrap">
       <div class="article-nav-title">k8s learn(6) 隔离与限制</div>
@@ -456,7 +465,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -464,7 +473,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -476,15 +497,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
             
             <div class="clearfix"></div>
