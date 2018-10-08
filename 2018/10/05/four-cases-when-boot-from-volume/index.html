@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="卷启动虚拟机卷启动虚拟机的使用方式有很多，这里通过看代码列出四种使用场景 1.glance直接接ceph，使用images池 镜像在ceph的images池中，其实我们可以直接通过ceph的clone拷贝镜像的rbd到volumes（cinder池）池中就可以，不过这要把glance的show_multiple_locations和show_dirct_url两个配置打开，这两个配置主要是用来输出">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-05T08:57:29.496Z">
+<meta property="og:updated_time" content="2018-10-05T08:59:11.142Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="卷启动虚拟机的四种情况">
 <meta name="twitter:description" content="卷启动虚拟机卷启动虚拟机的使用方式有很多，这里通过看代码列出四种使用场景 1.glance直接接ceph，使用images池 镜像在ceph的images池中，其实我们可以直接通过ceph的clone拷贝镜像的rbd到volumes（cinder池）池中就可以，不过这要把glance的show_multiple_locations和show_dirct_url两个配置打开，这两个配置主要是用来输出">
@@ -331,6 +331,15 @@
   
 <nav id="article-nav">
   
+    <a href="/2018/10/06/go-learn-3/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          每天5分钟go-3
+        
+      </div>
+    </a>
+  
   
     <a href="/2018/10/03/k8s-learn-7/" id="article-nav-older" class="article-nav-link-wrap">
       <div class="article-nav-title">k8s learn(7)深入理解容器镜像</div>
@@ -479,15 +488,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -504,10 +517,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
