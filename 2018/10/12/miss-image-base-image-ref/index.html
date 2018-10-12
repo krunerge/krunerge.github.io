@@ -6,12 +6,12 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>rebuild虚拟机之后做快照少base_image-ref信息 | 小甲师兄</title>
+  <title>rebuild虚拟机之后做快照少base_image_ref信息 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="问题由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门https://review.openstack.org/#/c/305079/22/nova/compute/manager.py，笔者手动合了这个patch到p版，心想">
 <meta name="keywords" content="openstack nova">
 <meta property="og:type" content="article">
-<meta property="og:title" content="rebuild虚拟机之后做快照少base_image-ref信息">
+<meta property="og:title" content="rebuild虚拟机之后做快照少base_image_ref信息">
 <meta property="og:url" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/index.html">
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="问题由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门https://review.openstack.org/#/c/305079/22/nova/compute/manager.py，笔者手动合了这个patch到p版，心想">
@@ -19,9 +19,9 @@
 <meta property="og:image" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/1.png">
 <meta property="og:image" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/2.png">
 <meta property="og:image" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/3.png">
-<meta property="og:updated_time" content="2018-10-12T14:45:08.178Z">
+<meta property="og:updated_time" content="2018-10-12T14:47:03.952Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="rebuild虚拟机之后做快照少base_image-ref信息">
+<meta name="twitter:title" content="rebuild虚拟机之后做快照少base_image_ref信息">
 <meta name="twitter:description" content="问题由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门https://review.openstack.org/#/c/305079/22/nova/compute/manager.py，笔者手动合了这个patch到p版，心想">
 <meta name="twitter:image" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/1.png">
   
@@ -164,7 +164,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      rebuild虚拟机之后做快照少base_image-ref信息
+      rebuild虚拟机之后做快照少base_image_ref信息
     </h1>
   
 
@@ -177,7 +177,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门<br><a href="https://review.openstack.org/#/c/305079/22/nova/compute/manager.py" target="_blank" rel="noopener">https://review.openstack.org/#/c/305079/22/nova/compute/manager.py</a><br>，笔者手动合了这个patch到p版，心想美滋滋，不了今天测试测出了一个bug</p>
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门<br><a href="https://review.openstack.org/#/c/305079/22/nova/compute/manager.py" target="_blank" rel="noopener">https://review.openstack.org/#/c/305079/22/nova/compute/manager.py</a><br>，笔者手动合了这个patch到p版，心想美滋滋，不过了今天测试测出了一个bug</p>
 <h2 id="情景如下"><a href="#情景如下" class="headerlink" title="情景如下"></a>情景如下</h2><p>我们一般会使用虚拟机创建快照，这个快照会作为镜像上传到glance，这个镜像我们可以称之为用户镜像，这个镜像跟一般的镜像有一个不同，会增加几个属性<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Name	Value</span><br><span class="line">image_type	snapshot</span><br><span class="line">instance_uuid	&lt;uuid of instance that was snapshotted&gt;</span><br><span class="line">base_image_ref	&lt;uuid of original image of instance that was snapshotted&gt;</span><br><span class="line">image_location	snapshot</span><br></pre></td></tr></table></figure></p>
 <p>其中笔者业务需要base_image_ref这个属性，但是在虚拟机重建之后，做了镜像快照之后没有这个属性了，</p>
 <h1 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h1><h2 id="创建虚拟机的时候这个属性怎么来的"><a href="#创建虚拟机的时候这个属性怎么来的" class="headerlink" title="创建虚拟机的时候这个属性怎么来的"></a>创建虚拟机的时候这个属性怎么来的</h2><ul>
@@ -330,7 +330,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="miss-image-base-image-ref" data-title="rebuild虚拟机之后做快照少base_image-ref信息" data-url="http://yoursite.com/2018/10/12/miss-image-base-image-ref/"></div>
+	<div class="ds-thread" data-thread-key="miss-image-base-image-ref" data-title="rebuild虚拟机之后做快照少base_image_ref信息" data-url="http://yoursite.com/2018/10/12/miss-image-base-image-ref/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
@@ -448,7 +448,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -460,15 +464,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -476,15 +472,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
             
             <div class="clearfix"></div>
