@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="镜像上传到Docker hub 1.docker login登陆 2.docker tag  hellword krunerge/hellword:v1其中krunerge是你的仓库名，也是你docker hub的用户名 3.docker push krunerge/hellword:v1  docker exec原理 1.找到容器的进程id 12# docker inspect --format">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-08T15:03:17.570Z">
+<meta property="og:updated_time" content="2018-10-08T15:04:31.458Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="k8s learn(8)重新认识Docker容器">
 <meta name="twitter:description" content="镜像上传到Docker hub 1.docker login登陆 2.docker tag  hellword krunerge/hellword:v1其中krunerge是你的仓库名，也是你docker hub的用户名 3.docker push krunerge/hellword:v1  docker exec原理 1.找到容器的进程id 12# docker inspect --format">
@@ -186,7 +186,7 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># ll /proc/48987/ns</span><br><span class="line">总用量 0</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 cgroup -&gt; cgroup:[4026531835]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 ipc -&gt; ipc:[4026533013]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 mnt -&gt; mnt:[4026533009]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 net -&gt; net:[4026533016]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid_for_children -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 user -&gt; user:[4026531837]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 uts -&gt; uts:[4026533012]</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>3.docker exec的原理就是创建一个新进程，加入到之前容器进程的namespace中，就是通过上面找到的namespace<br>使用setns()系统调用实现，模拟实现如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">#define _GNU_SOURCE</span><br><span class="line">#include &lt;fcntl.h&gt;</span><br><span class="line">#include &lt;sched.h&gt;</span><br><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">#define errExit(msg) do&#123; perror(msg); exit(EXIT_FAILURE);&#125; while(0)</span><br><span class="line"></span><br><span class="line">int main(int argc, char *argv[])&#123;</span><br><span class="line">  int fd;</span><br><span class="line"></span><br><span class="line">  fd = open(argv[1], O_RDONLY);</span><br><span class="line">  if (setns(fd, 0) == -1)&#123;</span><br><span class="line">      errExit(&quot;setns&quot;);  </span><br><span class="line">  &#125;</span><br><span class="line">  execvp(argv[2], &amp;argv[2]);</span><br><span class="line">  errExit(&quot;execvp&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">#define _GNU_SOURCE</span><br><span class="line">#include &lt;fcntl.h&gt;</span><br><span class="line">#include &lt;sched.h&gt;</span><br><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">#define errExit(msg) do&#123; perror(msg); exit(EXIT_FAILURE);&#125; while(0)</span><br><span class="line"></span><br><span class="line">int main(int argc, char *argv[])&#123;</span><br><span class="line">  int fd;</span><br><span class="line"></span><br><span class="line">  fd = open(argv[1], O_RDONLY);</span><br><span class="line">  if (setns(fd, 0) == -1)&#123;</span><br><span class="line">      errExit(&quot;setns&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  execvp(argv[2], &amp;argv[2]);</span><br><span class="line">  errExit(&quot;execvp&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 <h1 id="docker的数据卷"><a href="#docker的数据卷" class="headerlink" title="docker的数据卷"></a>docker的数据卷</h1><ul>
@@ -300,6 +300,15 @@
 
   
 <nav id="article-nav">
+  
+    <a href="/2018/10/09/virsh-domain/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          virsh-domain.c文件下命令分析
+        
+      </div>
+    </a>
   
   
     <a href="/2018/10/06/go-learn-3/" id="article-nav-older" class="article-nav-link-wrap">
@@ -449,18 +458,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
@@ -469,11 +466,27 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">

@@ -6,15 +6,24 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Tag: openstack nova cinder glance | 小甲师兄</title>
+  <title>rebuild虚拟机之后做快照少base_image-ref信息 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="小甲师兄">
-<meta property="og:url" content="http://yoursite.com/tags/openstack-nova-cinder-glance/index.html">
+  <meta name="description" content="问题由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门https://review.openstack.org/#/c/305079/22/nova/compute/manager.py，笔者手动合了这个patch到p版，心想">
+<meta name="keywords" content="openstack nova">
+<meta property="og:type" content="article">
+<meta property="og:title" content="rebuild虚拟机之后做快照少base_image-ref信息">
+<meta property="og:url" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="问题由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门https://review.openstack.org/#/c/305079/22/nova/compute/manager.py，笔者手动合了这个patch到p版，心想">
 <meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/1.png">
+<meta property="og:image" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/2.png">
+<meta property="og:image" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/3.png">
+<meta property="og:updated_time" content="2018-10-12T14:45:08.178Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄">
+<meta name="twitter:title" content="rebuild虚拟机之后做快照少base_image-ref信息">
+<meta name="twitter:description" content="问题由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门https://review.openstack.org/#/c/305079/22/nova/compute/manager.py，笔者手动合了这个patch到p版，心想">
+<meta name="twitter:image" content="http://yoursite.com/2018/10/12/miss-image-base-image-ref/1.png">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -148,60 +157,205 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-miss-image-base-image-ref" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2018" class="archive-year">2018</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/05/four-cases-when-boot-from-volume/" class="archive-article-date">
-  	<time datetime="2018-10-05T08:18:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-05</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/05/four-cases-when-boot-from-volume/">卷启动虚拟机的四种情况</a>
+    <h1 class="article-title" itemprop="name">
+      rebuild虚拟机之后做快照少base_image-ref信息
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2018/10/12/miss-image-base-image-ref/" class="archive-article-date">
+  	<time datetime="2018-10-12T13:05:03.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-12</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门<br><a href="https://review.openstack.org/#/c/305079/22/nova/compute/manager.py" target="_blank" rel="noopener">https://review.openstack.org/#/c/305079/22/nova/compute/manager.py</a><br>，笔者手动合了这个patch到p版，心想美滋滋，不了今天测试测出了一个bug</p>
+<h2 id="情景如下"><a href="#情景如下" class="headerlink" title="情景如下"></a>情景如下</h2><p>我们一般会使用虚拟机创建快照，这个快照会作为镜像上传到glance，这个镜像我们可以称之为用户镜像，这个镜像跟一般的镜像有一个不同，会增加几个属性<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Name	Value</span><br><span class="line">image_type	snapshot</span><br><span class="line">instance_uuid	&lt;uuid of instance that was snapshotted&gt;</span><br><span class="line">base_image_ref	&lt;uuid of original image of instance that was snapshotted&gt;</span><br><span class="line">image_location	snapshot</span><br></pre></td></tr></table></figure></p>
+<p>其中笔者业务需要base_image_ref这个属性，但是在虚拟机重建之后，做了镜像快照之后没有这个属性了，</p>
+<h1 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h1><h2 id="创建虚拟机的时候这个属性怎么来的"><a href="#创建虚拟机的时候这个属性怎么来的" class="headerlink" title="创建虚拟机的时候这个属性怎么来的"></a>创建虚拟机的时候这个属性怎么来的</h2><ul>
+<li>1.创建虚拟机源码分析<br><img src="1.png" alt="aa"><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">def _populate_instance_for_create(self, context, instance, image,</span><br><span class="line">                                      index, security_groups, instance_type,</span><br><span class="line">                                      num_instances, shutdown_terminate):</span><br><span class="line">    ....</span><br><span class="line">    # In case we couldn&apos;t find any suitable base_image</span><br><span class="line">    system_meta.setdefault(&apos;image_base_image_ref&apos;, instance.image_ref)</span><br><span class="line"></span><br><span class="line">    system_meta[&apos;owner_user_name&apos;] = context.user_name</span><br><span class="line">    system_meta[&apos;owner_project_name&apos;] = context.project_name</span><br><span class="line">    ....</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看见在创建虚拟机时在nova-api中加入的</p>
+<ul>
+<li>2.创建虚拟机快照源码分析<br>创建虚拟机快照的函数是_action_create_image函数，这个是入口<br><img src="2.png" alt="bb"><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">def _create_image(self, context, instance, name, image_type,</span><br><span class="line">                  extra_properties=None):</span><br><span class="line">    properties = &#123;</span><br><span class="line">        &apos;instance_uuid&apos;: instance.uuid,</span><br><span class="line">        &apos;user_id&apos;: str(context.user_id),</span><br><span class="line">        &apos;image_type&apos;: image_type,</span><br><span class="line">    &#125;</span><br><span class="line">    properties.update(extra_properties or &#123;&#125;)</span><br><span class="line"></span><br><span class="line">    image_meta = self._initialize_instance_snapshot_metadata(</span><br><span class="line">        instance, name, properties)</span><br><span class="line">    ....</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>主要是通过上面的_initialize_instance_snapshot_metadata函数从虚拟机的系统元数据中找出base_image_ref，就是上面创建虚拟机的时候加入，那rebuild虚拟机之后没有是怎么回事呢，来看一下rebuild源码分析</p>
+<ul>
+<li>3.rebuild源码分析<br>rebuild虚拟机的入口函数是_action_rebuild<br><img src="3.png" alt="cc"><br>rebuild函数内部有一个内部函数<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">def _reset_image_metadata():</span><br><span class="line">    orig_sys_metadata = dict(instance.system_metadata)</span><br><span class="line">    # Remove the old keys</span><br><span class="line">    for key in list(instance.system_metadata.keys()):</span><br><span class="line">        if key.startswith(utils.SM_IMAGE_PROP_PREFIX):</span><br><span class="line">            del instance.system_metadata[key]</span><br><span class="line"></span><br><span class="line">    # Add the new ones</span><br><span class="line">    new_sys_metadata = utils.get_system_metadata_from_image(</span><br><span class="line">        image, flavor)</span><br><span class="line"></span><br><span class="line">    instance.system_metadata.update(new_sys_metadata)</span><br><span class="line">    instance.save()</span><br><span class="line">    return orig_sys_metadata</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这个函数就是用来删除虚拟机中image前缀的，而base_image_ref正好有一个image前缀，就是创建虚拟机的时候计入的，但是加加入新的虚拟机系统元数据的时候没有加入，导致这个元数据没了，笔者的做法是在这里加上，毕竟系统元数据作为一个扩展属性，类似用户自定义的，增加一个影响不是很大，修改之后如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">def _reset_image_metadata(image_id):</span><br><span class="line">    orig_sys_metadata = dict(instance.system_metadata)</span><br><span class="line">    # Remove the old keys</span><br><span class="line">    for key in list(instance.system_metadata.keys()):</span><br><span class="line">        if key.startswith(utils.SM_IMAGE_PROP_PREFIX):</span><br><span class="line">            del instance.system_metadata[key]</span><br><span class="line"></span><br><span class="line">    # Add the new ones</span><br><span class="line">    new_sys_metadata = utils.get_system_metadata_from_image(</span><br><span class="line">        image, flavor)</span><br><span class="line">    new_sys_metadata[&quot;image_base_image_ref&quot;] = image_id  </span><br><span class="line"></span><br><span class="line">    instance.system_metadata.update(new_sys_metadata)</span><br><span class="line">    instance.save()</span><br><span class="line">    return orig_sys_metadata</span><br></pre></td></tr></table></figure></p>
+<p>之后rebuild的虚拟机再创建快照镜像之后就没有问题了</p>
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack nova cinder glance</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/10/12/miss-image-base-image-ref/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
   
   
-    </div></section>
+    <a href="/2018/10/09/k8s-learn-10/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">k8s learn(10)kubeadm使用</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+  
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="miss-image-base-image-ref" data-title="rebuild虚拟机之后做快照少base_image-ref信息" data-url="http://yoursite.com/2018/10/12/miss-image-base-image-ref/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+  
+  
   
 
-    
+  
+
+  
+
+  
 
 
           </div>
@@ -224,9 +378,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: true,
