@@ -184,11 +184,13 @@
 <p>2.2.3 调用driver的destroy信息<br>2.2.3.1 调用_destroy<br>强制关闭虚拟机，相关于拔电源，调用libvirt的destroy的接口，同步操作<br>2.2.3.2 调用cleanup进行清理<br>主要做一下四件事：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1.删除网络设备，包括linux bridge上面的qbr口，删除linux bridge以及删除br-int上面的port</span><br><span class="line">2.删除ceph vms池下面的系统盘</span><br><span class="line">3.删除计算节点本地的instances目录</span><br><span class="line">4.调用libvirt的undefineFlags接口，销毁虚拟机</span><br></pre></td></tr></table></figure></p>
 <hr>
 <p>2.2.4 调用neutron删除虚拟机网络信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self._try_deallocate_network(context, instance, requested_networks)</span><br></pre></td></tr></table></figure></p>
-<p>2.2.4.1 删除port</p>
-<h2 id="2-2-4-2-删除虚拟机nova数据库中的网络信息缓存"><a href="#2-2-4-2-删除虚拟机nova数据库中的网络信息缓存" class="headerlink" title="2.2.4.2 删除虚拟机nova数据库中的网络信息缓存"></a>2.2.4.2 删除虚拟机nova数据库中的网络信息缓存</h2><p>2.2.5 对卷进行卸载操作<br>2.2.5.1 terminate_connection卸载掉宿主机与卷的联系<br>由于笔者使用的ceph rbd，所以这个函数是空</p>
+<p>2.2.4.1 删除port<br>2.2.4.2 删除虚拟机nova数据库中的网络信息缓存</p>
+<hr>
+<p>2.2.5 对卷进行卸载操作<br>2.2.5.1 terminate_connection卸载掉宿主机与卷的联系<br>由于笔者使用的ceph rbd，所以这个函数是空</p>
 <h2 id="2-2-5-2-调用cinder的detach，主要是进行数据库操作"><a href="#2-2-5-2-调用cinder的detach，主要是进行数据库操作" class="headerlink" title="2.2.5.2 调用cinder的detach，主要是进行数据库操作"></a>2.2.5.2 调用cinder的detach，主要是进行数据库操作</h2><p>2.3 删除虚拟机缓存信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">instance.info_cache.delete()</span><br></pre></td></tr></table></figure></p>
 <p>2.4 删除设置为terminate时要删除的卷<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">self._cleanup_volumes(context, instance.uuid, bdms,</span><br><span class="line">                    raise_exc=False)</span><br></pre></td></tr></table></figure></p>
 <p>2.5 删除数据库中虚拟机instance实例<br>2.6 删除bdm数据库<br>2.7 删除console缓存token<br>2.7 在host manager内存dict中删除虚拟机信息</p>
+<p>分析完毕，还是做了很多事情的</p>
 
       
 
@@ -1247,23 +1249,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1275,11 +1265,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
