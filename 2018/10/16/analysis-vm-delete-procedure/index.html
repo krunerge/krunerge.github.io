@@ -6,16 +6,22 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>analysis vm delete procedure | 小甲师兄</title>
+  <title>虚拟机删除流程分析 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="article">
-<meta property="og:title" content="analysis vm delete procedure">
+  <meta name="description" content="虚拟机删除虚拟机的删除笔者之前没怎么研究过，心想无非就是调用libvirt接口进行destroy，其实仔细一看还是挺复杂的，让我们来分析一下 代码流程解析nova-api那边就不用看了，重点在nova-compute那端，分析如下：代码路径nova/comnpute/manager.py  1.同步加锁调内部函数 2.重头戏这里_delete_instance函数还增加了一个装饰器，用来增加一些钩">
+<meta name="keywords" content="openstack nova">
+<meta property="og:type" content="article">
+<meta property="og:title" content="虚拟机删除流程分析">
 <meta property="og:url" content="http://yoursite.com/2018/10/16/analysis-vm-delete-procedure/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="虚拟机删除虚拟机的删除笔者之前没怎么研究过，心想无非就是调用libvirt接口进行destroy，其实仔细一看还是挺复杂的，让我们来分析一下 代码流程解析nova-api那边就不用看了，重点在nova-compute那端，分析如下：代码路径nova/comnpute/manager.py  1.同步加锁调内部函数 2.重头戏这里_delete_instance函数还增加了一个装饰器，用来增加一些钩">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-16T13:30:59.076Z">
+<meta property="og:image" content="http://yoursite.com/2018/10/16/analysis-vm-delete-procedure/1.png">
+<meta property="og:updated_time" content="2018-10-16T14:55:07.541Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="analysis vm delete procedure">
+<meta name="twitter:title" content="虚拟机删除流程分析">
+<meta name="twitter:description" content="虚拟机删除虚拟机的删除笔者之前没怎么研究过，心想无非就是调用libvirt接口进行destroy，其实仔细一看还是挺复杂的，让我们来分析一下 代码流程解析nova-api那边就不用看了，重点在nova-compute那端，分析如下：代码路径nova/comnpute/manager.py  1.同步加锁调内部函数 2.重头戏这里_delete_instance函数还增加了一个装饰器，用来增加一些钩">
+<meta name="twitter:image" content="http://yoursite.com/2018/10/16/analysis-vm-delete-procedure/1.png">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -156,7 +162,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      analysis vm delete procedure
+      虚拟机删除流程分析
     </h1>
   
 
@@ -169,7 +175,26 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h1 id="虚拟机删除"><a href="#虚拟机删除" class="headerlink" title="虚拟机删除"></a>虚拟机删除</h1><p>虚拟机的删除笔者之前没怎么研究过，心想无非就是调用libvirt接口进行destroy，其实仔细一看还是挺复杂的，让我们来分析一下</p>
+<h1 id="代码流程解析"><a href="#代码流程解析" class="headerlink" title="代码流程解析"></a>代码流程解析</h1><p>nova-api那边就不用看了，重点在nova-compute那端，分析如下：<br>代码路径nova/comnpute/manager.py</p>
+<ul>
+<li>1.同步加锁调内部函数<br><img src="1.png" alt="aaa"></li>
+<li>2.重头戏<br>这里_delete_instance函数还增加了一个装饰器，用来增加一些钩子函数处理<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">@hooks.add_hook(&quot;delete_instance&quot;)</span><br><span class="line">def _delete_instance(self, context, instance, bdms, quotas):</span><br><span class="line">    ....</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>2.1 clear_events_for_instance</p>
+<h2 id="删除虚拟机的事件"><a href="#删除虚拟机的事件" class="headerlink" title="删除虚拟机的事件"></a>删除虚拟机的事件</h2><p>2.2 _shutdown_instance<br>主要是虚拟机关机，销毁网络设备，删除ceph系统盘，删除本地instance下目录，然后销毁虚拟机（undefine）<br>2.2.1 首先获取网络信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">compute_utils.get_nw_info_for_instance(instance)</span><br></pre></td></tr></table></figure></p>
+<p>2.2.2 获取磁盘信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_get_instance_block_device_info</span><br></pre></td></tr></table></figure></p>
+<hr>
+<p>2.2.3 调用driver的destroy信息<br>2.2.3.1 调用_destroy<br>强制关闭虚拟机，相关于拔电源，调用libvirt的destroy的接口，同步操作<br>2.2.3.2 调用cleanup进行清理<br>主要做一下四件事：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1.删除网络设备，包括linux bridge上面的qbr口，删除linux bridge以及删除br-int上面的port</span><br><span class="line">2.删除ceph vms池下面的系统盘</span><br><span class="line">3.删除计算节点本地的instances目录</span><br><span class="line">4.调用libvirt的undefineFlags接口，销毁虚拟机</span><br></pre></td></tr></table></figure></p>
+<hr>
+<p>2.2.4 调用neutron删除虚拟机网络信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self._try_deallocate_network(context, instance, requested_networks)</span><br></pre></td></tr></table></figure></p>
+<p>2.2.4.1 删除port</p>
+<h2 id="2-2-4-2-删除虚拟机nova数据库中的网络信息缓存"><a href="#2-2-4-2-删除虚拟机nova数据库中的网络信息缓存" class="headerlink" title="2.2.4.2 删除虚拟机nova数据库中的网络信息缓存"></a>2.2.4.2 删除虚拟机nova数据库中的网络信息缓存</h2><p>2.2.5 对卷进行卸载操作<br>2.2.5.1 terminate_connection卸载掉宿主机与卷的联系<br>由于笔者使用的ceph rbd，所以这个函数是空</p>
+<h2 id="2-2-5-2-调用cinder的detach，主要是进行数据库操作"><a href="#2-2-5-2-调用cinder的detach，主要是进行数据库操作" class="headerlink" title="2.2.5.2 调用cinder的detach，主要是进行数据库操作"></a>2.2.5.2 调用cinder的detach，主要是进行数据库操作</h2><p>2.3 删除虚拟机缓存信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">instance.info_cache.delete()</span><br></pre></td></tr></table></figure></p>
+<p>2.4 删除设置为terminate时要删除的卷<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">self._cleanup_volumes(context, instance.uuid, bdms,</span><br><span class="line">                    raise_exc=False)</span><br></pre></td></tr></table></figure></p>
+<p>2.5 删除数据库中虚拟机instance实例<br>2.6 删除bdm数据库<br>2.7 删除console缓存token<br>2.7 在host manager内存dict中删除虚拟机信息</p>
+
       
 
       
@@ -198,6 +223,17 @@
     <div class="article-info article-info-index">
       
       
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
       
 
       
@@ -292,7 +328,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="analysis-vm-delete-procedure" data-title="analysis vm delete procedure" data-url="http://yoursite.com/2018/10/16/analysis-vm-delete-procedure/"></div>
+	<div class="ds-thread" data-thread-key="analysis-vm-delete-procedure" data-title="虚拟机删除流程分析" data-url="http://yoursite.com/2018/10/16/analysis-vm-delete-procedure/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
@@ -414,7 +450,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -422,19 +458,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
