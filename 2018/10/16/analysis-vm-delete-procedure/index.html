@@ -17,7 +17,7 @@
 <meta property="og:description" content="虚拟机删除虚拟机的删除笔者之前没怎么研究过，心想无非就是调用libvirt接口进行destroy，其实仔细一看还是挺复杂的，让我们来分析一下 代码流程解析nova-api那边就不用看了，重点在nova-compute那端，分析如下：代码路径nova/comnpute/manager.py  1.同步加锁调内部函数 2.重头戏这里_delete_instance函数还增加了一个装饰器，用来增加一些钩">
 <meta property="og:locale" content="default">
 <meta property="og:image" content="http://yoursite.com/2018/10/16/analysis-vm-delete-procedure/1.png">
-<meta property="og:updated_time" content="2018-10-16T14:58:11.543Z">
+<meta property="og:updated_time" content="2018-10-16T15:05:33.011Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="虚拟机删除流程分析">
 <meta name="twitter:description" content="虚拟机删除虚拟机的删除笔者之前没怎么研究过，心想无非就是调用libvirt接口进行destroy，其实仔细一看还是挺复杂的，让我们来分析一下 代码流程解析nova-api那边就不用看了，重点在nova-compute那端，分析如下：代码路径nova/comnpute/manager.py  1.同步加锁调内部函数 2.重头戏这里_delete_instance函数还增加了一个装饰器，用来增加一些钩">
@@ -182,8 +182,9 @@
 <li>2.重头戏<br>这里_delete_instance函数还增加了一个装饰器，用来增加一些钩子函数处理<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">@hooks.add_hook(&quot;delete_instance&quot;)</span><br><span class="line">def _delete_instance(self, context, instance, bdms, quotas):</span><br><span class="line">    ....</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
-<p>2.1 clear_events_for_instance</p>
-<h2 id="删除虚拟机的事件"><a href="#删除虚拟机的事件" class="headerlink" title="删除虚拟机的事件"></a>删除虚拟机的事件</h2><p>2.2 _shutdown_instance<br>主要是虚拟机关机，销毁网络设备，删除ceph系统盘，删除本地instance下目录，然后销毁虚拟机（undefine）<br>2.2.1 首先获取网络信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">compute_utils.get_nw_info_for_instance(instance)</span><br></pre></td></tr></table></figure></p>
+<p>2.1 clear_events_for_instance<br>删除虚拟机的事件</p>
+<hr>
+<p>2.2 _shutdown_instance<br>主要是虚拟机关机，销毁网络设备，删除ceph系统盘，删除本地instance下目录，然后销毁虚拟机（undefine）<br>2.2.1 首先获取网络信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">compute_utils.get_nw_info_for_instance(instance)</span><br></pre></td></tr></table></figure></p>
 <p>2.2.2 获取磁盘信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_get_instance_block_device_info</span><br></pre></td></tr></table></figure></p>
 <hr>
 <p>2.2.3 调用driver的destroy信息<br>2.2.3.1 调用_destroy<br>强制关闭虚拟机，相关于拔电源，调用libvirt的destroy的接口，同步操作<br>2.2.3.2 调用cleanup进行清理<br>主要做一下四件事：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1.删除网络设备，包括linux bridge上面的qbr口，删除linux bridge以及删除br-int上面的port</span><br><span class="line">2.删除ceph vms池下面的系统盘</span><br><span class="line">3.删除计算节点本地的instances目录</span><br><span class="line">4.调用libvirt的undefineFlags接口，销毁虚拟机</span><br></pre></td></tr></table></figure></p>
@@ -452,15 +453,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -472,15 +465,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
