@@ -150,6 +150,192 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-k8s-learn-5" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/03/k8s-learn-5/">k8s learn(5) 从进程说起:容器到底是怎么一回事</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/03/k8s-learn-5/" class="archive-article-date">
+  	<time datetime="2018-10-03T06:38:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-03</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-程序跟进程"><a href="#1-程序跟进程" class="headerlink" title="1.程序跟进程"></a>1.程序跟进程</h1><ul>
+<li>程序是静态的</li>
+<li>进程是动态的</li>
+</ul>
+<h1 id="2-容器是一种进程"><a href="#2-容器是一种进程" class="headerlink" title="2.容器是一种进程"></a>2.容器是一种进程</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int pid = clone(main_function, stack_size, CLONE_NEWPID | SIGCHLD, NULL)</span><br></pre></td></tr></table></figure>
+<p>通过Cgroups 技术是用来制造约束的主要手段， 而Namespace 技术则是用来修改进程视图的主要方法<br>提供6种命令空间：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">PID</span><br><span class="line">Mount</span><br><span class="line">UTS</span><br><span class="line">IPC</span><br><span class="line">Network</span><br><span class="line">User</span><br></pre></td></tr></table></figure></p>
+<h1 id="3-容器中的进程跟宿主机中进程的对应关系"><a href="#3-容器中的进程跟宿主机中进程的对应关系" class="headerlink" title="3.容器中的进程跟宿主机中进程的对应关系"></a>3.容器中的进程跟宿主机中进程的对应关系</h1><ul>
+<li>在容器中，容器的启动进程在容器里面是1号进程（假init进程）<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># docker run -it busybox /bin/sh</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>容器中进程<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">PID   USER     TIME  COMMAND</span><br><span class="line">    1 root      0:00 /bin/sh</span><br><span class="line">   36 root      0:00 ps</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>在宿主机中，如何查看容器的进程呢，进程名其实就是容器的启动进程，比如上面的/bin/sh，通过docker inspect查看容器进程<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker inspect xxxx</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>从中找到status pid就是容器的进程id<br>我们可以在容器中运行一个top命令，看一下进程的关系</p>
+<h2 id="在容器中"><a href="#在容器中" class="headerlink" title="在容器中"></a>在容器中</h2><p>top命令是init的子进程</p>
+<h2 id="在宿主机上"><a href="#在宿主机上" class="headerlink" title="在宿主机上"></a>在宿主机上</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><span class="line"># pstree -p 2837</span><br><span class="line">dockerd-current(2837)─┬─docker-containe(105880)─┬─docker-containe(48506)─┬─sh(48521)───top(50346)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48507)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48508)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48509)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48510)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48511)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48513)</span><br><span class="line">                      │                         │                        └─&#123;docker-containe&#125;(48545)</span><br><span class="line">                      │                         ├─docker-containe(119459)─┬─pause(119475)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119460)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119461)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119462)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119463)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119464)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119465)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119466)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119509)</span><br><span class="line">                      │                         ├─docker-containe(119525)─┬─kube-dns(119546)─┬─&#123;kube-dns&#125;(119567)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119568)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119569)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119570)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119571)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119572)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119573)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119583)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(11921)</span><br><span class="line">                      │                         │                         │                  └─&#123;kube-dns&#125;(14741)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119526)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119527)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119528)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119529)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119530)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119531)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119532)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119533)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119534)</span><br><span class="line">                      │                         ├─docker-containe(119585)─┬─dnsmasq-nanny(119602)─┬─dnsmasq(119638)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119623)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119624)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119625)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119626)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119634)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119636)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119788)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119787)</span><br><span class="line">                      │                         │                         │                       └─&#123;dnsmasq-nanny&#125;(49454)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119586)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119587)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119588)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119589)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119590)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119591)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119592)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119596)</span><br><span class="line">                      │                         ├─docker-containe(119639)─┬─sidecar(119656)─┬─&#123;sidecar&#125;(119676)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119677)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119678)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119679)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119689)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119690)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119691)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(125464)</span><br><span class="line">                      │                         │                         │                 └─&#123;sidecar&#125;(33842)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119640)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119641)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119642)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119643)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119644)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119645)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119646)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119647)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105881)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105882)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105883)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105884)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105885)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105886)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105887)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105895)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(106063)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112355)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112412)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112467)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112987)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(113989)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(114932)</span><br><span class="line">                      │                         └─&#123;docker-containe&#125;(6250)</span><br><span class="line">                      ├─docker-proxy-cu(3090)─┬─&#123;docker-proxy-cu&#125;(3091)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3092)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3093)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3094)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3095)</span><br><span class="line">                      │                       └─&#123;docker-proxy-cu&#125;(3619)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2839)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2840)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2841)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2845)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2850)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2851)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2860)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2861)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2864)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2865)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3012)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3027)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3028)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3029)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3032)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3082)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3096)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3098)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3099)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3101)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3102)</span><br><span class="line">                      └─&#123;dockerd-current&#125;(3107)</span><br></pre></td></tr></table></figure>
+<p>其中，笔者的容器进程关系是这条<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dockerd-current(2837)─┬─docker-containe(105880)─┬─docker-containe(48506)─┬─sh(48521)───top(50346)</span><br></pre></td></tr></table></figure></p>
+<p>其中2837是dockerd驻留进程，其父进程是1（真正的init进程）,进程105880和48506也是docker相关的进程，不是容器进程，<br>48521是容器进程，50346是top进程</p>
+<p>从这可以看出容器里和宿主机上面的进程关系</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/03/k8s-learn-5/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-modify-openstack-code-then-make-rpm-package" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/09/29/modify-openstack-code-then-make-rpm-package/">修改openstack源码之后如何做rpm包</a>
+    </h1>
+  
+
+        
+        <a href="/2018/09/29/modify-openstack-code-then-make-rpm-package/" class="archive-article-date">
+  	<time datetime="2018-09-29T12:18:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-29</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="rpm包的需求"><a href="#rpm包的需求" class="headerlink" title="rpm包的需求"></a>rpm包的需求</h1><ul>
+<li>以前我们修改openstack的源码之后，如何部署openstack的呢？<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">首先使用openstack原生组件的rpm包，然后把我们修改的代码用脚本镜像文件替换，额。。。好像有点low</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="rpm制作流程"><a href="#rpm制作流程" class="headerlink" title="rpm制作流程"></a>rpm制作流程</h1><h2 id="首先找源码的src-rpm包"><a href="#首先找源码的src-rpm包" class="headerlink" title="首先找源码的src.rpm包"></a>首先找源码的src.rpm包</h2><p>来，传输门：<a href="http://vault.centos.org/7.5.1804/cloud/Source/openstack-pike/" target="_blank" rel="noopener">http://vault.centos.org/7.5.1804/cloud/Source/openstack-pike/</a><br>选择要使用的rpm包，这里我们已cinder-11.1.1为例</p>
+<ul>
+<li>下载src.rpm包<br><img src="1.png" alt="aa"></li>
+<li>解压rpm包<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpm -i openstack-cinder-11.1.1-1.el7.src.rpm</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这会生成/root/rpmbuild目录<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 4</span><br><span class="line">drwxr-xr-x. 3 root root   26 9月  29 19:10 BUILD</span><br><span class="line">drwxr-xr-x. 2 root root    6 9月  29 19:21 BUILDROOT</span><br><span class="line">drwxr-xr-x. 3 root root   19 9月  29 19:21 RPMS</span><br><span class="line">drwxr-xr-x. 2 root root 4096 9月  29 19:30 SOURCES</span><br><span class="line">drwxr-xr-x. 2 root root   60 9月  29 19:30 SPECS</span><br><span class="line">drwxr-xr-x. 2 root root   57 9月  29 19:21 SRPMS</span><br></pre></td></tr></table></figure></p>
+<p>其中SOURCES目录中就有源码的一些tar包<br>比如cinder-11.1.1.tar.gz<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">总用量 20668</span><br><span class="line">-rw-rw-r--. 1 root root 10041327 9月  29 19:10 cinder-11.1.1.tar.gz</span><br><span class="line">-rw-rw-r--. 1 root root      387 6月  19 00:52 cinder-dist.conf</span><br><span class="line">-rw-rw-r--. 1 root root      134 6月  19 00:52 cinder.logrotate</span><br><span class="line">-rw-rw-r--. 1 root root      112 6月  19 00:52 cinder-sudoers</span><br><span class="line">-rw-rw-r--. 1 root root 10975664 6月   4 22:33 nova-16.1.4.tar.gz</span><br><span class="line">-rw-rw-r--. 1 root root      752 6月   4 23:10 nova-dist.conf</span><br><span class="line">-rw-rw-r--. 1 root root      249 6月   4 23:10 nova-ifc-template</span><br><span class="line">-rw-rw-r--. 1 root root       95 6月   4 23:10 nova.logrotate</span><br><span class="line">-rw-rw-r--. 1 root root      190 6月   4 23:10 nova_migration_authorized_keys</span><br><span class="line">-rw-rw-r--. 1 root root      265 6月   4 23:10 nova_migration_identity</span><br><span class="line">-rw-rw-r--. 1 root root      679 6月   4 23:10 nova_migration-rootwrap_cold_migration</span><br><span class="line">-rw-rw-r--. 1 root root      121 6月   4 23:10 nova_migration-rootwrap.conf</span><br><span class="line">-rw-rw-r--. 1 root root      217 6月   4 23:10 nova_migration-sudoers</span><br><span class="line">-rw-rw-r--. 1 root root     2058 6月   4 23:10 nova-migration-wrapper</span><br><span class="line">-rw-rw-r--. 1 root root      695 6月   4 23:10 nova-placement-api.conf</span><br><span class="line">-rw-rw-r--. 1 root root      109 6月   4 23:10 nova-ssh-config</span><br><span class="line">-rw-rw-r--. 1 root root      158 6月   4 23:10 nova-sudoers</span><br><span class="line">-rw-rw-r--. 1 root root      343 6月  19 00:52 openstack-cinder-api.service</span><br><span class="line">-rw-rw-r--. 1 root root      335 6月  19 00:52 openstack-cinder-backup.service</span><br><span class="line">-rw-rw-r--. 1 root root      344 6月  19 00:52 openstack-cinder-scheduler.service</span><br><span class="line">-rw-rw-r--. 1 root root      389 6月  19 00:52 openstack-cinder-volume.service</span><br><span class="line">-rw-rw-r--. 1 root root      230 6月   4 23:10 openstack-nova-api.service</span><br><span class="line">-rw-rw-r--. 1 root root      234 6月   4 23:10 openstack-nova-cells.service</span><br><span class="line">-rw-rw-r--. 1 root root      302 6月   4 23:10 openstack-nova-compute.service</span><br><span class="line">-rw-rw-r--. 1 root root      242 6月   4 23:10 openstack-nova-conductor.service</span><br><span class="line">-rw-rw-r--. 1 root root      251 6月   4 23:10 openstack-nova-consoleauth.service</span><br><span class="line">-rw-rw-r--. 1 root root      244 6月   4 23:10 openstack-nova-console.service</span><br><span class="line">-rw-rw-r--. 1 root root      248 6月   4 23:10 openstack-nova-metadata-api.service</span><br><span class="line">-rw-rw-r--. 1 root root      299 6月   4 23:10 openstack-nova-network.service</span><br><span class="line">-rw-rw-r--. 1 root root      304 6月   4 23:10 openstack-nova-novncproxy.service</span><br><span class="line">-rw-rw-r--. 1 root root       73 6月   4 23:10 openstack-nova-novncproxy.sysconfig</span><br><span class="line">-rw-rw-r--. 1 root root      248 6月   4 23:10 openstack-nova-os-compute-api.service</span><br><span class="line">-rw-rw-r--. 1 root root      242 6月   4 23:10 openstack-nova-scheduler.service</span><br><span class="line">-rw-rw-r--. 1 root root      216 6月   4 23:10 openstack-nova-serialproxy.service</span><br><span class="line">-rw-rw-r--. 1 root root      225 6月   4 23:10 openstack-nova-spicehtml5proxy.service</span><br><span class="line">-rw-rw-r--. 1 root root      216 6月   4 23:10 openstack-nova-xvpvncproxy.service</span><br><span class="line">-rw-rw-r--. 1 root root        4 6月   4 23:10 policy.json</span><br></pre></td></tr></table></figure></p>
+<p>我们所需要的源码就在这个tar中，我们可以对这个tar镜像解压，然后修改代码，然后使用tar -zcvf生成新的tar包，然后把新的tar包拷贝到SOURCES目录下，对原有的tar包进行替换</p>
+<ul>
+<li>制作rpm包<br>在SOURCES同目录下还有一个SPECS，这个下面有一个spec文件，这个文件就是用来生成rpm包的<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 48</span><br><span class="line">-rw-rw-r--. 1 root root 14614 9月  29 16:46 openstack-cinder.spec</span><br><span class="line">-rw-rw-r--. 1 root root 29641 6月   4 23:10 openstack-nova.spec</span><br><span class="line"># rpmbuild -ba openstack-cinder.spec</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>命令之后会在RPMS目录下面生成相关的rpm包<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 11012</span><br><span class="line">-rw-r--r--. 1 root root   60636 9月  29 19:21 openstack-cinder-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 3943300 9月  29 19:21 openstack-cinder-doc-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 4229080 9月  29 19:21 python-cinder-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 3038588 9月  29 19:21 python-cinder-tests-11.1.1-1.el7_tstack.noarch.rpm</span><br></pre></td></tr></table></figure></p>
+<p>注:原生的tar解压的时候最好不要在windows下面操作，因为有些文件的执行权限会没有，大爱linux</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/09/29/modify-openstack-code-then-make-rpm-package/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-No-space-left-on-device-when-boot-vms" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -980,11 +1166,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -992,23 +1178,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1016,7 +1190,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
             
             <div class="clearfix"></div>
