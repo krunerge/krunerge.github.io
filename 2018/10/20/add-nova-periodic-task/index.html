@@ -20,7 +20,7 @@
 <meta property="og:image" content="http://yoursite.com/2018/10/20/add-nova-periodic-task/2.png">
 <meta property="og:image" content="http://yoursite.com/2018/10/20/add-nova-periodic-task/3.png">
 <meta property="og:image" content="http://yoursite.com/2018/10/20/add-nova-periodic-task/4.png">
-<meta property="og:updated_time" content="2018-10-20T06:04:11.722Z">
+<meta property="og:updated_time" content="2018-10-20T06:06:13.743Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="nova周期性任务分析">
 <meta name="twitter:description" content="周期任务周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？ 从nova-compute服务启动说起对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒123好，应该是在nova-compute服">
@@ -220,7 +220,7 @@
 <li>2.可以要增加一个周期任务的间隔时间的配置参数作为spacing参数，例如<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">periodic_task.periodic_task(spacing=CONF.scheduler_instance_sync_interval)</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
-
+<h1 id="后续有空可以分享一下ceph代码中的周期性任务调度方法"><a href="#后续有空可以分享一下ceph代码中的周期性任务调度方法" class="headerlink" title="后续有空可以分享一下ceph代码中的周期性任务调度方法"></a>后续有空可以分享一下ceph代码中的周期性任务调度方法</h1>
       
 
       
@@ -472,15 +472,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -492,7 +492,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -504,11 +504,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
