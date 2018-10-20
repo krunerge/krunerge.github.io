@@ -8,18 +8,18 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>k8s learn(14)为什么我们需要pod | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在运行">
+  <meta name="description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息  volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在">
 <meta name="keywords" content="k8s 张磊">
 <meta property="og:type" content="article">
 <meta property="og:title" content="k8s learn(14)为什么我们需要pod">
 <meta property="og:url" content="http://yoursite.com/2018/10/17/k8s-learn-14/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在运行">
+<meta property="og:description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息  volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-18T04:57:36.865Z">
+<meta property="og:updated_time" content="2018-10-20T06:13:24.284Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="k8s learn(14)为什么我们需要pod">
-<meta name="twitter:description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在运行">
+<meta name="twitter:description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息  volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -175,9 +175,13 @@
       
         <h1 id="k8s中api对象"><a href="#k8s中api对象" class="headerlink" title="k8s中api对象"></a>k8s中api对象</h1><ul>
 <li>1.metadata表示对象，主要有label</li>
-<li>2.spec具体api对象信息<h1 id="volume属于pod，类似于磁盘属于虚拟机"><a href="#volume属于pod，类似于磁盘属于虚拟机" class="headerlink" title="volume属于pod，类似于磁盘属于虚拟机"></a>volume属于pod，类似于磁盘属于虚拟机</h1><h1 id="empty宿主机临时目录，hostpath宿主机某个目录"><a href="#empty宿主机临时目录，hostpath宿主机某个目录" class="headerlink" title="empty宿主机临时目录，hostpath宿主机某个目录"></a>empty宿主机临时目录，hostpath宿主机某个目录</h1><h1 id="kubectl-exec进入容器"><a href="#kubectl-exec进入容器" class="headerlink" title="kubectl exec进入容器"></a>kubectl exec进入容器</h1><h1 id="pod的生命周期跟基础容器相同"><a href="#pod的生命周期跟基础容器相同" class="headerlink" title="pod的生命周期跟基础容器相同"></a>pod的生命周期跟基础容器相同</h1><h1 id="有两种容器"><a href="#有两种容器" class="headerlink" title="有两种容器"></a>有两种容器</h1></li>
+<li>2.spec具体api对象信息</li>
+</ul>
+<h1 id="volume属于pod，类似于磁盘属于虚拟机"><a href="#volume属于pod，类似于磁盘属于虚拟机" class="headerlink" title="volume属于pod，类似于磁盘属于虚拟机"></a>volume属于pod，类似于磁盘属于虚拟机</h1><h1 id="empty宿主机临时目录，hostpath宿主机某个目录"><a href="#empty宿主机临时目录，hostpath宿主机某个目录" class="headerlink" title="empty宿主机临时目录，hostpath宿主机某个目录"></a>empty宿主机临时目录，hostpath宿主机某个目录</h1><h1 id="kubectl-exec进入容器"><a href="#kubectl-exec进入容器" class="headerlink" title="kubectl exec进入容器"></a>kubectl exec进入容器</h1><h1 id="pod的生命周期跟基础容器相同"><a href="#pod的生命周期跟基础容器相同" class="headerlink" title="pod的生命周期跟基础容器相同"></a>pod的生命周期跟基础容器相同</h1><h1 id="有两种容器"><a href="#有两种容器" class="headerlink" title="有两种容器"></a>有两种容器</h1><ul>
 <li>initcontainer：运行网就退出，先于container运行</li>
-<li>container：initcontainer运行完在运行<h1 id="容器设计模式–sidecar"><a href="#容器设计模式–sidecar" class="headerlink" title="容器设计模式–sidecar"></a>容器设计模式–sidecar</h1></li>
+<li>container：initcontainer运行完在运行</li>
+</ul>
+<h1 id="容器设计模式–sidecar"><a href="#容器设计模式–sidecar" class="headerlink" title="容器设计模式–sidecar"></a>容器设计模式–sidecar</h1><ul>
 <li>运用网络共享：Istio</li>
 <li>运用卷共享：日志收集</li>
 </ul>
@@ -446,7 +450,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -454,15 +458,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
