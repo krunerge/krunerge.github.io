@@ -8,22 +8,22 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>nova周期性任务分析 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="周期任务周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？ 从nova-compute服务启动说起对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒123好，应该是在nova-compute服">
+  <meta name="description" content="1.周期任务周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？ 2.从nova-compute服务启动说起对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒123好，应该是在nova-comp">
 <meta name="keywords" content="nova periodic">
 <meta property="og:type" content="article">
 <meta property="og:title" content="nova周期性任务分析">
 <meta property="og:url" content="http://yoursite.com/2018/10/20/add-nova-periodic-task/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="周期任务周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？ 从nova-compute服务启动说起对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒123好，应该是在nova-compute服">
+<meta property="og:description" content="1.周期任务周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？ 2.从nova-compute服务启动说起对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒123好，应该是在nova-comp">
 <meta property="og:locale" content="default">
 <meta property="og:image" content="http://yoursite.com/2018/10/20/add-nova-periodic-task/1.png">
 <meta property="og:image" content="http://yoursite.com/2018/10/20/add-nova-periodic-task/2.png">
 <meta property="og:image" content="http://yoursite.com/2018/10/20/add-nova-periodic-task/3.png">
 <meta property="og:image" content="http://yoursite.com/2018/10/20/add-nova-periodic-task/4.png">
-<meta property="og:updated_time" content="2018-10-20T06:06:13.743Z">
+<meta property="og:updated_time" content="2018-10-20T06:29:02.170Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="nova周期性任务分析">
-<meta name="twitter:description" content="周期任务周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？ 从nova-compute服务启动说起对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒123好，应该是在nova-compute服">
+<meta name="twitter:description" content="1.周期任务周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？ 2.从nova-compute服务启动说起对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒123好，应该是在nova-comp">
 <meta name="twitter:image" content="http://yoursite.com/2018/10/20/add-nova-periodic-task/1.png">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
@@ -178,8 +178,8 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="周期任务"><a href="#周期任务" class="headerlink" title="周期任务"></a>周期任务</h1><p>周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？</p>
-<h1 id="从nova-compute服务启动说起"><a href="#从nova-compute服务启动说起" class="headerlink" title="从nova-compute服务启动说起"></a>从nova-compute服务启动说起</h1><p>对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒<br>1<br>2<br>3<br>好，应该是在nova-compute服务启动的时候就启动这些周期性的任务，至于这些任务是以何种方式运行，比如是以脱离nova-compute进程的外部进程(exec),还是子进程，还是以一个线程又或者是一个协程？我们来具体看一下。</p>
+        <h1 id="1-周期任务"><a href="#1-周期任务" class="headerlink" title="1.周期任务"></a>1.周期任务</h1><p>周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？</p>
+<h1 id="2-从nova-compute服务启动说起"><a href="#2-从nova-compute服务启动说起" class="headerlink" title="2.从nova-compute服务启动说起"></a>2.从nova-compute服务启动说起</h1><p>对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒<br>1<br>2<br>3<br>好，应该是在nova-compute服务启动的时候就启动这些周期性的任务，至于这些任务是以何种方式运行，比如是以脱离nova-compute进程的外部进程(exec),还是子进程，还是以一个线程又或者是一个协程？我们来具体看一下。</p>
 <ul>
 <li>1.从cmd看服务启动流程<br>nova的所有服务都从cmd目录下面启动，nova-compute也不例外<br>main函数如下<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">def main():</span><br><span class="line">    config.parse_args(sys.argv)</span><br><span class="line">    logging.setup(CONF, &apos;nova&apos;)</span><br><span class="line">    utils.monkey_patch()</span><br><span class="line">    objects.register_all()</span><br><span class="line"></span><br><span class="line">    gmr.TextGuruMeditation.setup_autorun(version)</span><br><span class="line"></span><br><span class="line">    if not CONF.conductor.use_local:</span><br><span class="line">        block_db_access()</span><br><span class="line">        objects_base.NovaObject.indirection_api = \</span><br><span class="line">            conductor_rpcapi.ConductorAPI()</span><br><span class="line"></span><br><span class="line">    server = service.Service.create(binary=&apos;nova-compute&apos;,</span><br><span class="line">                                    topic=CONF.compute_topic,</span><br><span class="line">                                    db_allowed=CONF.conductor.use_local)</span><br><span class="line">    service.serve(server)</span><br><span class="line">    service.wait()</span><br></pre></td></tr></table></figure>
 </li>
@@ -215,12 +215,12 @@
 <p>可以看出定时器就是一个loopcall，只不过是会根据任务指定的时间间隔进行周期性的调度，进入timer.start函数看一下周期性任务是怎么运行的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">def start(self, initial_delay=None, periodic_interval_max=None):</span><br><span class="line">    self._running = True</span><br><span class="line">    done = event.Event()</span><br><span class="line"></span><br><span class="line">    def _inner():</span><br><span class="line">        if initial_delay:</span><br><span class="line">            greenthread.sleep(initial_delay)</span><br><span class="line"></span><br><span class="line">        try:</span><br><span class="line">            while self._running:</span><br><span class="line">                idle = self.f(*self.args, **self.kw)</span><br><span class="line">                if not self._running:</span><br><span class="line">                    break</span><br><span class="line"></span><br><span class="line">                if periodic_interval_max is not None:</span><br><span class="line">                    idle = min(idle, periodic_interval_max)</span><br><span class="line">                LOG.debug(&apos;Dynamic looping call %(func_name)r sleeping &apos;</span><br><span class="line">                          &apos;for %(idle).02f seconds&apos;,</span><br><span class="line">                          &#123;&apos;func_name&apos;: self.f, &apos;idle&apos;: idle&#125;)</span><br><span class="line">                greenthread.sleep(idle)</span><br><span class="line">        except LoopingCallDone as e:</span><br><span class="line">            self.stop()</span><br><span class="line">            done.send(e.retvalue)</span><br><span class="line">        except Exception:</span><br><span class="line">            LOG.exception(_LE(&apos;in dynamic looping call&apos;))</span><br><span class="line">            done.send_exception(*sys.exc_info())</span><br><span class="line">            return</span><br><span class="line">        else:</span><br><span class="line">            done.send(True)</span><br><span class="line"></span><br><span class="line">    self.done = done</span><br><span class="line"></span><br><span class="line">    greenthread.spawn(_inner)</span><br><span class="line">    return self.done</span><br></pre></td></tr></table></figure></p>
 <p>找到答案了，周期任务是以协程方式运行的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">greenthread.spawn(_inner)</span><br></pre></td></tr></table></figure></p>
 <p>而且是所有的周期任务都在一个协程里面使用死循环运行<br>到这里，周期性任务框架讲完，那我们如何增加自己的周期性任务呢</p>
-<h1 id="增加周期性的任务"><a href="#增加周期性的任务" class="headerlink" title="增加周期性的任务"></a>增加周期性的任务</h1><ul>
+<h1 id="3-增加周期性的任务"><a href="#3-增加周期性的任务" class="headerlink" title="3.增加周期性的任务"></a>3.增加周期性的任务</h1><ul>
 <li>1.在computemanager中增加需要周期性任务运行的逻辑代码函数然后使用periodic_task.periodic_task装饰器进行修饰</li>
 <li>2.可以要增加一个周期任务的间隔时间的配置参数作为spacing参数，例如<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">periodic_task.periodic_task(spacing=CONF.scheduler_instance_sync_interval)</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
-<h1 id="后续有空可以分享一下ceph代码中的周期性任务调度方法"><a href="#后续有空可以分享一下ceph代码中的周期性任务调度方法" class="headerlink" title="后续有空可以分享一下ceph代码中的周期性任务调度方法"></a>后续有空可以分享一下ceph代码中的周期性任务调度方法</h1>
+<h1 id="4-后续有空可以分享一下ceph代码中的周期性任务调度方法"><a href="#4-后续有空可以分享一下ceph代码中的周期性任务调度方法" class="headerlink" title="4.后续有空可以分享一下ceph代码中的周期性任务调度方法"></a>4.后续有空可以分享一下ceph代码中的周期性任务调度方法</h1>
       
 
       
@@ -472,7 +472,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -480,7 +480,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -488,19 +488,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
