@@ -6,22 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>虚拟机rebuild流程分析 | 小甲师兄</title>
+  <title>k8s learn(14)为什么我们需要pod | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="虚拟机rebuild笔者这次使用板书，感觉这样的流程反而更清晰，哈哈（其实是偷懒）">
-<meta name="keywords" content="openstack nova">
+  <meta name="description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在运行">
+<meta name="keywords" content="k8s 张磊">
 <meta property="og:type" content="article">
-<meta property="og:title" content="虚拟机rebuild流程分析">
-<meta property="og:url" content="http://yoursite.com/2018/10/17/analysis-vm-rebuild/index.html">
+<meta property="og:title" content="k8s learn(14)为什么我们需要pod">
+<meta property="og:url" content="http://yoursite.com/2018/10/17/k8s-learn-14/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="虚拟机rebuild笔者这次使用板书，感觉这样的流程反而更清晰，哈哈（其实是偷懒）">
+<meta property="og:description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在运行">
 <meta property="og:locale" content="default">
-<meta property="og:image" content="http://yoursite.com/2018/10/17/analysis-vm-rebuild/1.png">
-<meta property="og:updated_time" content="2018-10-17T11:30:15.865Z">
+<meta property="og:updated_time" content="2018-10-18T04:57:36.865Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="虚拟机rebuild流程分析">
-<meta name="twitter:description" content="虚拟机rebuild笔者这次使用板书，感觉这样的流程反而更清晰，哈哈（其实是偷懒）">
-<meta name="twitter:image" content="http://yoursite.com/2018/10/17/analysis-vm-rebuild/1.png">
+<meta name="twitter:title" content="k8s learn(14)为什么我们需要pod">
+<meta name="twitter:description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在运行">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -155,27 +153,34 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-analysis-vm-rebuild" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-k8s-learn-14" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      虚拟机rebuild流程分析
+      k8s learn(14)为什么我们需要pod
     </h1>
   
 
         
-        <a href="/2018/10/17/analysis-vm-rebuild/" class="archive-article-date">
-  	<time datetime="2018-10-17T11:26:15.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-17</time>
+        <a href="/2018/10/17/k8s-learn-14/" class="archive-article-date">
+  	<time datetime="2018-10-17T14:58:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-17</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="虚拟机rebuild"><a href="#虚拟机rebuild" class="headerlink" title="虚拟机rebuild"></a>虚拟机rebuild</h1><p>笔者这次使用板书，感觉这样的流程反而更清晰，哈哈（其实是偷懒）<br><img src="1.png" alt="aaa"></p>
+        <h1 id="k8s中api对象"><a href="#k8s中api对象" class="headerlink" title="k8s中api对象"></a>k8s中api对象</h1><ul>
+<li>1.metadata表示对象，主要有label</li>
+<li>2.spec具体api对象信息<h1 id="volume属于pod，类似于磁盘属于虚拟机"><a href="#volume属于pod，类似于磁盘属于虚拟机" class="headerlink" title="volume属于pod，类似于磁盘属于虚拟机"></a>volume属于pod，类似于磁盘属于虚拟机</h1><h1 id="empty宿主机临时目录，hostpath宿主机某个目录"><a href="#empty宿主机临时目录，hostpath宿主机某个目录" class="headerlink" title="empty宿主机临时目录，hostpath宿主机某个目录"></a>empty宿主机临时目录，hostpath宿主机某个目录</h1><h1 id="kubectl-exec进入容器"><a href="#kubectl-exec进入容器" class="headerlink" title="kubectl exec进入容器"></a>kubectl exec进入容器</h1><h1 id="pod的生命周期跟基础容器相同"><a href="#pod的生命周期跟基础容器相同" class="headerlink" title="pod的生命周期跟基础容器相同"></a>pod的生命周期跟基础容器相同</h1><h1 id="有两种容器"><a href="#有两种容器" class="headerlink" title="有两种容器"></a>有两种容器</h1></li>
+<li>initcontainer：运行网就退出，先于container运行</li>
+<li>container：initcontainer运行完在运行<h1 id="容器设计模式–sidecar"><a href="#容器设计模式–sidecar" class="headerlink" title="容器设计模式–sidecar"></a>容器设计模式–sidecar</h1></li>
+<li>运用网络共享：Istio</li>
+<li>运用卷共享：日志收集</li>
+</ul>
 
       
 
@@ -210,7 +215,7 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
         		</li>
       		
 		</ul>
@@ -266,7 +271,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/10/17/analysis-vm-rebuild/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/10/17/k8s-learn-14/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -280,18 +285,18 @@
   
 <nav id="article-nav">
   
-    <a href="/2018/10/17/k8s-learn-14/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2018/10/20/add-nova-periodic-task/" id="article-nav-newer" class="article-nav-link-wrap">
       <i class="icon-circle-left"></i>
       <div class="article-nav-title">
         
-          k8s learn(14)为什么我们需要pod
+          nova周期性任务分析
         
       </div>
     </a>
   
   
-    <a href="/2018/10/16/analysis-vm-delete-procedure/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">虚拟机删除流程分析</div>
+    <a href="/2018/10/17/analysis-vm-rebuild/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">虚拟机rebuild流程分析</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -319,7 +324,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="analysis-vm-rebuild" data-title="虚拟机rebuild流程分析" data-url="http://yoursite.com/2018/10/17/analysis-vm-rebuild/"></div>
+	<div class="ds-thread" data-thread-key="k8s-learn-14" data-title="k8s learn(14)为什么我们需要pod" data-url="http://yoursite.com/2018/10/17/k8s-learn-14/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">

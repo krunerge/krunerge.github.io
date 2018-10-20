@@ -150,6 +150,237 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-four-cases-when-boot-from-volume" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/05/four-cases-when-boot-from-volume/">卷启动虚拟机的四种情况</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/05/four-cases-when-boot-from-volume/" class="archive-article-date">
+  	<time datetime="2018-10-05T08:18:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-05</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="卷启动虚拟机"><a href="#卷启动虚拟机" class="headerlink" title="卷启动虚拟机"></a>卷启动虚拟机</h1><p>卷启动虚拟机的使用方式有很多，这里通过看代码列出四种使用场景</p>
+<h2 id="1-glance直接接ceph，使用images池"><a href="#1-glance直接接ceph，使用images池" class="headerlink" title="1.glance直接接ceph，使用images池"></a>1.glance直接接ceph，使用images池</h2><ul>
+<li>镜像在ceph的images池中，其实我们可以直接通过ceph的clone拷贝镜像的rbd到volumes（cinder池）池中就可以，不过这要把glance的show_multiple_locations和show_dirct_url两个配置打开，这两个配置主要是用来输出image的时候把在ceph上面的位置信息也输出来</li>
+<li>代码如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">cinder/volume/flows/manager/create_volume.py</span><br><span class="line">_create_from_image</span><br><span class="line">def _create_from_image(self, context, volume,</span><br><span class="line">                       image_location, image_id, image_meta,</span><br><span class="line">                       image_service, **kwargs):</span><br><span class="line">    if (CONF.image_conversion_dir and not</span><br><span class="line">            os.path.exists(CONF.image_conversion_dir)):</span><br><span class="line">        os.makedirs(CONF.image_conversion_dir)</span><br><span class="line">    try:</span><br><span class="line">        image_utils.check_available_space(CONF.image_conversion_dir,</span><br><span class="line">                                          image_meta[&apos;size&apos;], image_id)</span><br><span class="line">    except exception.ImageTooBig as err:</span><br><span class="line">        with excutils.save_and_reraise_exception():</span><br><span class="line">            self.message.create(</span><br><span class="line">                context,</span><br><span class="line">                message_field.Action.COPY_IMAGE_TO_VOLUME,</span><br><span class="line">                resource_uuid=volume.id,</span><br><span class="line">                detail=message_field.Detail.NOT_ENOUGH_SPACE_FOR_IMAGE,</span><br><span class="line">                exception=err)</span><br><span class="line"></span><br><span class="line">    virtual_size = image_meta.get(&apos;virtual_size&apos;)</span><br><span class="line">    if virtual_size:</span><br><span class="line">        virtual_size = image_utils.check_virtual_size(virtual_size,</span><br><span class="line">                                                      volume.size,</span><br><span class="line">                                                      image_id)</span><br><span class="line"></span><br><span class="line">    volume_is_encrypted = volume.encryption_key_id is not None</span><br><span class="line">    cloned = False</span><br><span class="line">    model_update = None</span><br><span class="line">    if not volume_is_encrypted:</span><br><span class="line">        model_update, cloned = self.driver.clone_image(context,</span><br><span class="line">                                                       volume,</span><br><span class="line">                                                       image_location,</span><br><span class="line">                                                       image_meta,</span><br><span class="line">                                                       image_service)</span><br><span class="line"></span><br><span class="line">    # Try and clone the image if we have it set as a glance location.</span><br><span class="line">    if not cloned and &apos;cinder&apos; in CONF.allowed_direct_url_schemes:</span><br><span class="line">        model_update, cloned = self._clone_image_volume(context,</span><br><span class="line">                                                        volume,</span><br><span class="line">                                                        image_location,</span><br><span class="line">                                                        image_meta)</span><br><span class="line"></span><br><span class="line">    # Try and use the image cache, and download if not cached.</span><br><span class="line">    if not cloned:</span><br><span class="line">        model_update = self._create_from_image_cache_or_download(</span><br><span class="line">            context,</span><br><span class="line">            volume,</span><br><span class="line">            image_location,</span><br><span class="line">            image_id,</span><br><span class="line">            image_meta,</span><br><span class="line">            image_service)</span><br><span class="line"></span><br><span class="line">    self._handle_bootable_volume_glance_meta(context, volume,</span><br><span class="line">                                             image_id=image_id,</span><br><span class="line">                                             image_meta=image_meta)</span><br><span class="line">    return model_update</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>其中clone_image就是上面第一种情况<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">def clone_image(self, context, volume,</span><br><span class="line">                image_location, image_meta,</span><br><span class="line">                image_service):</span><br><span class="line">    if image_location:</span><br><span class="line">        # Note: image_location[0] is glance image direct_url.</span><br><span class="line">        # image_location[1] contains the list of all locations (including</span><br><span class="line">        # direct_url) or None if show_multiple_locations is False in</span><br><span class="line">        # glance configuration.</span><br><span class="line">        if image_location[1]:</span><br><span class="line">            url_locations = [location[&apos;url&apos;] for</span><br><span class="line">                             location in image_location[1]]</span><br><span class="line">        else:</span><br><span class="line">            url_locations = [image_location[0]]</span><br><span class="line"></span><br><span class="line">        # iterate all locations to look for a cloneable one.</span><br><span class="line">        for url_location in url_locations:</span><br><span class="line">            if url_location and self._is_cloneable(</span><br><span class="line">                    url_location, image_meta):</span><br><span class="line">                _prefix, pool, image, snapshot = \</span><br><span class="line">                    self._parse_location(url_location)</span><br><span class="line">                volume_update = self._clone(volume, pool, image, snapshot)</span><br><span class="line">                volume_update[&apos;provider_location&apos;] = None</span><br><span class="line">                self._resize(volume)</span><br><span class="line">                return volume_update, True</span><br><span class="line">    return (&#123;&#125;, False)</span><br></pre></td></tr></table></figure></p>
+<p>直接就是分析镜像的location，然后对镜像的snap镜像clone，很快，秒级</p>
+<h2 id="2-glance不直接对接ceph，而是对接cinder，这个是glance新支持的"><a href="#2-glance不直接对接ceph，而是对接cinder，这个是glance新支持的" class="headerlink" title="2.glance不直接对接ceph，而是对接cinder，这个是glance新支持的"></a>2.glance不直接对接ceph，而是对接cinder，这个是glance新支持的</h2><ul>
+<li><p>这个不仅需要把glance的两个配置打开，还要配置cinder的配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">allowed_direct_url_schemes = cinder</span><br><span class="line">glance_api_version = 2</span><br><span class="line">image_upload_use_cinder_backend = true</span><br><span class="line">image_upload_use_internal_tenant = true</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>代码就是如下的分支：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">if not cloned and &apos;cinder&apos; in CONF.allowed_direct_url_schemes:</span><br><span class="line">    model_update, cloned = self._clone_image_volume(context,</span><br><span class="line">                                                    volume,</span><br><span class="line">                                                    image_location,</span><br><span class="line">                                                    image_meta)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">def _clone_image_volume(self, context, volume, image_location, image_meta):</span><br><span class="line">    &quot;&quot;&quot;Create a volume efficiently from an existing image.</span><br><span class="line"></span><br><span class="line">    Returns a dict of volume properties eg. provider_location,</span><br><span class="line">    boolean indicating whether cloning occurred</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    # NOTE (lixiaoy1): currently can&apos;t create volume from source vol with</span><br><span class="line">    # different encryptions, so just return.</span><br><span class="line">    if not image_location or volume.encryption_key_id:</span><br><span class="line">        return None, False</span><br><span class="line"></span><br><span class="line">    if (image_meta.get(&apos;container_format&apos;) != &apos;bare&apos; or</span><br><span class="line">            image_meta.get(&apos;disk_format&apos;) != &apos;raw&apos;):</span><br><span class="line">        LOG.info(&quot;Requested image %(id)s is not in raw format.&quot;,</span><br><span class="line">                 &#123;&apos;id&apos;: image_meta.get(&apos;id&apos;)&#125;)</span><br><span class="line">        return None, False</span><br><span class="line"></span><br><span class="line">    image_volume = None</span><br><span class="line">    direct_url, locations = image_location</span><br><span class="line">    urls = set([direct_url] + [loc.get(&apos;url&apos;) for loc in locations or []])</span><br><span class="line">    image_volume_ids = [url[9:] for url in urls</span><br><span class="line">                        if url and url.startswith(&apos;cinder://&apos;)]</span><br><span class="line">    image_volumes = self.db.volume_get_all_by_host(</span><br><span class="line">        context, volume[&apos;host&apos;], filters=&#123;&apos;id&apos;: image_volume_ids&#125;)</span><br><span class="line"></span><br><span class="line">    for image_volume in image_volumes:</span><br><span class="line">        # For the case image volume is stored in the service tenant,</span><br><span class="line">        # image_owner volume metadata should also be checked.</span><br><span class="line">        image_owner = None</span><br><span class="line">        volume_metadata = image_volume.get(&apos;volume_metadata&apos;) or &#123;&#125;</span><br><span class="line">        for m in volume_metadata:</span><br><span class="line">            if m[&apos;key&apos;] == &apos;image_owner&apos;:</span><br><span class="line">                image_owner = m[&apos;value&apos;]</span><br><span class="line">        if (image_meta[&apos;owner&apos;] != volume[&apos;project_id&apos;] and</span><br><span class="line">                image_meta[&apos;owner&apos;] != image_owner):</span><br><span class="line">            LOG.info(&quot;Skipping image volume %(id)s because &quot;</span><br><span class="line">                     &quot;it is not accessible by current Tenant.&quot;,</span><br><span class="line">                     &#123;&apos;id&apos;: image_volume.id&#125;)</span><br><span class="line">            continue</span><br><span class="line"></span><br><span class="line">        LOG.info(&quot;Will clone a volume from the image volume &quot;</span><br><span class="line">                 &quot;%(id)s.&quot;, &#123;&apos;id&apos;: image_volume.id&#125;)</span><br><span class="line">        break</span><br><span class="line">    else:</span><br><span class="line">        LOG.debug(&quot;No accessible image volume for image %(id)s found.&quot;,</span><br><span class="line">                  &#123;&apos;id&apos;: image_meta[&apos;id&apos;]&#125;)</span><br><span class="line">        return None, False</span><br><span class="line"></span><br><span class="line">    try:</span><br><span class="line">        ret = self.driver.create_cloned_volume(volume, image_volume)</span><br><span class="line">        self._cleanup_cg_in_volume(volume)</span><br><span class="line">        return ret, True</span><br><span class="line">    except (NotImplementedError, exception.CinderException):</span><br><span class="line">        LOG.exception(&apos;Failed to clone image volume %(id)s.&apos;,</span><br><span class="line">                      &#123;&apos;id&apos;: image_volume[&apos;id&apos;]&#125;)</span><br><span class="line">        return None, False</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">create_cloned_volume</span><br><span class="line">判断cinder的rbd_max_clone_depth配置：</span><br><span class="line">  1. 如果&lt;=0，则使用rbd copy创建新卷</span><br><span class="line">  2. 如果&gt;0, 同时当前缓存卷的深度==rbd_max_clone_depth，则要先做flatten操作，然后在做snap加clone</span><br><span class="line">  3. 如果&gt;0, 同时当前缓存卷的深度&lt;rbd_max_clone_depth, 则直接snap加clone</span><br></pre></td></tr></table></figure>
+<p>从cinder卷中取出卷id，然后也是clone，很快，秒级</p>
+<h3 id="3-对镜像做cache"><a href="#3-对镜像做cache" class="headerlink" title="3.对镜像做cache"></a>3.对镜像做cache</h3><ul>
+<li>对镜像做cache，可以设置把启动的卷缓存在某一个租户下面，这样以后再从这个镜像使用卷启动直接就可以从缓存的卷做快照加clone，还是很快的，秒级，不过如果缓存中没有，也就是第一次使用这个镜像从卷启动，则就是常规流程，先把镜像下载到本地，如果不是raw格式还要做一下转化，然后在上传到创建的空的rbd中，使用的是rbd import命令</li>
+<li><p>需要增加的配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">cinder_internal_tenant_project_id = 13d54e99646f4d04a52323576d35ab44</span><br><span class="line">cinder_internal_tenant_user_id = 65c9479b8bc24869b7bf441a147d8404</span><br><span class="line">allowed_direct_url_schemes = cinder</span><br><span class="line">image_upload_use_internal_tenant = true</span><br><span class="line">image_volume_cache_enabled = true</span><br><span class="line">image_volume_cache_max_size_gb = 0</span><br><span class="line">image_volume_cache_max_count = 0</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>代码分析</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">if not cloned:</span><br><span class="line">    model_update = self._create_from_image_cache_or_download(</span><br><span class="line">        context,</span><br><span class="line">        volume,</span><br><span class="line">        image_location,</span><br><span class="line">        image_id,</span><br><span class="line">        image_meta,</span><br><span class="line">        image_service)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>第一次使用镜像从卷启动:<ul>
+<li>下载镜像到本地临时目录（可以配置）</li>
+<li>copy数据到volume</li>
+<li>在从这个volume创建一个缓存volume（在同一个池）</li>
+<li>把这个缓存volume加入到cache数据库中</li>
+</ul>
+</li>
+<li>cache中有缓存了：<ul>
+<li>从cache取出缓存volume</li>
+<li>判断cinder的rbd_max_clone_depth配置：<ol>
+<li>如果&lt;=0，则使用rbd copy创建新卷</li>
+<li>如果&gt;0, 同时当前缓存卷的深度==rbd_max_clone_depth，则要先做flatten操作，然后在做snap加clone</li>
+<li>如果&gt;0, 同时当前缓存卷的深度&lt;rbd_max_clone_depth, 则直接snap加clone</li>
+</ol>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="4-常规流程，下载到本地"><a href="#4-常规流程，下载到本地" class="headerlink" title="4.常规流程，下载到本地"></a>4.常规流程，下载到本地</h3><p>下载到本地的流程跟上面3情况的”第一次使用镜像从卷启动”差不多，只是不要记录到cache数据库</p>
+<ul>
+<li>下载镜像到本地临时目录（可以配置）</li>
+<li>copy数据到volume</li>
+<li>在从这个volume创建一个缓存volume</li>
+</ul>
+<p>由于笔者不能开启glance中location的配置，所以选择做镜像卷做缓存还是比较好的</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack nova cinder glance</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/05/four-cases-when-boot-from-volume/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-k8s-learn-7" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/03/k8s-learn-7/">k8s learn(7)深入理解容器镜像</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/03/k8s-learn-7/" class="archive-article-date">
+  	<time datetime="2018-10-03T12:26:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-03</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="Mount-namespace"><a href="#Mount-namespace" class="headerlink" title="Mount namespace"></a>Mount namespace</h1><ol>
+<li>容器进程在启动之前要做一下mount操作，要不文件系统的视角还是宿主机的</li>
+<li>chroot可以改变进程的视角</li>
+<li>mount namespace就是对chroot不断改良的结果</li>
+<li>容器进程一般会重新挂载/目录</li>
+<li>挂载在容器根目录上，用来为容器进程提供隔离后执行环境的文件系统，就是所谓的”容器镜像”,也叫做rootfs</li>
+</ol>
+<h1 id="rootfs"><a href="#rootfs" class="headerlink" title="rootfs"></a>rootfs</h1><p>rootfs(容器镜像)一般包含如下的文件和目录<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ls /</span><br><span class="line">bin dev etc home lib lib64 mnt opt proc root run sbin sys tmp usr var</span><br></pre></td></tr></table></figure></p>
+<h1 id="docker核心原理"><a href="#docker核心原理" class="headerlink" title="docker核心原理"></a>docker核心原理</h1><ul>
+<li>启动linux namespace配置</li>
+<li>设置指定的Cgroups参数</li>
+<li>切换进程的根目录<ul>
+<li>优先使用pivot_root</li>
+<li>系统不支持pivot_root，再使用chroot</li>
+</ul>
+</li>
+</ul>
+<h1 id="rootfs和内核"><a href="#rootfs和内核" class="headerlink" title="rootfs和内核"></a>rootfs和内核</h1><p>操作系统分为rootfs和内核，rootfs就是文件，配置和目录等，可以说是操作系统的躯壳<br>容器只包含rootfs也就是镜像，内核是共享的宿主机的内核</p>
+<h1 id="容器的一致性"><a href="#容器的一致性" class="headerlink" title="容器的一致性"></a>容器的一致性</h1><p>容器的一致性是指rootfs会包含可运行程序以及所需要的依赖库，所以容器在哪里运行都没问题，它有了自己所需要的所有东西</p>
+<h1 id="docker镜像"><a href="#docker镜像" class="headerlink" title="docker镜像"></a>docker镜像</h1><p>docker镜像引用了layer概念，用户制作镜像每一步骤，都会生成一个层，每一个层都是一个增量的rootfs<br>layer需要用到联合文件系统(Union File System)</p>
+<ul>
+<li><p>Union File System（UnionFS）<br>主要功能就是将多个位置的目录联合挂载到同一个目录下面</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mount -t aufs xxxxx</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>一般使用的存储驱动</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">aufs(ubuntu),没有被合并进入内核</span><br><span class="line">overlay,有一些bug，比如inode会被占满</span><br><span class="line">overlay2，修复了上面的bug，有望替换掉aufs，但是需要较高的内核，4.0以上，而且在docker1.12版本之后才可以使用</span><br><span class="line">devicemapper, 红帽出品，但是用的不多，使用的是块设备，而上面使用的文件，但是它能支持配额的管理，其他都不行</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>层的分级</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">只读层(镜像层)，包含操作系统</span><br><span class="line">init层，是以-init结尾的层，夹在只读层和读写层之间，这层专门用来存放/etc/hosts,/etc/resolv.conf，这层不会commit提交</span><br><span class="line">可读可写层（容器层），镜像发生的增，删，改都发生在这里，这层可以commit提交</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/03/k8s-learn-7/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-k8s-learn-6" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -880,228 +1111,6 @@
 
 
   
-    <article id="post-nova-Pike-changelog分析" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/26/nova-Pike-changelog分析/">nova Pike changelog分析</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/26/nova-Pike-changelog分析/" class="archive-article-date">
-  	<time datetime="2018-09-26T08:14:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="nova-16-0-1修改"><a href="#nova-16-0-1修改" class="headerlink" title="nova-16.0.1修改"></a><strong>nova-16.0.1修改</strong></h1><ul>
-<li><strong>Enable custom certificates for keystone communication</strong><br>允许keystone通信的自定义认证</li>
-<li><strong>Add @targets_cell for live_migrate_instance method in conductor</strong><br>live_migrate_instance增加了一个装饰器</li>
-<li><strong>Set error state after failed evacuation</strong><br>疏散失败的虚拟机设置成”error”状态，原来是”accepted”状态，如果这个状态的话在nova-compute重启之后会有问题</li>
-<li><strong>Functional test for regression bug #1713783</strong><br>增加功能测试，在没有机器可以疏散的时候设置虚拟机状态为”error”</li>
-<li><strong>Call terminate_connection when shelve_offloading</strong><br>增加虚拟机断开连接卷的处理，因为虚拟机在做了shelve操作之后进行unshelve的时候不一定还会调度到相同的机器上</li>
-<li><strong>Handle keypair not found from metadata server using cells</strong><br>修复bug <a href="https://bugs.launchpad.net/nova/+bug/1592167" target="_blank" rel="noopener">https://bugs.launchpad.net/nova/+bug/1592167</a><br>在使用cell的时候，如果删除了创建虚拟机时的keypair，那么在检索虚拟机的时候会报400错误</li>
-<li><strong>Target context when setting instance to ERROR when over quota</strong><br>通知虚拟机所在的cell，当虚拟机设置为error的时候</li>
-<li><strong>Move hash ring initialization to init_host() for ironic</strong><br>把hash环的初始化移到了ironic的init_host函数中</li>
-<li><strong>Remove dest node allocation if evacuate MoveClaim fails</strong><br>当疏散失败之后，需要移除目标机器的资源分配量，因为资源tracker不会自动去释放</li>
-<li><strong>De-duplicate two delete_allocation_for_* methods</strong><br>抽取迁移和疏散函数内部的公共代码部分，属于代码重构</li>
-<li><strong>Add a test to make sure failed evacuate cleans up dest allocation</strong><br>增加功能测试来验证在疏散操作失败之后会清理目的机器分配资源的清空</li>
-<li><strong>Add recreate test for evacuate claim failure</strong><br>增加重建功能测试，在目的主机MoveClaim失败之后上面的资源清空失败</li>
-<li><strong>Create allocations against forced dest host during evacuate</strong><br>在疏散操作期间，如果指定了目的主机，则忽略掉调度select_destinations()过程</li>
-<li><strong>Refactor out claim_resources_on_destination into a utility</strong><br>把claim_resources_on_destination函数提取出来放入到scheduler的工具文件中，属于代码重构</li>
-<li><strong>Add recreate test for forced host evacuate not setting dest allocations</strong><br>指定目标主机的疏散的功能测试</li>
-<li><strong>Provide hints when nova-manage db sync fails to sync cell0</strong><br>增加数据库同步cell0错误提示</li>
-<li><strong>Ensure instance mapping is updated in case of quota recheck fails</strong></li>
-</ul>
-<h1 id="nova-16-0-2修改"><a href="#nova-16-0-2修改" class="headerlink" title="nova-16.0.2修改"></a><strong>nova-16.0.2修改</strong></h1>
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/26/nova-Pike-changelog分析/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-每天5分钟go-2" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/21/每天5分钟go-2/">每天5分钟go(2)</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/21/每天5分钟go-2/" class="archive-article-date">
-  	<time datetime="2018-09-20T23:13:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-21</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="go语法"><a href="#go语法" class="headerlink" title="go语法"></a>go语法</h1><h2 id="标识符使用"><a href="#标识符使用" class="headerlink" title="标识符使用"></a>标识符使用</h2><ul>
-<li><p>用作空变量：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_ = x</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>包导入使用:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> _ xxx</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="空接口"><a href="#空接口" class="headerlink" title="空接口"></a>空接口</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">interface</span>&#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>任何类型都是空接口类型的实现类型</p>
-<h2 id="和–是语句不是表达式"><a href="#和–是语句不是表达式" class="headerlink" title="++和–是语句不是表达式"></a>++和–是语句不是表达式</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*p-- 等同于 (*p)--</span><br></pre></td></tr></table></figure>
-<h2 id="表达式"><a href="#表达式" class="headerlink" title="表达式"></a>表达式</h2><ul>
-<li><p>表达式类型</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">选择表达式 context.Speaker</span><br><span class="line">索引表达式 array[1]</span><br><span class="line">切片表达式 slice[1:2]</span><br><span class="line">类型断言 v1.(I1)</span><br><span class="line">调用表达式 v1.M1()</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>断言表达式<br>v1.(I1)</p>
-<ul>
-<li>如果v1是非接口值，这需要先转化成接口值，<br>interface{}(v1).(I1)</li>
-<li>类型断言失败会引发运行时恐慌，使用如下<br>var i1, ok = interface{}(v1).(I1)</li>
-</ul>
-</li>
-</ul>
-<h3 id="基本类型"><a href="#基本类型" class="headerlink" title="基本类型"></a>基本类型</h3><ul>
-<li>有18种基础类型<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rune类型是专门用来存储Unicode编码的单个字符</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>rune有5种表示形式</p>
-<ul>
-<li><p>字符串字面量有两种表示形式</p>
-<ul>
-<li>原生字符串字面量（`）：所见即所得</li>
-<li>解释型字符串字面量（”）：解释转义字符</li>
-</ul>
-</li>
-<li><p>字符串的值不可变</p>
-</li>
-<li><p>常量只能使用基础类型，常量需使用const</p>
-</li>
-</ul>
-<h3 id="高级类型"><a href="#高级类型" class="headerlink" title="高级类型"></a>高级类型</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">数组， 值类型</span><br><span class="line">切片 引用类型，空值为nil</span><br><span class="line">字典 map，引用类型，空值为nil</span><br><span class="line">函数和方法</span><br><span class="line">接口</span><br><span class="line">结构体 ，值类型</span><br></pre></td></tr></table></figure>
-<ul>
-<li>make可以初始化切片，字典和通道</li>
-<li>slice不需要长度值</li>
-<li><p>map示例<br>var a = map[string]bool{}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">表示key为string，value为bool，&#123;&#125;表示空值</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>map删除<br>delete(a, “192.168.0.1”)</p>
-</li>
-<li>函数和方法<br>函数就是普通的函数<br>方法是函数的一种，实际上就是与某个数据类型关联在一起的函数<ul>
-<li>方法分为<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">值方法</span><br><span class="line">指针方法</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="流程控制"><a href="#流程控制" class="headerlink" title="流程控制"></a>流程控制</h3><p>代码块<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">全局代码块</span><br><span class="line">代码包代码块</span><br><span class="line">源码文件代码块</span><br><span class="line">函数或者for循环</span><br></pre></td></tr></table></figure></p>
-<p>range可以迭代string，map，数组，管道</p>
-<h3 id="painc"><a href="#painc" class="headerlink" title="painc"></a>painc</h3><p>运行时错误是runtime.Error引起的</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/21/每天5分钟go-2/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
@@ -1203,15 +1212,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1219,7 +1224,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
