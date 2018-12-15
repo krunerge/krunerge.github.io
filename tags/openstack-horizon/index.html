@@ -6,20 +6,15 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>每天5分钟go（5） | 小甲师兄</title>
+  <title>Tag: openstack horizon | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="1. 并发机制是在runtime库中实现的2. go程序理论上可以运行10000个协程3. M P G模型中3.1 M值的两种设置方法 初始化的时候可以设置 之后可以通过runtime/debug设置3.2 P值的两种设置方法 通过runtime.GOMAXPROCS设置 通过环境变量GOMAXPROCS设置p值有一个硬性上限 256注意：通过runtime.GOMAXPROCS设置的时候会停止所">
-<meta name="keywords" content="go">
-<meta property="og:type" content="article">
-<meta property="og:title" content="每天5分钟go（5）">
-<meta property="og:url" content="http://yoursite.com/2018/10/27/go-learn-5/index.html">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="小甲师兄">
+<meta property="og:url" content="http://yoursite.com/tags/openstack-horizon/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="1. 并发机制是在runtime库中实现的2. go程序理论上可以运行10000个协程3. M P G模型中3.1 M值的两种设置方法 初始化的时候可以设置 之后可以通过runtime/debug设置3.2 P值的两种设置方法 通过runtime.GOMAXPROCS设置 通过环境变量GOMAXPROCS设置p值有一个硬性上限 256注意：通过runtime.GOMAXPROCS设置的时候会停止所">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-11-16T06:21:07.892Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="每天5分钟go（5）">
-<meta name="twitter:description" content="1. 并发机制是在runtime库中实现的2. go程序理论上可以运行10000个协程3. M P G模型中3.1 M值的两种设置方法 初始化的时候可以设置 之后可以通过runtime/debug设置3.2 P值的两种设置方法 通过runtime.GOMAXPROCS设置 通过环境变量GOMAXPROCS设置p值有一个硬性上限 256注意：通过runtime.GOMAXPROCS设置的时候会停止所">
+<meta name="twitter:title" content="小甲师兄">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,201 +148,60 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-go-learn-5" class="article article-type-post " itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
+            
   
-    <h1 class="article-title" itemprop="name">
-      每天5分钟go（5）
+  
+    
+    
+      
+      
+      <section class="archives-wrap">
+        <div class="archive-year-wrap">
+          <a href="/archives/2018" class="archive-year">2018</a>
+        </div>
+        <div class="archives">
+    
+    <article class="archive-article archive-type-post">
+  <div class="archive-article-inner">
+    <header class="archive-article-header">
+      	<div class="article-meta">
+	      	<a href="/2018/12/15/how-to-change-horizon-chinese/" class="archive-article-date">
+  	<time datetime="2018-12-15T05:17:08.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-15</time>
+</a>
+        </div>
+    	 
+  
+    <h1 itemprop="name">
+      <a class="archive-article-title" href="/2018/12/15/how-to-change-horizon-chinese/">how to change horizon chinese</a>
     </h1>
   
 
-        
-        <a href="/2018/10/27/go-learn-5/" class="archive-article-date">
-  	<time datetime="2018-10-27T11:54:14.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-27</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-并发机制是在runtime库中实现的"><a href="#1-并发机制是在runtime库中实现的" class="headerlink" title="1. 并发机制是在runtime库中实现的"></a>1. 并发机制是在runtime库中实现的</h1><h1 id="2-go程序理论上可以运行10000个协程"><a href="#2-go程序理论上可以运行10000个协程" class="headerlink" title="2. go程序理论上可以运行10000个协程"></a>2. go程序理论上可以运行10000个协程</h1><h1 id="3-M-P-G模型中"><a href="#3-M-P-G模型中" class="headerlink" title="3. M P G模型中"></a>3. M P G模型中</h1><h2 id="3-1-M值的两种设置方法"><a href="#3-1-M值的两种设置方法" class="headerlink" title="3.1 M值的两种设置方法"></a>3.1 M值的两种设置方法</h2><ul>
-<li>初始化的时候可以设置</li>
-<li>之后可以通过runtime/debug设置<h2 id="3-2-P值的两种设置方法"><a href="#3-2-P值的两种设置方法" class="headerlink" title="3.2 P值的两种设置方法"></a>3.2 P值的两种设置方法</h2></li>
-<li>通过runtime.GOMAXPROCS设置</li>
-<li>通过环境变量GOMAXPROCS设置<br>p值有一个硬性上限 256<br>注意：通过runtime.GOMAXPROCS设置的时候会停止所有p和G，影响程序的性能，所以设置P值的时候一般是在main函数之前<h2 id="P有状态"><a href="#P有状态" class="headerlink" title="P有状态"></a>P有状态</h2>见go并发实践136页<br>P有两个队列，一个是可运行队列，用来存放即将运行的程序，另一个是自由队列，用来重用G，就不需要创建新的G<h2 id="go语句的执行顺序"><a href="#go语句的执行顺序" class="headerlink" title="go语句的执行顺序"></a>go语句的执行顺序</h2>步骤1：go 语句<br>步骤2：生成newporc<br>步骤3：本地p和调度器看看有没有可用的自由G，没有新建一个<br>步骤4：初始化关联go函数，G的状态以及ID<br>步骤5：存到本地P的runnext,然后会把原来runnext上面的G放到p的可运行队列的尾，如果队列满了，则追加到调度器的课运行队列中<h2 id="G也有状态"><a href="#G也有状态" class="headerlink" title="G也有状态"></a>G也有状态</h2>见go并发实践140页</li>
-</ul>
-
-      
-
-      
-        <div class="page-reward">
-          <a href="javascript:;" class="page-reward-btn tooltip-top">
-            <div class="tooltip tooltip-east">
-            <span class="tooltip-item">
-              赏
-            </span>
-            <span class="tooltip-content">
-              <span class="tooltip-text">
-                <span class="tooltip-inner">
-                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
-                  <div class="reward-box">
-                    
-                    
-                  </div>
-                </span>
-              </span>
-            </span>
-          </div>
-          </a>
-        </div>
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
+        <div class="article-info info-on-right">
+          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">openstack horizon</a>
         		</li>
       		
 		</ul>
 	</div>
 
-      
+          
 
-      
-
-      
-        
-<div class="share-btn share-icons tooltip-left">
-  <div class="tooltip tooltip-east">
-    <span class="tooltip-item">
-      <a href="javascript:;" class="share-sns share-outer">
-        <i class="icon icon-share"></i>
-      </a>
-    </span>
-    <span class="tooltip-content">
-      <div class="share-wrap">
-        <div class="share-icons">
-          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
-            <i class="icon icon-weibo"></i>
-          </a>
-          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
-            <i class="icon icon-weixin"></i>
-          </a>
-          <a class="qq share-sns" href="javascript:;" data-type="qq">
-            <i class="icon icon-qq"></i>
-          </a>
-          <a class="douban share-sns" href="javascript:;" data-type="douban">
-            <i class="icon icon-douban"></i>
-          </a>
-          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
-            <i class="icon icon-qzone"></i>
-          </a>
-          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
-            <i class="icon icon-facebook"></i>
-          </a>
-          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
-            <i class="icon icon-twitter"></i>
-          </a>
-          <a class="google share-sns" href="javascript:;" data-type="google">
-            <i class="icon icon-google"></i>
-          </a>
         </div>
-      </div>
-    </span>
-  </div>
-</div>
-
-<div class="page-modal wx-share js-wx-box">
-    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
-    <p>扫一扫，分享到微信</p>
-    <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/10/27/go-learn-5/" alt="微信分享二维码">
-    </div>
-</div>
-
-<div class="mask js-mask"></div>
-      
-      <div class="clearfix"></div>
-    </div>
+        <div class="clearfix"></div>
+    </header>
   </div>
 </article>
-
-  
-<nav id="article-nav">
-  
-    <a href="/2018/11/29/linux-optimization-load-average/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          linux optimization:load average
-        
-      </div>
-    </a>
   
   
-    <a href="/2018/10/20/add-nova-periodic-task/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">nova周期性任务分析</div>
-      <i class="icon-circle-right"></i>
-    </a>
-  
-</nav>
-
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-  
-  <div class="duoshuo">
-	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="go-learn-5" data-title="每天5分钟go（5）" data-url="http://yoursite.com/2018/10/27/go-learn-5/"></div>
-	<!-- 多说评论框 end -->
-	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
-	<script type="text/javascript">
-	var duoshuoQuery = {short_name:"true"};
-	(function() {
-		var ds = document.createElement('script');
-		ds.type = 'text/javascript';ds.async = true;
-		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-		ds.charset = 'UTF-8';
-		(document.getElementsByTagName('head')[0] 
-		 || document.getElementsByTagName('body')[0]).appendChild(ds);
-	})();
-	</script>
-	<!-- 多说公共JS代码 end -->
-</div>
-
-  
-  
+    </div></section>
   
 
-  
-
-  
-
-  
+    
 
 
           </div>
@@ -370,9 +224,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: true,
+		isPost: false,
 		isArchive: false,
-		isTag: false,
+		isTag: true,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: true,

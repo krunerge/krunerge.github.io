@@ -8,14 +8,20 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>how to change horizon chinese | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="article">
+  <meta name="description" content="问题描述最近笔者想修改一下openstack dashboard上面中文，比如我想把”主机聚合”改成”主机集群”，笔者的openstack的版本是Pike，虽然这个问题网上有很多说明，但是不能解决我的全部问题 问题分析网上都说在/usr/share/openstack-dashboard/openstack_dashboard/locale/zh_CN/LC_MESSAGES这个目录下会有一个po">
+<meta name="keywords" content="openstack horizon">
+<meta property="og:type" content="article">
 <meta property="og:title" content="how to change horizon chinese">
 <meta property="og:url" content="http://yoursite.com/2018/12/15/how-to-change-horizon-chinese/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="问题描述最近笔者想修改一下openstack dashboard上面中文，比如我想把”主机聚合”改成”主机集群”，笔者的openstack的版本是Pike，虽然这个问题网上有很多说明，但是不能解决我的全部问题 问题分析网上都说在/usr/share/openstack-dashboard/openstack_dashboard/locale/zh_CN/LC_MESSAGES这个目录下会有一个po">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-12-15T05:17:08.054Z">
+<meta property="og:image" content="http://yoursite.com/2018/12/15/how-to-change-horizon-chinese/1.png">
+<meta property="og:updated_time" content="2018-12-15T05:46:07.151Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="how to change horizon chinese">
+<meta name="twitter:description" content="问题描述最近笔者想修改一下openstack dashboard上面中文，比如我想把”主机聚合”改成”主机集群”，笔者的openstack的版本是Pike，虽然这个问题网上有很多说明，但是不能解决我的全部问题 问题分析网上都说在/usr/share/openstack-dashboard/openstack_dashboard/locale/zh_CN/LC_MESSAGES这个目录下会有一个po">
+<meta name="twitter:image" content="http://yoursite.com/2018/12/15/how-to-change-horizon-chinese/1.png">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -169,7 +175,11 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>最近笔者想修改一下openstack dashboard上面中文，比如我想把”主机聚合”改成”主机集群”，笔者的openstack的版本是Pike，虽然这个问题网上有很多说明，但是不能解决我的全部问题</p>
+<h1 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h1><p>网上都说在/usr/share/openstack-dashboard/openstack_dashboard/locale/zh_CN/LC_MESSAGES这个目录下会有一个po文件，只要把里面的相应中文改成你想要的就可以了，但是Pike版环境上这个目录下面没有这po文件，只有一个mo文件<br><img src="1.png" alt="aa"><br>而且还是二进制文件，打开看不出啥一对乱码<br>然后笔者想到的是去github的原理里面找po文件<br><a href="https://sourcegraph.com/github.com/openstack/horizon@master/-/blob/horizon/locale/zh_CN/LC_MESSAGES/django.po" target="_blank" rel="noopener">https://sourcegraph.com/github.com/openstack/horizon@master/-/blob/horizon/locale/zh_CN/LC_MESSAGES/django.po</a><br>然而。。。。<br>我在这个文件里面搜索竟然没有找到我要求的中文，什么鬼，那到底在哪里<br>然后很无奈的全局搜索了一下，最后竟然在上面mo二进制文件中有match，那就说有，那为什么源码的po文件没有，估计应该是编译的时候加入一些</p>
+<h1 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h1><p>那问题就是如果把mo反编译会po，然后修改po，最后在编译会mo<br>mo到po<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msgunfmt xxx.mo -o xxx.po</span><br></pre></td></tr></table></figure></p>
+<p>po到mo<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msgfmt -o xxx.mo xxx.po</span><br></pre></td></tr></table></figure></p>
+
       
 
       
@@ -198,6 +208,17 @@
     <div class="article-info article-info-index">
       
       
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">openstack horizon</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
       
 
       
@@ -418,11 +439,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -430,19 +451,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -455,6 +476,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
             
             <div class="clearfix"></div>
