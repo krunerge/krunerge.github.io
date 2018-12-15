@@ -6,20 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>每天5分钟go(2) | 小甲师兄</title>
+  <title>每天5分钟go（5） | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="go语法标识符使用 用作空变量： 1_ = x  包导入使用: 1import _ xxx   空接口1interface&amp;#123;&amp;#125; 任何类型都是空接口类型的实现类型 ++和–是语句不是表达式1*p-- 等同于 (*p)-- 表达式 表达式类型 12345选择表达式 context.Speaker索引表达式 array[1]切片表达式 slice[1:2]类型断言 v1.(I1)调用">
+  <meta name="description" content="1. 并发机制是在runtime库中实现的2. go程序理论上可以运行10000个协程3. M P G模型中3.1 M值的两种设置方法 初始化的时候可以设置 之后可以通过runtime/debug设置3.2 P值的两种设置方法 通过runtime.GOMAXPROCS设置 通过环境变量GOMAXPROCS设置p值有一个硬性上限 256注意：通过runtime.GOMAXPROCS设置的时候会停止所">
 <meta name="keywords" content="go">
 <meta property="og:type" content="article">
-<meta property="og:title" content="每天5分钟go(2)">
-<meta property="og:url" content="http://yoursite.com/2018/09/21/每天5分钟go-2/index.html">
+<meta property="og:title" content="每天5分钟go（5）">
+<meta property="og:url" content="http://yoursite.com/2018/10/27/go-learn-5/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="go语法标识符使用 用作空变量： 1_ = x  包导入使用: 1import _ xxx   空接口1interface&amp;#123;&amp;#125; 任何类型都是空接口类型的实现类型 ++和–是语句不是表达式1*p-- 等同于 (*p)-- 表达式 表达式类型 12345选择表达式 context.Speaker索引表达式 array[1]切片表达式 slice[1:2]类型断言 v1.(I1)调用">
+<meta property="og:description" content="1. 并发机制是在runtime库中实现的2. go程序理论上可以运行10000个协程3. M P G模型中3.1 M值的两种设置方法 初始化的时候可以设置 之后可以通过runtime/debug设置3.2 P值的两种设置方法 通过runtime.GOMAXPROCS设置 通过环境变量GOMAXPROCS设置p值有一个硬性上限 256注意：通过runtime.GOMAXPROCS设置的时候会停止所">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-05T08:16:52.975Z">
+<meta property="og:updated_time" content="2018-11-16T06:21:07.892Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="每天5分钟go(2)">
-<meta name="twitter:description" content="go语法标识符使用 用作空变量： 1_ = x  包导入使用: 1import _ xxx   空接口1interface&amp;#123;&amp;#125; 任何类型都是空接口类型的实现类型 ++和–是语句不是表达式1*p-- 等同于 (*p)-- 表达式 表达式类型 12345选择表达式 context.Speaker索引表达式 array[1]切片表达式 slice[1:2]类型断言 v1.(I1)调用">
+<meta name="twitter:title" content="每天5分钟go（5）">
+<meta name="twitter:description" content="1. 并发机制是在runtime库中实现的2. go程序理论上可以运行10000个协程3. M P G模型中3.1 M值的两种设置方法 初始化的时候可以设置 之后可以通过runtime/debug设置3.2 P值的两种设置方法 通过runtime.GOMAXPROCS设置 通过环境变量GOMAXPROCS设置p值有一个硬性上限 256注意：通过runtime.GOMAXPROCS设置的时候会停止所">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,83 +153,32 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-每天5分钟go-2" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-go-learn-5" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      每天5分钟go(2)
+      每天5分钟go（5）
     </h1>
   
 
         
-        <a href="/2018/09/21/每天5分钟go-2/" class="archive-article-date">
-  	<time datetime="2018-09-20T23:13:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-21</time>
+        <a href="/2018/10/27/go-learn-5/" class="archive-article-date">
+  	<time datetime="2018-10-27T11:54:14.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-27</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="go语法"><a href="#go语法" class="headerlink" title="go语法"></a>go语法</h1><h2 id="标识符使用"><a href="#标识符使用" class="headerlink" title="标识符使用"></a>标识符使用</h2><ul>
-<li><p>用作空变量：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_ = x</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>包导入使用:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> _ xxx</span><br></pre></td></tr></table></figure>
-</li>
+        <h1 id="1-并发机制是在runtime库中实现的"><a href="#1-并发机制是在runtime库中实现的" class="headerlink" title="1. 并发机制是在runtime库中实现的"></a>1. 并发机制是在runtime库中实现的</h1><h1 id="2-go程序理论上可以运行10000个协程"><a href="#2-go程序理论上可以运行10000个协程" class="headerlink" title="2. go程序理论上可以运行10000个协程"></a>2. go程序理论上可以运行10000个协程</h1><h1 id="3-M-P-G模型中"><a href="#3-M-P-G模型中" class="headerlink" title="3. M P G模型中"></a>3. M P G模型中</h1><h2 id="3-1-M值的两种设置方法"><a href="#3-1-M值的两种设置方法" class="headerlink" title="3.1 M值的两种设置方法"></a>3.1 M值的两种设置方法</h2><ul>
+<li>初始化的时候可以设置</li>
+<li>之后可以通过runtime/debug设置<h2 id="3-2-P值的两种设置方法"><a href="#3-2-P值的两种设置方法" class="headerlink" title="3.2 P值的两种设置方法"></a>3.2 P值的两种设置方法</h2></li>
+<li>通过runtime.GOMAXPROCS设置</li>
+<li>通过环境变量GOMAXPROCS设置<br>p值有一个硬性上限 256<br>注意：通过runtime.GOMAXPROCS设置的时候会停止所有p和G，影响程序的性能，所以设置P值的时候一般是在main函数之前<h2 id="P有状态"><a href="#P有状态" class="headerlink" title="P有状态"></a>P有状态</h2>见go并发实践136页<br>P有两个队列，一个是可运行队列，用来存放即将运行的程序，另一个是自由队列，用来重用G，就不需要创建新的G<h2 id="go语句的执行顺序"><a href="#go语句的执行顺序" class="headerlink" title="go语句的执行顺序"></a>go语句的执行顺序</h2>步骤1：go 语句<br>步骤2：生成newporc<br>步骤3：本地p和调度器看看有没有可用的自由G，没有新建一个<br>步骤4：初始化关联go函数，G的状态以及ID<br>步骤5：存到本地P的runnext,然后会把原来runnext上面的G放到p的可运行队列的尾，如果队列满了，则追加到调度器的课运行队列中<h2 id="G也有状态"><a href="#G也有状态" class="headerlink" title="G也有状态"></a>G也有状态</h2>见go并发实践140页</li>
 </ul>
-<h2 id="空接口"><a href="#空接口" class="headerlink" title="空接口"></a>空接口</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">interface</span>&#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>任何类型都是空接口类型的实现类型</p>
-<h2 id="和–是语句不是表达式"><a href="#和–是语句不是表达式" class="headerlink" title="++和–是语句不是表达式"></a>++和–是语句不是表达式</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*p-- 等同于 (*p)--</span><br></pre></td></tr></table></figure>
-<h2 id="表达式"><a href="#表达式" class="headerlink" title="表达式"></a>表达式</h2><ul>
-<li><p>表达式类型</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">选择表达式 context.Speaker</span><br><span class="line">索引表达式 array[1]</span><br><span class="line">切片表达式 slice[1:2]</span><br><span class="line">类型断言 v1.(I1)</span><br><span class="line">调用表达式 v1.M1()</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>断言表达式<br>v1.(I1)</p>
-<ul>
-<li>如果v1是非接口值，这需要先转化成接口值，<br>interface{}(v1).(I1)</li>
-<li>类型断言失败会引发运行时恐慌，使用如下<br>var i1, ok = interface{}(v1).(I1)</li>
-</ul>
-</li>
-</ul>
-<h3 id="基本类型"><a href="#基本类型" class="headerlink" title="基本类型"></a>基本类型</h3><ul>
-<li>有18种基础类型<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rune类型是专门用来存储Unicode编码的单个字符</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>rune有5种表示形式</p>
-<ul>
-<li><p>字符串字面量有两种表示形式</p>
-<ul>
-<li>原生字符串字面量（`）：所见即所得</li>
-<li>解释型字符串字面量（”）：解释转义字符</li>
-</ul>
-</li>
-<li><p>字符串的值不可变</p>
-</li>
-<li><p>常量只能使用基础类型，常量需使用const</p>
-</li>
-</ul>
-<h3 id="高级类型"><a href="#高级类型" class="headerlink" title="高级类型"></a>高级类型</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">数组， 值类型</span><br><span class="line">切片 引用类型，空值为nil</span><br><span class="line">字典 map，引用类型，空值为nil</span><br><span class="line">函数和方法</span><br><span class="line">接口</span><br><span class="line">结构体 ，值类型</span><br></pre></td></tr></table></figure>
-<ul>
-<li>make可以初始化切片，字典和通道</li>
-<li>slice不需要长度值</li>
-<li><p>map示例<br>var a = map[string]bool{}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">表示key为string，value为bool，&#123;&#125;表示空值</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>map删除<br>delete(a, “192.168.0.1”)</p>
-</li>
-<li>函数和方法<br>函数就是普通的函数<br>方法是函数的一种，实际上就是与某个数据类型关联在一起的函数<ul>
-<li>方法分为<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">值方法</span><br><span class="line">指针方法</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="流程控制"><a href="#流程控制" class="headerlink" title="流程控制"></a>流程控制</h3><p>代码块<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">全局代码块</span><br><span class="line">代码包代码块</span><br><span class="line">源码文件代码块</span><br><span class="line">函数或者for循环</span><br></pre></td></tr></table></figure></p>
-<p>range可以迭代string，map，数组，管道</p>
-<h3 id="painc"><a href="#painc" class="headerlink" title="painc"></a>painc</h3><p>运行时错误是runtime.Error引起的</p>
 
       
 
@@ -320,7 +269,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/09/21/每天5分钟go-2/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/10/27/go-learn-5/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -334,18 +283,18 @@
   
 <nav id="article-nav">
   
-    <a href="/2018/09/26/nova-Pike-changelog分析/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2018/11/29/linux-optimization-load-average/" id="article-nav-newer" class="article-nav-link-wrap">
       <i class="icon-circle-left"></i>
       <div class="article-nav-title">
         
-          nova Pike changelog分析
+          linux optimization:load average
         
       </div>
     </a>
   
   
-    <a href="/2018/09/20/每天5分钟go-1/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">每天5分钟go(1)</div>
+    <a href="/2018/10/20/add-nova-periodic-task/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">nova周期性任务分析</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -373,7 +322,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="每天5分钟go-2" data-title="每天5分钟go(2)" data-url="http://yoursite.com/2018/09/21/每天5分钟go-2/"></div>
+	<div class="ds-thread" data-thread-key="go-learn-5" data-title="每天5分钟go（5）" data-url="http://yoursite.com/2018/10/27/go-learn-5/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">

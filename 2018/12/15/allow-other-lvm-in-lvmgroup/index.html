@@ -6,20 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>每天5分钟go(2) | 小甲师兄</title>
+  <title>allow other lvm in lvmgroup | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="go语法标识符使用 用作空变量： 1_ = x  包导入使用: 1import _ xxx   空接口1interface&amp;#123;&amp;#125; 任何类型都是空接口类型的实现类型 ++和–是语句不是表达式1*p-- 等同于 (*p)-- 表达式 表达式类型 12345选择表达式 context.Speaker索引表达式 array[1]切片表达式 slice[1:2]类型断言 v1.(I1)调用">
-<meta name="keywords" content="go">
+  <meta name="description" content="问题描述：笔者有一套openstack环境，没有对接ceph，使用的lvm作为虚拟机的存储，虚拟机的系统卷都存放在一个叫做vms-group的lvmgroup中，不过其下有其他人创建了一个lvm的逻辑卷，但是不是给openstack的用的，导致OpenStack hypvisor中的local_gb_free不准备，导致虚拟机创建有问题 原理分析通过源码分析可以知道，nova compute会定时">
+<meta name="keywords" content="openstack lvm">
 <meta property="og:type" content="article">
-<meta property="og:title" content="每天5分钟go(2)">
-<meta property="og:url" content="http://yoursite.com/2018/09/21/每天5分钟go-2/index.html">
+<meta property="og:title" content="allow other lvm in lvmgroup">
+<meta property="og:url" content="http://yoursite.com/2018/12/15/allow-other-lvm-in-lvmgroup/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="go语法标识符使用 用作空变量： 1_ = x  包导入使用: 1import _ xxx   空接口1interface&amp;#123;&amp;#125; 任何类型都是空接口类型的实现类型 ++和–是语句不是表达式1*p-- 等同于 (*p)-- 表达式 表达式类型 12345选择表达式 context.Speaker索引表达式 array[1]切片表达式 slice[1:2]类型断言 v1.(I1)调用">
+<meta property="og:description" content="问题描述：笔者有一套openstack环境，没有对接ceph，使用的lvm作为虚拟机的存储，虚拟机的系统卷都存放在一个叫做vms-group的lvmgroup中，不过其下有其他人创建了一个lvm的逻辑卷，但是不是给openstack的用的，导致OpenStack hypvisor中的local_gb_free不准备，导致虚拟机创建有问题 原理分析通过源码分析可以知道，nova compute会定时">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-05T08:16:52.975Z">
+<meta property="og:updated_time" content="2018-12-15T05:16:35.636Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="每天5分钟go(2)">
-<meta name="twitter:description" content="go语法标识符使用 用作空变量： 1_ = x  包导入使用: 1import _ xxx   空接口1interface&amp;#123;&amp;#125; 任何类型都是空接口类型的实现类型 ++和–是语句不是表达式1*p-- 等同于 (*p)-- 表达式 表达式类型 12345选择表达式 context.Speaker索引表达式 array[1]切片表达式 slice[1:2]类型断言 v1.(I1)调用">
+<meta name="twitter:title" content="allow other lvm in lvmgroup">
+<meta name="twitter:description" content="问题描述：笔者有一套openstack环境，没有对接ceph，使用的lvm作为虚拟机的存储，虚拟机的系统卷都存放在一个叫做vms-group的lvmgroup中，不过其下有其他人创建了一个lvm的逻辑卷，但是不是给openstack的用的，导致OpenStack hypvisor中的local_gb_free不准备，导致虚拟机创建有问题 原理分析通过源码分析可以知道，nova compute会定时">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,83 +153,37 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-每天5分钟go-2" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-allow-other-lvm-in-lvmgroup" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      每天5分钟go(2)
+      allow other lvm in lvmgroup
     </h1>
   
 
         
-        <a href="/2018/09/21/每天5分钟go-2/" class="archive-article-date">
-  	<time datetime="2018-09-20T23:13:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-21</time>
+        <a href="/2018/12/15/allow-other-lvm-in-lvmgroup/" class="archive-article-date">
+  	<time datetime="2018-12-15T04:47:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-15</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="go语法"><a href="#go语法" class="headerlink" title="go语法"></a>go语法</h1><h2 id="标识符使用"><a href="#标识符使用" class="headerlink" title="标识符使用"></a>标识符使用</h2><ul>
-<li><p>用作空变量：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_ = x</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>包导入使用:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> _ xxx</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="空接口"><a href="#空接口" class="headerlink" title="空接口"></a>空接口</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">interface</span>&#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>任何类型都是空接口类型的实现类型</p>
-<h2 id="和–是语句不是表达式"><a href="#和–是语句不是表达式" class="headerlink" title="++和–是语句不是表达式"></a>++和–是语句不是表达式</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*p-- 等同于 (*p)--</span><br></pre></td></tr></table></figure>
-<h2 id="表达式"><a href="#表达式" class="headerlink" title="表达式"></a>表达式</h2><ul>
-<li><p>表达式类型</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">选择表达式 context.Speaker</span><br><span class="line">索引表达式 array[1]</span><br><span class="line">切片表达式 slice[1:2]</span><br><span class="line">类型断言 v1.(I1)</span><br><span class="line">调用表达式 v1.M1()</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>断言表达式<br>v1.(I1)</p>
-<ul>
-<li>如果v1是非接口值，这需要先转化成接口值，<br>interface{}(v1).(I1)</li>
-<li>类型断言失败会引发运行时恐慌，使用如下<br>var i1, ok = interface{}(v1).(I1)</li>
-</ul>
-</li>
-</ul>
-<h3 id="基本类型"><a href="#基本类型" class="headerlink" title="基本类型"></a>基本类型</h3><ul>
-<li>有18种基础类型<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rune类型是专门用来存储Unicode编码的单个字符</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>rune有5种表示形式</p>
-<ul>
-<li><p>字符串字面量有两种表示形式</p>
-<ul>
-<li>原生字符串字面量（`）：所见即所得</li>
-<li>解释型字符串字面量（”）：解释转义字符</li>
-</ul>
-</li>
-<li><p>字符串的值不可变</p>
-</li>
-<li><p>常量只能使用基础类型，常量需使用const</p>
-</li>
-</ul>
-<h3 id="高级类型"><a href="#高级类型" class="headerlink" title="高级类型"></a>高级类型</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">数组， 值类型</span><br><span class="line">切片 引用类型，空值为nil</span><br><span class="line">字典 map，引用类型，空值为nil</span><br><span class="line">函数和方法</span><br><span class="line">接口</span><br><span class="line">结构体 ，值类型</span><br></pre></td></tr></table></figure>
-<ul>
-<li>make可以初始化切片，字典和通道</li>
-<li>slice不需要长度值</li>
-<li><p>map示例<br>var a = map[string]bool{}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">表示key为string，value为bool，&#123;&#125;表示空值</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>map删除<br>delete(a, “192.168.0.1”)</p>
-</li>
-<li>函数和方法<br>函数就是普通的函数<br>方法是函数的一种，实际上就是与某个数据类型关联在一起的函数<ul>
-<li>方法分为<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">值方法</span><br><span class="line">指针方法</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="流程控制"><a href="#流程控制" class="headerlink" title="流程控制"></a>流程控制</h3><p>代码块<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">全局代码块</span><br><span class="line">代码包代码块</span><br><span class="line">源码文件代码块</span><br><span class="line">函数或者for循环</span><br></pre></td></tr></table></figure></p>
-<p>range可以迭代string，map，数组，管道</p>
-<h3 id="painc"><a href="#painc" class="headerlink" title="painc"></a>painc</h3><p>运行时错误是runtime.Error引起的</p>
+        <h1 id="问题描述："><a href="#问题描述：" class="headerlink" title="问题描述："></a>问题描述：</h1><p>笔者有一套openstack环境，没有对接ceph，使用的lvm作为虚拟机的存储，虚拟机的系统卷都存放在一个叫做vms-group的lvmgroup中，不过其下有其他人创建了一个lvm的逻辑卷，但是不是给openstack的用的，导致OpenStack hypvisor中的local_gb_free不准备，导致虚拟机创建有问题</p>
+<h1 id="原理分析"><a href="#原理分析" class="headerlink" title="原理分析"></a>原理分析</h1><p>通过源码分析可以知道，nova compute会定时同步hypervisor的资源，包括存储，那按理来说，从宿主机上面获取lvmgroup的总量和使用量应该是没有问题的，那为什么会导致出现最后hypervisor上面的资源统计不正确呢？<br>我们来看一下代码，代码是不会说谎的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">def update_available_resource(self, context):</span><br><span class="line"></span><br><span class="line">    LOG.info(_LI(&quot;Auditing locally available compute resources for &quot;</span><br><span class="line">                 &quot;node %(node)s&quot;),</span><br><span class="line">             &#123;&apos;node&apos;: self.nodename&#125;)</span><br><span class="line">    resources = self.driver.get_available_resource(self.nodename)</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure></p>
+<p>在nova/compute/resource_tracker.py文件中的update_available_resource函数调用了get_available_resource函数，这个函数其实就是调用libvirt的接口，其实调用的是如下的命令<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vgs --noheadings --nosuffix --separator --units b -o vg_size,vg_free vg</span><br></pre></td></tr></table></figure></p>
+<p>就是取出vg这个逻辑组的总量和剩余量，而使用量是这样计算的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;&apos;total&apos;: int(info[0]),</span><br><span class="line">  &apos;free&apos;: int(info[1]),</span><br><span class="line">  &apos;used&apos;: int(info[0]) - int(info[1])&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看出这个使用量是包括这个lvmgroup中不是openstack创建使用的，那为什么最后的hypervisor统计不正确呢<br>我们继续往下看<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">def update_available_resource(self, context):</span><br><span class="line">    .....</span><br><span class="line">    self._update_available_resource(context, resources)</span><br></pre></td></tr></table></figure></p>
+<p>在update_available_resource函数中还调用了更新可用量的请求，_update_available_resource<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">def _update_available_resource(self, context, resources):</span><br><span class="line"></span><br><span class="line">    ....</span><br><span class="line">    self._update_usage_from_instances(context, resources, instances)</span><br><span class="line">    .....</span><br></pre></td></tr></table></figure></p>
+<p>这个函数调用_update_usage_from_instances函数，统计虚拟机的使用量，我们好像有点眉目了，我们可以猜测一下，通过统计数据库中虚拟机存盘的使用量（系统盘）来统计openstack的使用量，这就不包含了lvmgroup中其他用途创建的逻辑卷，是不是这样，我们看一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">def _update_usage_from_instances(self, context, resources, instances):</span><br><span class="line"></span><br><span class="line">        # set some initial values, reserve room for host/hypervisor:</span><br><span class="line">        resources[&apos;local_gb_used&apos;] = CONF.reserved_host_disk_mb / 1024</span><br><span class="line">        resources[&apos;memory_mb_used&apos;] = CONF.reserved_host_memory_mb</span><br><span class="line">        resources[&apos;free_ram_mb&apos;] = (resources[&apos;memory_mb&apos;] -</span><br><span class="line">                                    resources[&apos;memory_mb_used&apos;])</span><br><span class="line">        resources[&apos;free_disk_gb&apos;] = (resources[&apos;local_gb&apos;] -</span><br><span class="line">                                     resources[&apos;local_gb_used&apos;])</span><br><span class="line">        resources[&apos;current_workload&apos;] = 0</span><br><span class="line">        resources[&apos;running_vms&apos;] = 0</span><br><span class="line"></span><br><span class="line">        # Reset values for extended resources</span><br><span class="line">        self.ext_resources_handler.reset_resources(resources, self.driver)</span><br><span class="line"></span><br><span class="line">        for instance in instances:</span><br><span class="line">            if instance.vm_state != vm_states.DELETED:</span><br><span class="line">                self._update_usage_from_instance(context, resources, instance)</span><br></pre></td></tr></table></figure></p>
+<p>上面关键的是<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">resources[&apos;local_gb_used&apos;] = CONF.reserved_host_disk_mb / 1024</span><br></pre></td></tr></table></figure></p>
+<p>local_gb_used这个参数被重新赋值了，之前的值就是通过上面调用命令之后计算出来的也就是真实值，这里进行了重新赋值，赋予了保留值，然后通过遍历数据库中的所有虚拟机，根据它们的机型中定义的系统盘值统计使用量，就是下面这个函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_update_usage_from_instance</span><br></pre></td></tr></table></figure></p>
+<p>最后可以使用的free_gb，就是通过命令取出来的总值，减去预留值，减去虚拟机的使用量，这就导致没有包括其他用途使用的逻辑卷</p>
+<h1 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h1><p>通过修改小修改_update_usage_from_instances函数来解决，笔者通过取两个使用量统计的最大值最为使用量，<br>一个是通过命令行获取，一个是预留值加上所有虚拟机的总使用量<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">def _update_usage_from_instances(self, context, resources, instances):</span><br><span class="line">    &quot;&quot;&quot;Calculate resource usage based on instance utilization.  This is</span><br><span class="line">    different than the hypervisor&apos;s view as it will account for all</span><br><span class="line">    instances assigned to the local compute host, even if they are not</span><br><span class="line">    currently powered on.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    self.tracked_instances.clear()</span><br><span class="line"></span><br><span class="line">    # purge old stats and init with anything passed in by the driver</span><br><span class="line">    self.stats.clear()</span><br><span class="line">    self.stats.digest_stats(resources.get(&apos;stats&apos;))</span><br><span class="line"></span><br><span class="line">    # set some initial values, reserve room for host/hypervisor:</span><br><span class="line">    resources[&apos;local_gb_used_orig&apos;] = resources[&apos;local_gb_used&apos;]</span><br><span class="line">    resources[&apos;local_gb_used&apos;] = 0</span><br><span class="line">    resources[&apos;memory_mb_used&apos;] = CONF.reserved_host_memory_mb</span><br><span class="line">    resources[&apos;free_ram_mb&apos;] = (resources[&apos;memory_mb&apos;] -</span><br><span class="line">                                resources[&apos;memory_mb_used&apos;])</span><br><span class="line">    resources[&apos;free_disk_gb&apos;] = (resources[&apos;local_gb&apos;] -</span><br><span class="line">                                 resources[&apos;local_gb_used&apos;])</span><br><span class="line">    resources[&apos;current_workload&apos;] = 0</span><br><span class="line">    resources[&apos;running_vms&apos;] = 0</span><br><span class="line"></span><br><span class="line">    # Reset values for extended resources</span><br><span class="line">    self.ext_resources_handler.reset_resources(resources, self.driver)</span><br><span class="line"></span><br><span class="line">    for instance in instances:</span><br><span class="line">        if instance.vm_state != vm_states.DELETED:</span><br><span class="line">            self._update_usage_from_instance(context, resources, instance)</span><br><span class="line"></span><br><span class="line">    resources[&apos;local_gb_used&apos;] = max(resources[&apos;local_gb_used&apos;], resources[&apos;local_gb_used_orig&apos;]) + \</span><br><span class="line">                                 CONF.reserved_host_disk_mb / 1024</span><br><span class="line">    resources[&apos;free_disk_gb&apos;] = (resources[&apos;local_gb&apos;] -</span><br><span class="line">                                 resources[&apos;local_gb_used&apos;])</span><br></pre></td></tr></table></figure></p>
 
       
 
@@ -264,7 +218,7 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack lvm</a>
         		</li>
       		
 		</ul>
@@ -320,7 +274,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/09/21/每天5分钟go-2/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/12/15/allow-other-lvm-in-lvmgroup/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -334,18 +288,18 @@
   
 <nav id="article-nav">
   
-    <a href="/2018/09/26/nova-Pike-changelog分析/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2018/12/15/how-to-change-horizon-chinese/" id="article-nav-newer" class="article-nav-link-wrap">
       <i class="icon-circle-left"></i>
       <div class="article-nav-title">
         
-          nova Pike changelog分析
+          how to change horizon chinese
         
       </div>
     </a>
   
   
-    <a href="/2018/09/20/每天5分钟go-1/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">每天5分钟go(1)</div>
+    <a href="/2018/11/29/linux-optimization-load-average/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">linux optimization:load average</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -373,7 +327,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="每天5分钟go-2" data-title="每天5分钟go(2)" data-url="http://yoursite.com/2018/09/21/每天5分钟go-2/"></div>
+	<div class="ds-thread" data-thread-key="allow-other-lvm-in-lvmgroup" data-title="allow other lvm in lvmgroup" data-url="http://yoursite.com/2018/12/15/allow-other-lvm-in-lvmgroup/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
