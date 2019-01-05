@@ -150,6 +150,80 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-analysis-vm-rebuild" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/17/analysis-vm-rebuild/">虚拟机rebuild流程分析</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/17/analysis-vm-rebuild/" class="archive-article-date">
+  	<time datetime="2018-10-17T11:26:15.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-17</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="虚拟机rebuild"><a href="#虚拟机rebuild" class="headerlink" title="虚拟机rebuild"></a>虚拟机rebuild</h1><p>笔者这次使用板书，感觉这样的流程反而更清晰，哈哈（其实是偷懒）<br><img src="1.png" alt="aaa"></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/17/analysis-vm-rebuild/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-analysis-vm-delete-procedure" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1033,129 +1107,9 @@
 
 
   
-    <article id="post-k8s-learn-6" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/03/k8s-learn-6/">k8s learn(6) 隔离与限制</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/03/k8s-learn-6/" class="archive-article-date">
-  	<time datetime="2018-10-03T07:50:35.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-03</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="容器与虚拟机"><a href="#容器与虚拟机" class="headerlink" title="容器与虚拟机"></a>容器与虚拟机</h1><p><img src="1.png" alt="aa"></p>
-<h2 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h2><ul>
-<li>性能：<br>vm: Guest Os的操作要经过Hypervisor的转换，再到宿主机，所以计算，存储，网络性能损耗比较严重<br>容器：因为本身就是宿主机的进程，损耗可以忽略不计<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2></li>
-<li>namespace隔离没有虚拟机化技术彻底</li>
-</ul>
-<ol>
-<li>内核是宿主机的内核：window不能运行linux，低内核不能运行高内核</li>
-<li>linux内核中有些资源是不能被namespace，比如时间</li>
-<li>共享内核会导致攻击面变大，虽然可以使用Seccomp进行系统的调用的加固，但是有两个问题：一是性能损耗，二是不知道应该给哪些系统调用加固</li>
-</ol>
-<h1 id="Cgroups"><a href="#Cgroups" class="headerlink" title="Cgroups"></a>Cgroups</h1><p>主要用来限制CPU，内存，磁盘，网络带宽<br>Cgroups表现出来的接口是文件系统</p>
-<ul>
-<li>Cgroups位置<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"># ll /sys/fs/cgroup/</span><br><span class="line">总用量 0</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 blkio</span><br><span class="line">lrwxrwxrwx. 1 root root 11 9月  29 12:55 cpu -&gt; cpu,cpuacct</span><br><span class="line">lrwxrwxrwx. 1 root root 11 9月  29 12:55 cpuacct -&gt; cpu,cpuacct</span><br><span class="line">dr-xr-xr-x. 7 root root  0 9月  29 12:55 cpu,cpuacct</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 cpuset</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 devices</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 freezer</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 hugetlb</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 memory</span><br><span class="line">lrwxrwxrwx. 1 root root 16 9月  29 12:55 net_cls -&gt; net_cls,net_prio</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 net_cls,net_prio</span><br><span class="line">lrwxrwxrwx. 1 root root 16 9月  29 12:55 net_prio -&gt; net_cls,net_prio</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 perf_event</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 pids</span><br><span class="line">dr-xr-xr-x. 2 root root  0 9月  29 12:55 rdma</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 systemd</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h2><ul>
-<li><p>创建一个控制组,会自动生成资源控制文件</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># cd /sys/fs/cgroup/cpu</span><br><span class="line"># mkdir container</span><br><span class="line"># ll container/</span><br><span class="line">总用量 0</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cgroup.clone_children</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cgroup.procs</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_all</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_percpu</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_percpu_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_percpu_user</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_user</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.cfs_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.cfs_quota_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.rt_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.rt_runtime_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.shares</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpu.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 notify_on_release</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 tasks</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>启动死循环</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"># while : ; do : ; done &amp;</span><br><span class="line">[1] 68322</span><br><span class="line"></span><br><span class="line"># top</span><br><span class="line">top - 16:17:50 up 4 days,  3:22, 12 users,  load average: 2.07, 1.83, 1.78</span><br><span class="line">Tasks: 247 total,   2 running, 166 sleeping,   0 stopped,   0 zombie</span><br><span class="line">%Cpu(s): 52.6 us,  0.8 sy,  0.0 ni, 46.2 id,  0.0 wa,  0.0 hi,  0.3 si,  0.0 st</span><br><span class="line">KiB Mem :  4016192 total,   838948 free,  1630224 used,  1547020 buff/cache</span><br><span class="line">KiB Swap:  3014652 total,  2518980 free,   495672 used.  1774528 avail Mem</span><br><span class="line"></span><br><span class="line">   PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                                                                                </span><br><span class="line"> 68322 root      20   0  117352   3092    768 R 100.0  0.1   0:14.79 bash                                                                                                                   </span><br><span class="line">119028 root      20   0  297036 245732  55584 S  50.8  6.1  93:13.82 kube-controller                                                                                                        </span><br><span class="line">118812 root      20   0  657528 513892  66756 S  43.5 12.8  92:29.19 kube-apiserver                                                                                                         </span><br><span class="line">119031 root      20   0  103016  92976  29568 S  16.3  2.3  37:35.77 kube-scheduler                                                                                                         </span><br><span class="line">119156 root      20   0  740200 102960  59764 S   2.0  2.6  10:55.70 kubelet                                                                                                                </span><br><span class="line">  2837 root      20   0 1513220  58348  17060 S   0.7  1.5  24:55.22 dockerd-current                                                                                                        </span><br><span class="line">118599 root      20   0 10.346g  76844  16260 S   0.7  1.9   4:41.54 etcd                                                                                                                   </span><br><span class="line">    10 root      20   0       0      0      0 I   0.3  0.0   6:05.00 rcu_sched                                                                                                              </span><br><span class="line"> 48603 root      20   0  145440   8440   7184 S   0.3  0.2   0:01.30 sshd                                                                                                                   </span><br><span class="line">118482 root      20   0  114184   4028   2752 S   0.3  0.1   0:10.08 local-up-cluste                                                                                                        </span><br><span class="line">119042 root      20   0   53936  39132  28888 S   0.3  1.0   0:51.40 kube-proxy                                                                                                             </span><br><span class="line">     1 root      20   0  126468   5728   3616 S   0.0  0.1   2:32.84 systemd                                                                                                                </span><br><span class="line">     2 root      20   0       0      0      0 S   0.0  0.0   0:00.33 kthreadd                                                                                                               </span><br><span class="line">     3 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 rcu_gp                                                                                                                 </span><br><span class="line">     4 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 rcu_par_gp                                                                                                             </span><br><span class="line">     6 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 kworker/0:0H-xf                                                                                                        </span><br><span class="line">     8 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 mm_percpu_wq                                                                                                           </span><br><span class="line">     9 root      20   0       0      0      0 S   0.0  0.0   0:10.38 ksoftirqd/0                                                                                                            </span><br><span class="line">    11 root      20   0       0      0      0 I   0.0  0.0   0:00.00 rcu_bh                                                                                                                 </span><br><span class="line">    12 root      rt   0       0      0      0 S   0.0  0.0   0:01.69 migration/0                                                                                                            </span><br><span class="line">    13 root      rt   0       0      0      0 S   0.0  0.0   0:00.81 watchdog/0                                                                                                             </span><br><span class="line">    14 root      20   0       0      0      0 S   0.0  0.0   0:00.00 cpuhp/0                                                                                                                </span><br><span class="line">    15 root      20   0       0      0      0 S   0.0  0.0   0:00.00 cpuhp/1                                                                                                                </span><br><span class="line">    16 root      rt   0       0      0      0 S   0.0  0.0   0:00.92 watchdog/1                                                                                                             </span><br><span class="line">    17 root      rt   0       0      0      0 S   0.0  0.0   0:01.62 migration/1                                                                                                            </span><br><span class="line">    18 root      20   0       0      0      0 S   0.0  0.0   0:14.91 ksoftirqd/1                                                                                                            </span><br><span class="line">    20 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 kworker/1:0H-xf                                                                                                        </span><br><span class="line">    21 root      20   0       0      0      0 S   0.0  0.0   0:00.00 cpuhp/2                                                                                                                </span><br><span class="line">    22 root      rt   0       0      0      0 S   0.0  0.0   0:00.84 watchdog/2                                                                                                             </span><br><span class="line">    23 root      rt   0       0      0      0 S   0.0  0.0   0:01.68 migration/2                                                                                                            </span><br><span class="line">    24 root      20   0       0      0      0 S   0.0  0.0   0:10.84 ksoftirqd/2                                                                                                            </span><br><span class="line">    26 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 kworker/2:0H-kb</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>cpu跑了100%<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># cat container/cpu.cfs_quota_us</span><br><span class="line">-1</span><br></pre></td></tr></table></figure></p>
-<p>查看cpu quota限制<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat container/cpu.cfs_period_us</span><br><span class="line">100000</span><br></pre></td></tr></table></figure></p>
-<p>查看cpu period限制</p>
-<ul>
-<li>修改quota限制<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># echo 20000 container/cpu.cfs_quota_us</span><br><span class="line">20000 container/cpu.cfs_quota_us</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>它意味着在每 100 ms 的时间里，被该控制组限制的进程只能使用 20 ms 的 CPU 时间，也就是说这个进程只能使用到 20% 的 CPU 带宽<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># echo 68322 &gt; container/tasks</span><br></pre></td></tr></table></figure></p>
-<p>将死循环加入控制组，cpu就降下来了</p>
-<h1 id="除了cpu子系统，cgroup还有很多其他的资源限制能力"><a href="#除了cpu子系统，cgroup还有很多其他的资源限制能力" class="headerlink" title="除了cpu子系统，cgroup还有很多其他的资源限制能力"></a>除了cpu子系统，cgroup还有很多其他的资源限制能力</h1><ul>
-<li>blkio， 为块设备限制I/O</li>
-<li>cpuset, 为进程分配单独的cpu核和对应的内存节点</li>
-<li>memory, 为进程设定内存使用的限制</li>
-</ul>
-<h1 id="docker的Cgroup玩法"><a href="#docker的Cgroup玩法" class="headerlink" title="docker的Cgroup玩法"></a>docker的Cgroup玩法</h1><p>在每个子系统下面，为每个容器创建一个控制组(就是创建一个新目录)，然后将启动的容器进程加入到对应控制组的tasks文件就可以了<br>docker容器资源的限制就是在docker run启动是参数指定的</p>
-<ul>
-<li>使用示例<br>启动cpu限制的容器<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># docker run -it --cpu-period=100000 --cpu-quota=20000 busybox /bin/sh</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>然后去cgroup目录看一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ cat /sys/fs/cgroup/cpu/docker/5d5c9f67d/cpu.cfs_period_us</span><br><span class="line">100000</span><br><span class="line">$ cat /sys/fs/cgroup/cpu/docker/5d5c9f67d/cpu.cfs_quota_us</span><br><span class="line">20000</span><br></pre></td></tr></table></figure></p>
-<p>笔者的环境竟然没有生成这个目录，难道是装了k8s的原因<br>研究了一下发现路径跟张磊的不一样<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 0</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cgroup.clone_children</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cgroup.procs</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cgroup.sane_behavior</span><br><span class="line">drwxr-xr-x.   2 root root 0 10月  3 16:11 container</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.stat</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_all</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_percpu</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_percpu_sys</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_percpu_user</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_sys</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_user</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.cfs_period_us</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.cfs_quota_us</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.rt_period_us</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.rt_runtime_us</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.shares</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpu.stat</span><br><span class="line">drwxr-xr-x.   4 root root 0 9月  29 21:30 kubepods.slice</span><br><span class="line">drwxr-xr-x.   2 root root 0 9月  29 21:30 kube-proxy</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 notify_on_release</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 release_agent</span><br><span class="line">drwxr-xr-x. 114 root root 0 9月  29 12:55 system.slice</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 tasks</span><br><span class="line">drwxr-xr-x.   4 root root 0 9月  29 12:55 user.slice</span><br></pre></td></tr></table></figure></p>
-<p>在system.slice目录下面<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">ll system.slice/*4c46475c05c0*</span><br><span class="line">system.slice/docker-4c46475c05c0372ff550718235cb02427be6afff3e658112a83e69817c28f74b.scope:</span><br><span class="line">总用量 0</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cgroup.clone_children</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:35 cgroup.procs</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_all</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu_user</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_user</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:35 cpu.cfs_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:35 cpu.cfs_quota_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.rt_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.rt_runtime_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.shares</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpu.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 notify_on_release</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 tasks</span><br><span class="line"></span><br><span class="line">system.slice/var-lib-docker-containers-4c46475c05c0372ff550718235cb02427be6afff3e658112a83e69817c28f74b-shm.mount:</span><br><span class="line">总用量 0</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cgroup.clone_children</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cgroup.procs</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_all</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu_user</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_user</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.cfs_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.cfs_quota_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.rt_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.rt_runtime_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.shares</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpu.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 notify_on_release</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 tasks</span><br></pre></td></tr></table></figure></p>
-<h1 id="top和-proc的问题"><a href="#top和-proc的问题" class="headerlink" title="top和/proc的问题"></a>top和/proc的问题</h1><p>张磊所说的容器中可以看到宿主机的/proc的问题在笔者的环境里面没有出现<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/ # top</span><br><span class="line">Mem: 3907244K used, 108948K free, 45876K shrd, 8K buff, 920448K cached</span><br><span class="line">CPU: 30.7% usr  2.5% sys  0.0% nic 66.6% idle  0.0% io  0.0% irq  0.0% sirq</span><br><span class="line">Load average: 2.41 2.07 2.11 3/616 7</span><br><span class="line">  PID  PPID USER     STAT   VSZ %VSZ CPU %CPU COMMAND</span><br><span class="line">    1     0 root     S     1256  0.0   1  0.0 /bin/sh</span><br><span class="line">    7     1 root     R     1248  0.0   0  0.0 top</span><br></pre></td></tr></table></figure></p>
-<p>容器中的top命令不能看到宿主机的/proc内容,不懂是否有修改<br>课后回答有人说使用lxcfs把/var/lib/lxcfs/proc/*挂载到容器的/proc/*目录中</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/03/k8s-learn-6/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
+      <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
     </nav>
   
 
@@ -1250,27 +1204,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1278,15 +1212,35 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1294,11 +1248,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">

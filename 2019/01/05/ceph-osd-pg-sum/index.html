@@ -6,15 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>小甲师兄</title>
+  <title>ceph osd pg统计 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="小甲师兄">
-<meta property="og:url" content="http://yoursite.com/page/3/index.html">
+  <meta name="description" content="ceph osd pg统计脚本————————————————————————————————————————————————————————————————————这里引用磨磨的一篇博客http://www.zphj1987.com/2015/10/04/%E6%9F%A5%E8%AF%A2osd%E4%B8%8A%E7%9A%84pg%E6%95%B0/">
+<meta name="keywords" content="ceph">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ceph osd pg统计">
+<meta property="og:url" content="http://yoursite.com/2019/01/05/ceph-osd-pg-sum/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="ceph osd pg统计脚本————————————————————————————————————————————————————————————————————这里引用磨磨的一篇博客http://www.zphj1987.com/2015/10/04/%E6%9F%A5%E8%AF%A2osd%E4%B8%8A%E7%9A%84pg%E6%95%B0/">
 <meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2019-01-05T06:43:17.396Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄">
+<meta name="twitter:title" content="ceph osd pg统计">
+<meta name="twitter:description" content="ceph osd pg统计脚本————————————————————————————————————————————————————————————————————这里引用磨磨的一篇博客http://www.zphj1987.com/2015/10/04/%E6%9F%A5%E8%AF%A2osd%E4%B8%8A%E7%9A%84pg%E6%95%B0/">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -148,78 +153,51 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-    <article id="post-k8s-learn-6" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+            <article id="post-ceph-osd-pg-sum" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/03/k8s-learn-6/">k8s learn(6) 隔离与限制</a>
+    <h1 class="article-title" itemprop="name">
+      ceph osd pg统计
     </h1>
   
 
         
-        <a href="/2018/10/03/k8s-learn-6/" class="archive-article-date">
-  	<time datetime="2018-10-03T07:50:35.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-03</time>
+        <a href="/2019/01/05/ceph-osd-pg-sum/" class="archive-article-date">
+  	<time datetime="2019-01-05T06:41:23.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="容器与虚拟机"><a href="#容器与虚拟机" class="headerlink" title="容器与虚拟机"></a>容器与虚拟机</h1><p><img src="1.png" alt="aa"></p>
-<h2 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h2><ul>
-<li>性能：<br>vm: Guest Os的操作要经过Hypervisor的转换，再到宿主机，所以计算，存储，网络性能损耗比较严重<br>容器：因为本身就是宿主机的进程，损耗可以忽略不计<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2></li>
-<li>namespace隔离没有虚拟机化技术彻底</li>
-</ul>
-<ol>
-<li>内核是宿主机的内核：window不能运行linux，低内核不能运行高内核</li>
-<li>linux内核中有些资源是不能被namespace，比如时间</li>
-<li>共享内核会导致攻击面变大，虽然可以使用Seccomp进行系统的调用的加固，但是有两个问题：一是性能损耗，二是不知道应该给哪些系统调用加固</li>
-</ol>
-<h1 id="Cgroups"><a href="#Cgroups" class="headerlink" title="Cgroups"></a>Cgroups</h1><p>主要用来限制CPU，内存，磁盘，网络带宽<br>Cgroups表现出来的接口是文件系统</p>
-<ul>
-<li>Cgroups位置<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"># ll /sys/fs/cgroup/</span><br><span class="line">总用量 0</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 blkio</span><br><span class="line">lrwxrwxrwx. 1 root root 11 9月  29 12:55 cpu -&gt; cpu,cpuacct</span><br><span class="line">lrwxrwxrwx. 1 root root 11 9月  29 12:55 cpuacct -&gt; cpu,cpuacct</span><br><span class="line">dr-xr-xr-x. 7 root root  0 9月  29 12:55 cpu,cpuacct</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 cpuset</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 devices</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 freezer</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 hugetlb</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 memory</span><br><span class="line">lrwxrwxrwx. 1 root root 16 9月  29 12:55 net_cls -&gt; net_cls,net_prio</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 net_cls,net_prio</span><br><span class="line">lrwxrwxrwx. 1 root root 16 9月  29 12:55 net_prio -&gt; net_cls,net_prio</span><br><span class="line">dr-xr-xr-x. 5 root root  0 9月  29 12:55 perf_event</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 pids</span><br><span class="line">dr-xr-xr-x. 2 root root  0 9月  29 12:55 rdma</span><br><span class="line">dr-xr-xr-x. 6 root root  0 9月  29 12:55 systemd</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h2><ul>
-<li><p>创建一个控制组,会自动生成资源控制文件</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># cd /sys/fs/cgroup/cpu</span><br><span class="line"># mkdir container</span><br><span class="line"># ll container/</span><br><span class="line">总用量 0</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cgroup.clone_children</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cgroup.procs</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_all</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_percpu</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_percpu_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_percpu_user</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpuacct.usage_user</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.cfs_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.cfs_quota_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.rt_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.rt_runtime_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 cpu.shares</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 16:12 cpu.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 notify_on_release</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:12 tasks</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>启动死循环</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"># while : ; do : ; done &amp;</span><br><span class="line">[1] 68322</span><br><span class="line"></span><br><span class="line"># top</span><br><span class="line">top - 16:17:50 up 4 days,  3:22, 12 users,  load average: 2.07, 1.83, 1.78</span><br><span class="line">Tasks: 247 total,   2 running, 166 sleeping,   0 stopped,   0 zombie</span><br><span class="line">%Cpu(s): 52.6 us,  0.8 sy,  0.0 ni, 46.2 id,  0.0 wa,  0.0 hi,  0.3 si,  0.0 st</span><br><span class="line">KiB Mem :  4016192 total,   838948 free,  1630224 used,  1547020 buff/cache</span><br><span class="line">KiB Swap:  3014652 total,  2518980 free,   495672 used.  1774528 avail Mem</span><br><span class="line"></span><br><span class="line">   PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                                                                                </span><br><span class="line"> 68322 root      20   0  117352   3092    768 R 100.0  0.1   0:14.79 bash                                                                                                                   </span><br><span class="line">119028 root      20   0  297036 245732  55584 S  50.8  6.1  93:13.82 kube-controller                                                                                                        </span><br><span class="line">118812 root      20   0  657528 513892  66756 S  43.5 12.8  92:29.19 kube-apiserver                                                                                                         </span><br><span class="line">119031 root      20   0  103016  92976  29568 S  16.3  2.3  37:35.77 kube-scheduler                                                                                                         </span><br><span class="line">119156 root      20   0  740200 102960  59764 S   2.0  2.6  10:55.70 kubelet                                                                                                                </span><br><span class="line">  2837 root      20   0 1513220  58348  17060 S   0.7  1.5  24:55.22 dockerd-current                                                                                                        </span><br><span class="line">118599 root      20   0 10.346g  76844  16260 S   0.7  1.9   4:41.54 etcd                                                                                                                   </span><br><span class="line">    10 root      20   0       0      0      0 I   0.3  0.0   6:05.00 rcu_sched                                                                                                              </span><br><span class="line"> 48603 root      20   0  145440   8440   7184 S   0.3  0.2   0:01.30 sshd                                                                                                                   </span><br><span class="line">118482 root      20   0  114184   4028   2752 S   0.3  0.1   0:10.08 local-up-cluste                                                                                                        </span><br><span class="line">119042 root      20   0   53936  39132  28888 S   0.3  1.0   0:51.40 kube-proxy                                                                                                             </span><br><span class="line">     1 root      20   0  126468   5728   3616 S   0.0  0.1   2:32.84 systemd                                                                                                                </span><br><span class="line">     2 root      20   0       0      0      0 S   0.0  0.0   0:00.33 kthreadd                                                                                                               </span><br><span class="line">     3 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 rcu_gp                                                                                                                 </span><br><span class="line">     4 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 rcu_par_gp                                                                                                             </span><br><span class="line">     6 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 kworker/0:0H-xf                                                                                                        </span><br><span class="line">     8 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 mm_percpu_wq                                                                                                           </span><br><span class="line">     9 root      20   0       0      0      0 S   0.0  0.0   0:10.38 ksoftirqd/0                                                                                                            </span><br><span class="line">    11 root      20   0       0      0      0 I   0.0  0.0   0:00.00 rcu_bh                                                                                                                 </span><br><span class="line">    12 root      rt   0       0      0      0 S   0.0  0.0   0:01.69 migration/0                                                                                                            </span><br><span class="line">    13 root      rt   0       0      0      0 S   0.0  0.0   0:00.81 watchdog/0                                                                                                             </span><br><span class="line">    14 root      20   0       0      0      0 S   0.0  0.0   0:00.00 cpuhp/0                                                                                                                </span><br><span class="line">    15 root      20   0       0      0      0 S   0.0  0.0   0:00.00 cpuhp/1                                                                                                                </span><br><span class="line">    16 root      rt   0       0      0      0 S   0.0  0.0   0:00.92 watchdog/1                                                                                                             </span><br><span class="line">    17 root      rt   0       0      0      0 S   0.0  0.0   0:01.62 migration/1                                                                                                            </span><br><span class="line">    18 root      20   0       0      0      0 S   0.0  0.0   0:14.91 ksoftirqd/1                                                                                                            </span><br><span class="line">    20 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 kworker/1:0H-xf                                                                                                        </span><br><span class="line">    21 root      20   0       0      0      0 S   0.0  0.0   0:00.00 cpuhp/2                                                                                                                </span><br><span class="line">    22 root      rt   0       0      0      0 S   0.0  0.0   0:00.84 watchdog/2                                                                                                             </span><br><span class="line">    23 root      rt   0       0      0      0 S   0.0  0.0   0:01.68 migration/2                                                                                                            </span><br><span class="line">    24 root      20   0       0      0      0 S   0.0  0.0   0:10.84 ksoftirqd/2                                                                                                            </span><br><span class="line">    26 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 kworker/2:0H-kb</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>cpu跑了100%<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># cat container/cpu.cfs_quota_us</span><br><span class="line">-1</span><br></pre></td></tr></table></figure></p>
-<p>查看cpu quota限制<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat container/cpu.cfs_period_us</span><br><span class="line">100000</span><br></pre></td></tr></table></figure></p>
-<p>查看cpu period限制</p>
-<ul>
-<li>修改quota限制<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># echo 20000 container/cpu.cfs_quota_us</span><br><span class="line">20000 container/cpu.cfs_quota_us</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>它意味着在每 100 ms 的时间里，被该控制组限制的进程只能使用 20 ms 的 CPU 时间，也就是说这个进程只能使用到 20% 的 CPU 带宽<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># echo 68322 &gt; container/tasks</span><br></pre></td></tr></table></figure></p>
-<p>将死循环加入控制组，cpu就降下来了</p>
-<h1 id="除了cpu子系统，cgroup还有很多其他的资源限制能力"><a href="#除了cpu子系统，cgroup还有很多其他的资源限制能力" class="headerlink" title="除了cpu子系统，cgroup还有很多其他的资源限制能力"></a>除了cpu子系统，cgroup还有很多其他的资源限制能力</h1><ul>
-<li>blkio， 为块设备限制I/O</li>
-<li>cpuset, 为进程分配单独的cpu核和对应的内存节点</li>
-<li>memory, 为进程设定内存使用的限制</li>
-</ul>
-<h1 id="docker的Cgroup玩法"><a href="#docker的Cgroup玩法" class="headerlink" title="docker的Cgroup玩法"></a>docker的Cgroup玩法</h1><p>在每个子系统下面，为每个容器创建一个控制组(就是创建一个新目录)，然后将启动的容器进程加入到对应控制组的tasks文件就可以了<br>docker容器资源的限制就是在docker run启动是参数指定的</p>
-<ul>
-<li>使用示例<br>启动cpu限制的容器<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># docker run -it --cpu-period=100000 --cpu-quota=20000 busybox /bin/sh</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>然后去cgroup目录看一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ cat /sys/fs/cgroup/cpu/docker/5d5c9f67d/cpu.cfs_period_us</span><br><span class="line">100000</span><br><span class="line">$ cat /sys/fs/cgroup/cpu/docker/5d5c9f67d/cpu.cfs_quota_us</span><br><span class="line">20000</span><br></pre></td></tr></table></figure></p>
-<p>笔者的环境竟然没有生成这个目录，难道是装了k8s的原因<br>研究了一下发现路径跟张磊的不一样<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 0</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cgroup.clone_children</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cgroup.procs</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cgroup.sane_behavior</span><br><span class="line">drwxr-xr-x.   2 root root 0 10月  3 16:11 container</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.stat</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_all</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_percpu</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_percpu_sys</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_percpu_user</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_sys</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpuacct.usage_user</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.cfs_period_us</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.cfs_quota_us</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.rt_period_us</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.rt_runtime_us</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 cpu.shares</span><br><span class="line">-r--r--r--.   1 root root 0 10月  3 16:10 cpu.stat</span><br><span class="line">drwxr-xr-x.   4 root root 0 9月  29 21:30 kubepods.slice</span><br><span class="line">drwxr-xr-x.   2 root root 0 9月  29 21:30 kube-proxy</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 notify_on_release</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 release_agent</span><br><span class="line">drwxr-xr-x. 114 root root 0 9月  29 12:55 system.slice</span><br><span class="line">-rw-r--r--.   1 root root 0 10月  3 16:10 tasks</span><br><span class="line">drwxr-xr-x.   4 root root 0 9月  29 12:55 user.slice</span><br></pre></td></tr></table></figure></p>
-<p>在system.slice目录下面<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">ll system.slice/*4c46475c05c0*</span><br><span class="line">system.slice/docker-4c46475c05c0372ff550718235cb02427be6afff3e658112a83e69817c28f74b.scope:</span><br><span class="line">总用量 0</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cgroup.clone_children</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:35 cgroup.procs</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_all</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu_user</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_user</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:35 cpu.cfs_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 16:35 cpu.cfs_quota_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.rt_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.rt_runtime_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.shares</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpu.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 notify_on_release</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 tasks</span><br><span class="line"></span><br><span class="line">system.slice/var-lib-docker-containers-4c46475c05c0372ff550718235cb02427be6afff3e658112a83e69817c28f74b-shm.mount:</span><br><span class="line">总用量 0</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cgroup.clone_children</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cgroup.procs</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_all</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_percpu_user</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_sys</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpuacct.usage_user</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.cfs_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.cfs_quota_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.rt_period_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.rt_runtime_us</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 cpu.shares</span><br><span class="line">-r--r--r--. 1 root root 0 10月  3 17:04 cpu.stat</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 notify_on_release</span><br><span class="line">-rw-r--r--. 1 root root 0 10月  3 17:04 tasks</span><br></pre></td></tr></table></figure></p>
-<h1 id="top和-proc的问题"><a href="#top和-proc的问题" class="headerlink" title="top和/proc的问题"></a>top和/proc的问题</h1><p>张磊所说的容器中可以看到宿主机的/proc的问题在笔者的环境里面没有出现<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/ # top</span><br><span class="line">Mem: 3907244K used, 108948K free, 45876K shrd, 8K buff, 920448K cached</span><br><span class="line">CPU: 30.7% usr  2.5% sys  0.0% nic 66.6% idle  0.0% io  0.0% irq  0.0% sirq</span><br><span class="line">Load average: 2.41 2.07 2.11 3/616 7</span><br><span class="line">  PID  PPID USER     STAT   VSZ %VSZ CPU %CPU COMMAND</span><br><span class="line">    1     0 root     S     1256  0.0   1  0.0 /bin/sh</span><br><span class="line">    7     1 root     R     1248  0.0   0  0.0 top</span><br></pre></td></tr></table></figure></p>
-<p>容器中的top命令不能看到宿主机的/proc内容,不懂是否有修改<br>课后回答有人说使用lxcfs把/var/lib/lxcfs/proc/*挂载到容器的/proc/*目录中</p>
+        <h1 id="ceph-osd-pg统计脚本"><a href="#ceph-osd-pg统计脚本" class="headerlink" title="ceph osd pg统计脚本"></a>ceph osd pg统计脚本</h1><p>————————————————————————————————————————————————————————————————————<br>这里引用磨磨的一篇博客<br><a href="http://www.zphj1987.com/2015/10/04/%E6%9F%A5%E8%AF%A2osd%E4%B8%8A%E7%9A%84pg%E6%95%B0/" target="_blank" rel="noopener">http://www.zphj1987.com/2015/10/04/%E6%9F%A5%E8%AF%A2osd%E4%B8%8A%E7%9A%84pg%E6%95%B0/</a></p>
 
       
 
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
       
     </div>
     <div class="article-info article-info-index">
@@ -230,7 +208,7 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph</a>
         		</li>
       		
 		</ul>
@@ -239,16 +217,75 @@
       
 
       
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/03/k8s-learn-6/">展开全文 >></a>
-        </p>
-      
 
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
+        </div>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2019/01/05/ceph-osd-pg-sum/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
       
       <div class="clearfix"></div>
     </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
+  
+  
+    <a href="/2019/01/05/cephfs-use/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">cephfs部署，创建和删除</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
 
 <aside class="wrap-side-operation">
     <div class="mod-side-operation">
@@ -268,844 +305,34 @@
 
 
 
-
   
-    <article id="post-k8s-learn-5" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/03/k8s-learn-5/">k8s learn(5) 从进程说起:容器到底是怎么一回事</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/03/k8s-learn-5/" class="archive-article-date">
-  	<time datetime="2018-10-03T06:38:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-03</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-程序跟进程"><a href="#1-程序跟进程" class="headerlink" title="1.程序跟进程"></a>1.程序跟进程</h1><ul>
-<li>程序是静态的</li>
-<li>进程是动态的</li>
-</ul>
-<h1 id="2-容器是一种进程"><a href="#2-容器是一种进程" class="headerlink" title="2.容器是一种进程"></a>2.容器是一种进程</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int pid = clone(main_function, stack_size, CLONE_NEWPID | SIGCHLD, NULL)</span><br></pre></td></tr></table></figure>
-<p>通过Cgroups 技术是用来制造约束的主要手段， 而Namespace 技术则是用来修改进程视图的主要方法<br>提供6种命令空间：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">PID</span><br><span class="line">Mount</span><br><span class="line">UTS</span><br><span class="line">IPC</span><br><span class="line">Network</span><br><span class="line">User</span><br></pre></td></tr></table></figure></p>
-<h1 id="3-容器中的进程跟宿主机中进程的对应关系"><a href="#3-容器中的进程跟宿主机中进程的对应关系" class="headerlink" title="3.容器中的进程跟宿主机中进程的对应关系"></a>3.容器中的进程跟宿主机中进程的对应关系</h1><ul>
-<li>在容器中，容器的启动进程在容器里面是1号进程（假init进程）<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># docker run -it busybox /bin/sh</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>容器中进程<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">PID   USER     TIME  COMMAND</span><br><span class="line">    1 root      0:00 /bin/sh</span><br><span class="line">   36 root      0:00 ps</span><br></pre></td></tr></table></figure></p>
-<ul>
-<li>在宿主机中，如何查看容器的进程呢，进程名其实就是容器的启动进程，比如上面的/bin/sh，通过docker inspect查看容器进程<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker inspect xxxx</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>从中找到status pid就是容器的进程id<br>我们可以在容器中运行一个top命令，看一下进程的关系</p>
-<h2 id="在容器中"><a href="#在容器中" class="headerlink" title="在容器中"></a>在容器中</h2><p>top命令是init的子进程</p>
-<h2 id="在宿主机上"><a href="#在宿主机上" class="headerlink" title="在宿主机上"></a>在宿主机上</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><span class="line"># pstree -p 2837</span><br><span class="line">dockerd-current(2837)─┬─docker-containe(105880)─┬─docker-containe(48506)─┬─sh(48521)───top(50346)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48507)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48508)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48509)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48510)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48511)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48513)</span><br><span class="line">                      │                         │                        └─&#123;docker-containe&#125;(48545)</span><br><span class="line">                      │                         ├─docker-containe(119459)─┬─pause(119475)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119460)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119461)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119462)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119463)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119464)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119465)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119466)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119509)</span><br><span class="line">                      │                         ├─docker-containe(119525)─┬─kube-dns(119546)─┬─&#123;kube-dns&#125;(119567)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119568)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119569)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119570)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119571)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119572)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119573)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119583)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(11921)</span><br><span class="line">                      │                         │                         │                  └─&#123;kube-dns&#125;(14741)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119526)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119527)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119528)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119529)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119530)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119531)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119532)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119533)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119534)</span><br><span class="line">                      │                         ├─docker-containe(119585)─┬─dnsmasq-nanny(119602)─┬─dnsmasq(119638)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119623)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119624)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119625)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119626)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119634)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119636)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119788)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119787)</span><br><span class="line">                      │                         │                         │                       └─&#123;dnsmasq-nanny&#125;(49454)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119586)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119587)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119588)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119589)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119590)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119591)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119592)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119596)</span><br><span class="line">                      │                         ├─docker-containe(119639)─┬─sidecar(119656)─┬─&#123;sidecar&#125;(119676)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119677)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119678)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119679)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119689)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119690)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119691)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(125464)</span><br><span class="line">                      │                         │                         │                 └─&#123;sidecar&#125;(33842)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119640)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119641)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119642)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119643)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119644)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119645)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119646)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119647)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105881)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105882)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105883)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105884)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105885)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105886)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105887)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105895)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(106063)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112355)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112412)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112467)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112987)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(113989)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(114932)</span><br><span class="line">                      │                         └─&#123;docker-containe&#125;(6250)</span><br><span class="line">                      ├─docker-proxy-cu(3090)─┬─&#123;docker-proxy-cu&#125;(3091)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3092)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3093)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3094)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3095)</span><br><span class="line">                      │                       └─&#123;docker-proxy-cu&#125;(3619)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2839)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2840)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2841)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2845)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2850)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2851)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2860)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2861)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2864)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2865)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3012)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3027)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3028)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3029)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3032)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3082)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3096)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3098)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3099)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3101)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3102)</span><br><span class="line">                      └─&#123;dockerd-current&#125;(3107)</span><br></pre></td></tr></table></figure>
-<p>其中，笔者的容器进程关系是这条<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dockerd-current(2837)─┬─docker-containe(105880)─┬─docker-containe(48506)─┬─sh(48521)───top(50346)</span><br></pre></td></tr></table></figure></p>
-<p>其中2837是dockerd驻留进程，其父进程是1（真正的init进程）,进程105880和48506也是docker相关的进程，不是容器进程，<br>48521是容器进程，50346是top进程</p>
-<p>从这可以看出容器里和宿主机上面的进程关系</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/03/k8s-learn-5/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-modify-openstack-code-then-make-rpm-package" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/29/modify-openstack-code-then-make-rpm-package/">修改openstack源码之后如何做rpm包</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/29/modify-openstack-code-then-make-rpm-package/" class="archive-article-date">
-  	<time datetime="2018-09-29T12:18:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-29</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="rpm包的需求"><a href="#rpm包的需求" class="headerlink" title="rpm包的需求"></a>rpm包的需求</h1><ul>
-<li>以前我们修改openstack的源码之后，如何部署openstack的呢？<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">首先使用openstack原生组件的rpm包，然后把我们修改的代码用脚本镜像文件替换，额。。。好像有点low</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h1 id="rpm制作流程"><a href="#rpm制作流程" class="headerlink" title="rpm制作流程"></a>rpm制作流程</h1><h2 id="首先找源码的src-rpm包"><a href="#首先找源码的src-rpm包" class="headerlink" title="首先找源码的src.rpm包"></a>首先找源码的src.rpm包</h2><p>来，传输门：<a href="http://vault.centos.org/7.5.1804/cloud/Source/openstack-pike/" target="_blank" rel="noopener">http://vault.centos.org/7.5.1804/cloud/Source/openstack-pike/</a><br>选择要使用的rpm包，这里我们已cinder-11.1.1为例</p>
-<ul>
-<li>下载src.rpm包<br><img src="1.png" alt="aa"></li>
-<li>解压rpm包<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpm -i openstack-cinder-11.1.1-1.el7.src.rpm</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>这会生成/root/rpmbuild目录<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 4</span><br><span class="line">drwxr-xr-x. 3 root root   26 9月  29 19:10 BUILD</span><br><span class="line">drwxr-xr-x. 2 root root    6 9月  29 19:21 BUILDROOT</span><br><span class="line">drwxr-xr-x. 3 root root   19 9月  29 19:21 RPMS</span><br><span class="line">drwxr-xr-x. 2 root root 4096 9月  29 19:30 SOURCES</span><br><span class="line">drwxr-xr-x. 2 root root   60 9月  29 19:30 SPECS</span><br><span class="line">drwxr-xr-x. 2 root root   57 9月  29 19:21 SRPMS</span><br></pre></td></tr></table></figure></p>
-<p>其中SOURCES目录中就有源码的一些tar包<br>比如cinder-11.1.1.tar.gz<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">总用量 20668</span><br><span class="line">-rw-rw-r--. 1 root root 10041327 9月  29 19:10 cinder-11.1.1.tar.gz</span><br><span class="line">-rw-rw-r--. 1 root root      387 6月  19 00:52 cinder-dist.conf</span><br><span class="line">-rw-rw-r--. 1 root root      134 6月  19 00:52 cinder.logrotate</span><br><span class="line">-rw-rw-r--. 1 root root      112 6月  19 00:52 cinder-sudoers</span><br><span class="line">-rw-rw-r--. 1 root root 10975664 6月   4 22:33 nova-16.1.4.tar.gz</span><br><span class="line">-rw-rw-r--. 1 root root      752 6月   4 23:10 nova-dist.conf</span><br><span class="line">-rw-rw-r--. 1 root root      249 6月   4 23:10 nova-ifc-template</span><br><span class="line">-rw-rw-r--. 1 root root       95 6月   4 23:10 nova.logrotate</span><br><span class="line">-rw-rw-r--. 1 root root      190 6月   4 23:10 nova_migration_authorized_keys</span><br><span class="line">-rw-rw-r--. 1 root root      265 6月   4 23:10 nova_migration_identity</span><br><span class="line">-rw-rw-r--. 1 root root      679 6月   4 23:10 nova_migration-rootwrap_cold_migration</span><br><span class="line">-rw-rw-r--. 1 root root      121 6月   4 23:10 nova_migration-rootwrap.conf</span><br><span class="line">-rw-rw-r--. 1 root root      217 6月   4 23:10 nova_migration-sudoers</span><br><span class="line">-rw-rw-r--. 1 root root     2058 6月   4 23:10 nova-migration-wrapper</span><br><span class="line">-rw-rw-r--. 1 root root      695 6月   4 23:10 nova-placement-api.conf</span><br><span class="line">-rw-rw-r--. 1 root root      109 6月   4 23:10 nova-ssh-config</span><br><span class="line">-rw-rw-r--. 1 root root      158 6月   4 23:10 nova-sudoers</span><br><span class="line">-rw-rw-r--. 1 root root      343 6月  19 00:52 openstack-cinder-api.service</span><br><span class="line">-rw-rw-r--. 1 root root      335 6月  19 00:52 openstack-cinder-backup.service</span><br><span class="line">-rw-rw-r--. 1 root root      344 6月  19 00:52 openstack-cinder-scheduler.service</span><br><span class="line">-rw-rw-r--. 1 root root      389 6月  19 00:52 openstack-cinder-volume.service</span><br><span class="line">-rw-rw-r--. 1 root root      230 6月   4 23:10 openstack-nova-api.service</span><br><span class="line">-rw-rw-r--. 1 root root      234 6月   4 23:10 openstack-nova-cells.service</span><br><span class="line">-rw-rw-r--. 1 root root      302 6月   4 23:10 openstack-nova-compute.service</span><br><span class="line">-rw-rw-r--. 1 root root      242 6月   4 23:10 openstack-nova-conductor.service</span><br><span class="line">-rw-rw-r--. 1 root root      251 6月   4 23:10 openstack-nova-consoleauth.service</span><br><span class="line">-rw-rw-r--. 1 root root      244 6月   4 23:10 openstack-nova-console.service</span><br><span class="line">-rw-rw-r--. 1 root root      248 6月   4 23:10 openstack-nova-metadata-api.service</span><br><span class="line">-rw-rw-r--. 1 root root      299 6月   4 23:10 openstack-nova-network.service</span><br><span class="line">-rw-rw-r--. 1 root root      304 6月   4 23:10 openstack-nova-novncproxy.service</span><br><span class="line">-rw-rw-r--. 1 root root       73 6月   4 23:10 openstack-nova-novncproxy.sysconfig</span><br><span class="line">-rw-rw-r--. 1 root root      248 6月   4 23:10 openstack-nova-os-compute-api.service</span><br><span class="line">-rw-rw-r--. 1 root root      242 6月   4 23:10 openstack-nova-scheduler.service</span><br><span class="line">-rw-rw-r--. 1 root root      216 6月   4 23:10 openstack-nova-serialproxy.service</span><br><span class="line">-rw-rw-r--. 1 root root      225 6月   4 23:10 openstack-nova-spicehtml5proxy.service</span><br><span class="line">-rw-rw-r--. 1 root root      216 6月   4 23:10 openstack-nova-xvpvncproxy.service</span><br><span class="line">-rw-rw-r--. 1 root root        4 6月   4 23:10 policy.json</span><br></pre></td></tr></table></figure></p>
-<p>我们所需要的源码就在这个tar中，我们可以对这个tar镜像解压，然后修改代码，然后使用tar -zcvf生成新的tar包，然后把新的tar包拷贝到SOURCES目录下，对原有的tar包进行替换</p>
-<ul>
-<li>制作rpm包<br>在SOURCES同目录下还有一个SPECS，这个下面有一个spec文件，这个文件就是用来生成rpm包的<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 48</span><br><span class="line">-rw-rw-r--. 1 root root 14614 9月  29 16:46 openstack-cinder.spec</span><br><span class="line">-rw-rw-r--. 1 root root 29641 6月   4 23:10 openstack-nova.spec</span><br><span class="line"># rpmbuild -ba openstack-cinder.spec</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>命令之后会在RPMS目录下面生成相关的rpm包<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># ll</span><br><span class="line">总用量 11012</span><br><span class="line">-rw-r--r--. 1 root root   60636 9月  29 19:21 openstack-cinder-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 3943300 9月  29 19:21 openstack-cinder-doc-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 4229080 9月  29 19:21 python-cinder-11.1.1-1.el7_tstack.noarch.rpm</span><br><span class="line">-rw-r--r--. 1 root root 3038588 9月  29 19:21 python-cinder-tests-11.1.1-1.el7_tstack.noarch.rpm</span><br></pre></td></tr></table></figure></p>
-<p>注:原生的tar解压的时候最好不要在windows下面操作，因为有些文件的执行权限会没有，大爱linux</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/29/modify-openstack-code-then-make-rpm-package/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-No-space-left-on-device-when-boot-vms" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/29/No-space-left-on-device-when-boot-vms/">从镜像和卷启动虚拟机遇到No space left on device问题</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/29/No-space-left-on-device-when-boot-vms/" class="archive-article-date">
-  	<time datetime="2018-09-29T11:39:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-29</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
-<li>使用windows的qcow2镜像从镜像和卷启动虚拟机的时候，出现No space left on device问题，由于公司环境的机器分配下来之后，根目录都是20G，so small</li>
-</ul>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>分别对镜像启动和卷启动两种情况进行解决：</p>
-<h2 id="镜像启动虚拟机"><a href="#镜像启动虚拟机" class="headerlink" title="镜像启动虚拟机"></a>镜像启动虚拟机</h2><ul>
-<li>原因分析<br>从镜像启动虚拟机按理来说在glance配置开启了show_image_direct_url配置之后应该可以秒级启动虚拟机，即对glance池里面镜像的rbd做快照snap，然后clone到vms池作为虚拟机的系统盘，但是这里有一个前提，ceph只支持raw格式的虚拟机镜像，如果是qcow2格式的镜像需要先从ceph的images池把镜像下载到本地目录（/var/lib/nova/instances/_base），然后使用qemu镜像镜像格式的转化，而我使用的镜像正好的qcow2格式的，而且是windows，这个转化成raw格式的镜像需要50G，已经超过了根目录的大小，所以会报上面的No space left on device的错误。</li>
-<li>cephfs解决<br>ceph也提高文件系统功能，我们可以把这个cephfs挂载各个计算节点的/var/lib/nova/instances/_base目录，还能达到共享存储的效果，不过一个问题，ceph mon的level数据存储默认是在根目录，而我们的根目录只有20G，所以往往会把ceph mon撑爆（我们测试环境一般计算节点也是存储节点），mon挂了之后会导致ceph的命令都不能用，由于我们把cephfs挂载了本地目录，会导致df命令不能使用，出现一脸懵逼，发生了什么</li>
-<li>软连接数据盘<br>幸亏公司的机器还是有其他数据盘的，数据盘的容量还是慷慨的，我们可以在数据建个软连接过去<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># mkdir /data/base</span><br><span class="line"># ln -s /data/base /var/lib/nova/instances/_base</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="卷启动虚拟机"><a href="#卷启动虚拟机" class="headerlink" title="卷启动虚拟机"></a>卷启动虚拟机</h2><ul>
-<li>从卷启动类型也需要先下载到本地进行转化，不过卷启动会先创建一个空的rbd卷在volumes池，然后把转化后的本地镜像通过rbd import命令导入到rbd卷中，这里的本地转化发生在/var/lib/cinder/conversion目录下，也是在根目录，解决方法跟上面类似</li>
-</ul>
-<p>我用的是软连接，ok问题解决</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack nova cinder</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/29/No-space-left-on-device-when-boot-vms/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-虚拟机镜像上传问题" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/28/虚拟机镜像上传问题/">虚拟机快照镜像上传问题</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/28/虚拟机镜像上传问题/" class="archive-article-date">
-  	<time datetime="2018-09-28T09:21:06.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
-<li>环境P版在虚拟机创建快照的时候，上传镜像的时候出现如下错误信息：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ImageNotAuthorized: Not authorized for image 4fb7c773-0ab3-4123-a6cc-2a9e38373793</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><ul>
-<li><p>本人在之前对glance设置了一个配置show_image_direct_url，用来支持虚拟机从镜像秒启动，跟踪了错误日志</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server Traceback (most recent call last):</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_messaging/rpc/server.py&quot;, line 160, in _process_incoming</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     res = self.dispatcher.dispatch(message)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_messaging/rpc/dispatcher.py&quot;, line 213, in dispatch</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return self._do_dispatch(endpoint, method, ctxt, args)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_messaging/rpc/dispatcher.py&quot;, line 183, in _do_dispatch</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     result = func(ctxt, **new_args)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/exception_wrapper.py&quot;, line 76, in wrapped</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     function_name, call_dict, binary)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/exception_wrapper.py&quot;, line 67, in wrapped</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return f(self, context, *args, **kw)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 191, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     &quot;Error: %s&quot;, e, instance=instance)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 161, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return function(self, context, *args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 219, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     kwargs[&apos;instance&apos;], e, sys.exc_info())</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 207, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return function(self, context, *args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 248, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     image_id, instance=instance)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 235, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     *args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 3221, in snapshot_instance</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     task_states.IMAGE_SNAPSHOT)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 3253, in _snapshot_instance</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     update_task_state)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/virt/libvirt/driver.py&quot;, line 1827, in snapshot</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     ignore_errors=True)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/virt/libvirt/driver.py&quot;, line 1768, in snapshot</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     purge_props=False)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/api.py&quot;, line 132, in update</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     purge_props=purge_props)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 503, in update</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     _reraise_translated_image_exception(image_id)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 820, in _reraise_translated_image_exception</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(type(new_exc), new_exc, exc_trace)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 501, in update</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     image = self._update_v2(context, sent_service_image_meta, data)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 515, in _update_v2</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     image = self._add_location(context, image_id, location)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 400, in _add_location</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     location, &#123;&#125;)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 166, in call</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     result = getattr(controller, method)(*args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/v2/images.py&quot;, line 368, in add_location</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     response = self._send_image_update_request(image_id, add_patch)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/common/utils.py&quot;, line 545, in inner</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return RequestIdProxy(wrapped(*args, **kwargs))</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/v2/images.py&quot;, line 352, in _send_image_update_request</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     data=json.dumps(patch_body))</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/keystoneauth1/adapter.py&quot;, line 300, in patch</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return self.request(url, &apos;PATCH&apos;, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/common/http.py&quot;, line 349, in request</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return self._handle_response(resp)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/common/http.py&quot;, line 98, in _handle_response</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     raise exc.from_response(resp, resp.content)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server ImageNotAuthorized: Not authorized for image 4fb7c773-0ab3-4123-a6cc-2a9e38373793.</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>在代码里面看到这段注释</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">/usr/lib/python2<span class="number">.7</span>/site-packages/nova/image/glance.py</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_add_location</span><span class="params">(self, context, image_id, location)</span>:</span></span><br><span class="line">        <span class="comment"># 'show_multiple_locations' must be enabled in glance api conf file.</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> self._client.call(context, <span class="number">2</span>, <span class="string">'add_location'</span>, image_id,</span><br><span class="line">                                     location, &#123;&#125;)</span><br><span class="line">        <span class="keyword">except</span> glanceclient.exc.HTTPBadRequest:</span><br><span class="line">            _reraise_translated_exception()</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>需要打开show_multiple_locations配置，打开之后就OK了</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack nova glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/28/虚拟机镜像上传问题/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-k8s learn(16)" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/28/k8s learn(16)/">张磊k8s学习(16)</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/28/k8s learn(16)/" class="archive-article-date">
-  	<time datetime="2018-09-28T05:18:39.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/28/k8s learn(16)/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-k8s use cephfs as StorageClass" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/28/k8s use cephfs as StorageClass/">k8s use cephfs as StorageClass</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/28/k8s use cephfs as StorageClass/" class="archive-article-date">
-  	<time datetime="2018-09-28T05:16:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
-<li>同事给了一个任务，habor想使用cephfs做后端存储，同时想使用storageclass动态分配pv</li>
-</ul>
-<h1 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h1><ul>
-<li>下载external-storage<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># go get github.com/kubernetes-incubator/external-storage</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="创建cephfs命名空间"><a href="#创建cephfs命名空间" class="headerlink" title="创建cephfs命名空间"></a>创建cephfs命名空间</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># cat namespace.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Namespace</span><br><span class="line">metadata:</span><br><span class="line">   name: cephfs</span><br><span class="line">   labels:</span><br><span class="line">     name: cephfs</span><br><span class="line"></span><br><span class="line"># kubectl create –f namespace.yaml</span><br></pre></td></tr></table></figure>
-<h2 id="部署external-storage"><a href="#部署external-storage" class="headerlink" title="部署external-storage"></a>部署external-storage</h2><ul>
-<li><p>链接: <a href="https://github.com/kubernetes-incubator/external-storage/blob/master/ceph/cephfs/deploy/README.md" target="_blank" rel="noopener">https://github.com/kubernetes-incubator/external-storage/blob/master/ceph/cephfs/deploy/README.md</a></p>
-</li>
-<li><p>使用rbac role的 provider</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># cd $GOPATH/src/github.com/kubernetes-incubator/external-storage/ceph/cephfs/deploy</span><br><span class="line"># NAMESPACE=cephfs</span><br><span class="line"># sed -r -i &quot;s/namespace: [^ ]+/namespace: $NAMESPACE/g&quot; ./rbac/*.yaml</span><br><span class="line"># kubectl -n $NAMESPACE apply -f ./rbac –n cephfs</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>注：使用没有rbac部署的external-storage创建的pvc失败，后面再研究一下<br>这个会在cephfs命名空间下面创建一个pod，这个pod不会去调用cephfs创建pv</p>
-</li>
-</ul>
-<h2 id="创建cephfs的secret"><a href="#创建cephfs的secret" class="headerlink" title="创建cephfs的secret"></a>创建cephfs的secret</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># cat ceph-secret.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-secret</span><br><span class="line">data:</span><br><span class="line">  key: QVFCZDJIeGIyWmF6TlJBQTV4MnhvNDFuYU91VkhtUmJaTkEvOGc9PQ==</span><br><span class="line"></span><br><span class="line"># kubectl create –f ceph-secret.yaml –n cephfs</span><br></pre></td></tr></table></figure>
-<h2 id="创建StorageClass"><a href="#创建StorageClass" class="headerlink" title="创建StorageClass"></a>创建StorageClass</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># cat sc.yaml</span><br><span class="line"></span><br><span class="line">kind: StorageClass</span><br><span class="line">apiVersion: storage.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: cephfs</span><br><span class="line">provisioner: ceph.com/cephfs</span><br><span class="line">parameters:</span><br><span class="line">    monitors: 10.125.224.26:6789</span><br><span class="line">    adminId: admin</span><br><span class="line">    adminSecretName: ceph-secret</span><br><span class="line">adminSecretNamespace: &quot;cephfs&quot;</span><br><span class="line"></span><br><span class="line"># kubectl create –f sc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
-<h2 id="创建pvc"><a href="#创建pvc" class="headerlink" title="创建pvc"></a>创建pvc</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># cat pvc_with_sc.yaml</span><br><span class="line"></span><br><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: pvc-3</span><br><span class="line">  annotations:</span><br><span class="line">    volume.beta.kubernetes.io/storage-class: &quot;cephfs&quot;</span><br><span class="line">spec:</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 1Gi</span><br><span class="line"></span><br><span class="line"># kubectl create –f pvc_with_sc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
-<ul>
-<li>创建完pvc的时候会有pv创建，并且在cephfs中会有相应的目录创建<br><img src="1.png" alt="aa"><br>在cephfs根目录下的volumes/kubernetes/kubernetes这个文件夹下</li>
-</ul>
-<h2 id="使用pvc创建pod"><a href="#使用pvc创建pod" class="headerlink" title="使用pvc创建pod"></a>使用pvc创建pod</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"># cat pod_with_cephfs_pvc.yaml</span><br><span class="line"></span><br><span class="line">kind: Pod</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: test-pod1</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: test-pod1</span><br><span class="line">    image: docker.io/nginx</span><br><span class="line">    imagePullPolicy: IfNotPresent</span><br><span class="line">    volumeMounts:</span><br><span class="line">      - name: pvc-3</span><br><span class="line">        mountPath: &quot;/mnt&quot;</span><br><span class="line">  restartPolicy: &quot;Never&quot;</span><br><span class="line">  volumes:</span><br><span class="line">    - name: pvc-3</span><br><span class="line">      persistentVolumeClaim:</span><br><span class="line">        claimName: pvc-3</span><br><span class="line"></span><br><span class="line"># kubectl create –f pod_with_cephfs_pvc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
-<p><img src="2.png" alt="bb"><br>mount可以看到这个挂载关系</p>
-<h2 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h2><p>之前pod一直创建不起来，打开了mds的日志看了一下，说client少FILE_LAYOUT_V2这个特性<br>解决办法传送门：<br><a href="https://stackoverflow.com/questions/48026677/ceph-luminous-rbd-map-hangs-forever?rq=1" target="_blank" rel="noopener">https://stackoverflow.com/questions/48026677/ceph-luminous-rbd-map-hangs-forever?rq=1</a><br>用内核挂载文件系统内核有版本要求，我目前是3.10，我升到了最新的4.18，然后就ok了。</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">k8s cephfs</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/28/k8s use cephfs as StorageClass/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-glance local image add to ceph" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/27/glance local image add to ceph/">glance本地镜像补齐到ceph</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/27/glance local image add to ceph/" class="archive-article-date">
-  	<time datetime="2018-09-27T09:11:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-27</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>  由于同事的openstack部署脚本每次都会先部署本地存储的glance，然后上传一个镜像，测试创建虚拟机功能，然后在glance配置ceph后端存储，这会导致之前上传上去的镜像不能使用来创建虚拟机。</p>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>通过补齐镜像到ceph来实现，有一下几个步骤：<br>1.在安装glance的机器上面找到镜像的本地存储<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># cd /var/lib/glance/images/</span><br><span class="line"># ll</span><br><span class="line">total 12892</span><br><span class="line">-rw-r----- 1 glance glance 13200896 Sep 25 09:32 09913ab8-5b38-4fcb-880a-4efa23bb229a</span><br></pre></td></tr></table></figure></p>
-<p>2.上传镜像到ceph<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rbd import 09913ab8-5b38-4fcb-880a-4efa23bb229a  images/09913ab8-5b38-4fcb-880a-4efa23bb229a</span><br></pre></td></tr></table></figure></p>
-<p>3.创建镜像快照snap<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rbd snap create --image images/09913ab8-5b38-4fcb-880a-4efa23bb229a --snap snap images/09913ab8-5b38-4fcb-880a-4efa23bb229a@snap</span><br></pre></td></tr></table></figure></p>
-<p>4.修改glance数据库<br>glance数据库中有一个image_locations记录了glance的位置，是本地存储file，还是ceph rbd存储<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update image_locations set value=&quot;rbd://dc21b052-eae7-46bb-a90d-4818a029a99c/images/09913ab8-5b38-4fcb-880a-4efa23bb229a/snap&quot; where image_id = &quot;09913ab8-5b38-4fcb-880a-4efa23bb229a&quot;;</span><br></pre></td></tr></table></figure></p>
-<p>OK，大功告成</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/27/glance local image add to ceph/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-nova-Pike-changelog分析" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/26/nova-Pike-changelog分析/">nova Pike changelog分析</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/26/nova-Pike-changelog分析/" class="archive-article-date">
-  	<time datetime="2018-09-26T08:14:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="nova-16-0-1修改"><a href="#nova-16-0-1修改" class="headerlink" title="nova-16.0.1修改"></a><strong>nova-16.0.1修改</strong></h1><ul>
-<li><strong>Enable custom certificates for keystone communication</strong><br>允许keystone通信的自定义认证</li>
-<li><strong>Add @targets_cell for live_migrate_instance method in conductor</strong><br>live_migrate_instance增加了一个装饰器</li>
-<li><strong>Set error state after failed evacuation</strong><br>疏散失败的虚拟机设置成”error”状态，原来是”accepted”状态，如果这个状态的话在nova-compute重启之后会有问题</li>
-<li><strong>Functional test for regression bug #1713783</strong><br>增加功能测试，在没有机器可以疏散的时候设置虚拟机状态为”error”</li>
-<li><strong>Call terminate_connection when shelve_offloading</strong><br>增加虚拟机断开连接卷的处理，因为虚拟机在做了shelve操作之后进行unshelve的时候不一定还会调度到相同的机器上</li>
-<li><strong>Handle keypair not found from metadata server using cells</strong><br>修复bug <a href="https://bugs.launchpad.net/nova/+bug/1592167" target="_blank" rel="noopener">https://bugs.launchpad.net/nova/+bug/1592167</a><br>在使用cell的时候，如果删除了创建虚拟机时的keypair，那么在检索虚拟机的时候会报400错误</li>
-<li><strong>Target context when setting instance to ERROR when over quota</strong><br>通知虚拟机所在的cell，当虚拟机设置为error的时候</li>
-<li><strong>Move hash ring initialization to init_host() for ironic</strong><br>把hash环的初始化移到了ironic的init_host函数中</li>
-<li><strong>Remove dest node allocation if evacuate MoveClaim fails</strong><br>当疏散失败之后，需要移除目标机器的资源分配量，因为资源tracker不会自动去释放</li>
-<li><strong>De-duplicate two delete_allocation_for_* methods</strong><br>抽取迁移和疏散函数内部的公共代码部分，属于代码重构</li>
-<li><strong>Add a test to make sure failed evacuate cleans up dest allocation</strong><br>增加功能测试来验证在疏散操作失败之后会清理目的机器分配资源的清空</li>
-<li><strong>Add recreate test for evacuate claim failure</strong><br>增加重建功能测试，在目的主机MoveClaim失败之后上面的资源清空失败</li>
-<li><strong>Create allocations against forced dest host during evacuate</strong><br>在疏散操作期间，如果指定了目的主机，则忽略掉调度select_destinations()过程</li>
-<li><strong>Refactor out claim_resources_on_destination into a utility</strong><br>把claim_resources_on_destination函数提取出来放入到scheduler的工具文件中，属于代码重构</li>
-<li><strong>Add recreate test for forced host evacuate not setting dest allocations</strong><br>指定目标主机的疏散的功能测试</li>
-<li><strong>Provide hints when nova-manage db sync fails to sync cell0</strong><br>增加数据库同步cell0错误提示</li>
-<li><strong>Ensure instance mapping is updated in case of quota recheck fails</strong></li>
-</ul>
-<h1 id="nova-16-0-2修改"><a href="#nova-16-0-2修改" class="headerlink" title="nova-16.0.2修改"></a><strong>nova-16.0.2修改</strong></h1>
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/26/nova-Pike-changelog分析/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-每天5分钟go-2" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/21/每天5分钟go-2/">每天5分钟go(2)</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/21/每天5分钟go-2/" class="archive-article-date">
-  	<time datetime="2018-09-20T23:13:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-21</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="go语法"><a href="#go语法" class="headerlink" title="go语法"></a>go语法</h1><h2 id="标识符使用"><a href="#标识符使用" class="headerlink" title="标识符使用"></a>标识符使用</h2><ul>
-<li><p>用作空变量：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_ = x</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>包导入使用:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> _ xxx</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="空接口"><a href="#空接口" class="headerlink" title="空接口"></a>空接口</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">interface</span>&#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>任何类型都是空接口类型的实现类型</p>
-<h2 id="和–是语句不是表达式"><a href="#和–是语句不是表达式" class="headerlink" title="++和–是语句不是表达式"></a>++和–是语句不是表达式</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*p-- 等同于 (*p)--</span><br></pre></td></tr></table></figure>
-<h2 id="表达式"><a href="#表达式" class="headerlink" title="表达式"></a>表达式</h2><ul>
-<li><p>表达式类型</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">选择表达式 context.Speaker</span><br><span class="line">索引表达式 array[1]</span><br><span class="line">切片表达式 slice[1:2]</span><br><span class="line">类型断言 v1.(I1)</span><br><span class="line">调用表达式 v1.M1()</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>断言表达式<br>v1.(I1)</p>
-<ul>
-<li>如果v1是非接口值，这需要先转化成接口值，<br>interface{}(v1).(I1)</li>
-<li>类型断言失败会引发运行时恐慌，使用如下<br>var i1, ok = interface{}(v1).(I1)</li>
-</ul>
-</li>
-</ul>
-<h3 id="基本类型"><a href="#基本类型" class="headerlink" title="基本类型"></a>基本类型</h3><ul>
-<li>有18种基础类型<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rune类型是专门用来存储Unicode编码的单个字符</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>rune有5种表示形式</p>
-<ul>
-<li><p>字符串字面量有两种表示形式</p>
-<ul>
-<li>原生字符串字面量（`）：所见即所得</li>
-<li>解释型字符串字面量（”）：解释转义字符</li>
-</ul>
-</li>
-<li><p>字符串的值不可变</p>
-</li>
-<li><p>常量只能使用基础类型，常量需使用const</p>
-</li>
-</ul>
-<h3 id="高级类型"><a href="#高级类型" class="headerlink" title="高级类型"></a>高级类型</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">数组， 值类型</span><br><span class="line">切片 引用类型，空值为nil</span><br><span class="line">字典 map，引用类型，空值为nil</span><br><span class="line">函数和方法</span><br><span class="line">接口</span><br><span class="line">结构体 ，值类型</span><br></pre></td></tr></table></figure>
-<ul>
-<li>make可以初始化切片，字典和通道</li>
-<li>slice不需要长度值</li>
-<li><p>map示例<br>var a = map[string]bool{}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">表示key为string，value为bool，&#123;&#125;表示空值</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>map删除<br>delete(a, “192.168.0.1”)</p>
-</li>
-<li>函数和方法<br>函数就是普通的函数<br>方法是函数的一种，实际上就是与某个数据类型关联在一起的函数<ul>
-<li>方法分为<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">值方法</span><br><span class="line">指针方法</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="流程控制"><a href="#流程控制" class="headerlink" title="流程控制"></a>流程控制</h3><p>代码块<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">全局代码块</span><br><span class="line">代码包代码块</span><br><span class="line">源码文件代码块</span><br><span class="line">函数或者for循环</span><br></pre></td></tr></table></figure></p>
-<p>range可以迭代string，map，数组，管道</p>
-<h3 id="painc"><a href="#painc" class="headerlink" title="painc"></a>painc</h3><p>运行时错误是runtime.Error引起的</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/21/每天5分钟go-2/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="ceph-osd-pg-sum" data-title="ceph osd pg统计" data-url="http://yoursite.com/2019/01/05/ceph-osd-pg-sum/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
 
   
   
-    <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/2/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/4/">Next &raquo;</a>
-    </nav>
+  
+
+  
+
+  
+
   
 
 
@@ -1128,8 +355,8 @@
     <script>
 	var yiliaConfig = {
 		mathjax: false,
-		isHome: true,
-		isPost: false,
+		isHome: false,
+		isPost: true,
 		isArchive: false,
 		isTag: false,
 		isCategory: false,
