@@ -6,15 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Archives | 小甲师兄</title>
+  <title>cephfs部署，创建和删除 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="小甲师兄">
-<meta property="og:url" content="http://yoursite.com/archives/page/2/index.html">
+  <meta name="description" content="cephfs部署——————————————————————————————————————————————————————————————————————————  1.ceph-deploy安装 1yum install ceph-deploy  2.ceph mds服务安装进入到/etc/ceph目录 12ceph-deploy gatherkeys &amp;#123;hostname&amp;#125;">
+<meta name="keywords" content="cephfs">
+<meta property="og:type" content="article">
+<meta property="og:title" content="cephfs部署，创建和删除">
+<meta property="og:url" content="http://yoursite.com/2019/01/05/cephfs-use/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="cephfs部署——————————————————————————————————————————————————————————————————————————  1.ceph-deploy安装 1yum install ceph-deploy  2.ceph mds服务安装进入到/etc/ceph目录 12ceph-deploy gatherkeys &amp;#123;hostname&amp;#125;">
 <meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2019-01-05T05:55:09.670Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄">
+<meta name="twitter:title" content="cephfs部署，创建和删除">
+<meta name="twitter:description" content="cephfs部署——————————————————————————————————————————————————————————————————————————  1.ceph-deploy安装 1yum install ceph-deploy  2.ceph mds服务安装进入到/etc/ceph目录 12ceph-deploy gatherkeys &amp;#123;hostname&amp;#125;">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -148,405 +153,225 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-cephfs-use" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      cephfs部署，创建和删除
+    </h1>
+  
+
+        
+        <a href="/2019/01/05/cephfs-use/" class="archive-article-date">
+  	<time datetime="2019-01-05T05:34:58.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
+</a>
+        
+      </header>
     
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="cephfs部署"><a href="#cephfs部署" class="headerlink" title="cephfs部署"></a>cephfs部署</h1><p>——————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li><p>1.ceph-deploy安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install ceph-deploy</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2.ceph mds服务安装<br>进入到/etc/ceph目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ceph-deploy gatherkeys &#123;hostname&#125;</span><br><span class="line">ceph-deploy mds create &#123;hostmane&#125;:&#123;服务名字&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>注意可以在一个节点上面启动多个mds服务，一般推荐一个机器上面跑一个mds服务</p>
+<h1 id="cephfs创建"><a href="#cephfs创建" class="headerlink" title="cephfs创建"></a>cephfs创建</h1><p>—————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li>1.创建cephfs需要使用的池<br>创建数据池<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph osd pool create gkk_data 20 20</span><br><span class="line">pool &apos;gkk_data&apos; created</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>创建元数据池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph osd pool create gkk_metadata 20 20</span><br><span class="line">pool &apos;gkk_metadata&apos; created</span><br></pre></td></tr></table></figure></p>
+<p>创建cephfs文件系统<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph fs new gkk gkk_metadata gkk_data</span><br><span class="line">new fs with metadata pool 7 and data pool 8</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>2.开启多文件系统模式<br>默认情况ceph集群只允许创建一套cephfs文件系统，但是可以打开一个flag就可以开始多文件系统模式<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph fs flag set enable_multiple true --yes-i-really-mean-it</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>打开flag之后创建多个cephfs文件系统如下所示<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph -s</span><br><span class="line">    cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line">     health HEALTH_OK</span><br><span class="line">     monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">            election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">      fsmap e68: ceph-1/1/1 up gkk-1/1/1 up &#123;[ceph:0]=con03=up:active,[gkk:0]=con01=up:active&#125;, 1 up:standby</span><br><span class="line">     osdmap e255: 3 osds: 3 up, 3 in</span><br><span class="line">            flags sortbitwise,require_jewel_osds</span><br><span class="line">      pgmap v1934353: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">            182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">                4240 active+clean</span><br><span class="line">  client io 0 B/s rd, 5623 B/s wr, 0 op/s rd, 0 op/s wr</span><br></pre></td></tr></table></figure></p>
+<p>可以看到笔者的集群中有三个mds，有两个cephfs文件系统，名字分别叫ceph和gkk，其中他们分别占用一台mds用来管理元数据服务，分别为con03和con01</p>
+<ul>
+<li>3.配置一个文件系统使用多个mds服务，实现使用集群来管理文件系统的元数据<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ceph fs set ceph allow_multimds true --yes-i-really-mean-it</span><br><span class="line">ceph fs set ceph max_mds 3</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>此时集群如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line"> health HEALTH_OK</span><br><span class="line"> monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">        election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">  fsmap e74: ceph-2/2/2 up gkk-1/1/1 up &#123;[ceph:0]=con03=up:active,[ceph:1]=con02=up:active,[gkk:0]=con01=up:active&#125;</span><br><span class="line"> osdmap e255: 3 osds: 3 up, 3 in</span><br><span class="line">        flags sortbitwise,require_jewel_osds</span><br><span class="line">  pgmap v1934434: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">        182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">            4240 active+clean</span><br><span class="line">client io 10459 B/s rd, 2324 B/s wr, 12 op/s rd, 0 op/s wr</span><br></pre></td></tr></table></figure></p>
+<p>可以看到集群没有standby的元数据服务了</p>
+<h1 id="cephfs删除"><a href="#cephfs删除" class="headerlink" title="cephfs删除"></a>cephfs删除</h1><p>—————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li><p>1.stop 所有的mds服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop ceph-mds@&#123;hostname&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2.删除文件系统</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ceph fs rm ceph --yes-i-really-mean-it</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>此时看一下集群状态<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph -s</span><br><span class="line">    cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line">     health HEALTH_OK</span><br><span class="line">     monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">            election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">     osdmap e264: 3 osds: 3 up, 3 in</span><br><span class="line">            flags sortbitwise,require_jewel_osds</span><br><span class="line">      pgmap v1934517: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">            182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">                4240 active+clean</span><br><span class="line">  client io 0 B/s rd, 9829 B/s wr, 0 op/s rd, 1 op/s wr</span><br></pre></td></tr></table></figure></p>
+<p>之前fsmap已经没有了</p>
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
       
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2018" class="archive-year">2018</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/16/analysis-vm-delete-procedure/" class="archive-article-date">
-  	<time datetime="2018-10-16T13:30:59.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-16</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/16/analysis-vm-delete-procedure/">虚拟机删除流程分析</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">cephfs</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2019/01/05/cephfs-use/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/13/go-learn-4/" class="archive-article-date">
-  	<time datetime="2018-10-13T08:41:51.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-13</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2018/12/20/dashboard-add-download-image-function/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">dashboard下载镜像</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/13/go-learn-4/">每天5分钟go(4)</a>
-    </h1>
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="cephfs-use" data-title="cephfs部署，创建和删除" data-url="http://yoursite.com/2019/01/05/cephfs-use/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+  
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/12/miss-image-base-image-ref/" class="archive-article-date">
-  	<time datetime="2018-10-12T13:05:03.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-12</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/12/miss-image-base-image-ref/">rebuild虚拟机之后做快照少base_image_ref信息</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/09/k8s-learn-10/" class="archive-article-date">
-  	<time datetime="2018-10-09T14:44:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-09</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/09/k8s-learn-10/">k8s learn(10)kubeadm使用</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/09/virsh-domain/" class="archive-article-date">
-  	<time datetime="2018-10-09T13:34:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-09</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/09/virsh-domain/">virsh-domain.c文件下命令分析</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">libvirt</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/08/k8s-learn-8/" class="archive-article-date">
-  	<time datetime="2018-10-08T14:21:46.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-08</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/08/k8s-learn-8/">k8s learn(8)重新认识Docker容器</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/06/go-learn-3/" class="archive-article-date">
-  	<time datetime="2018-10-06T07:49:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-06</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/06/go-learn-3/">每天5分钟go-3</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/05/four-cases-when-boot-from-volume/" class="archive-article-date">
-  	<time datetime="2018-10-05T08:18:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-05</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/05/four-cases-when-boot-from-volume/">卷启动虚拟机的四种情况</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack nova cinder glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/03/k8s-learn-7/" class="archive-article-date">
-  	<time datetime="2018-10-03T12:26:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-03</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/03/k8s-learn-7/">k8s learn(7)深入理解容器镜像</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/10/03/k8s-learn-6/" class="archive-article-date">
-  	<time datetime="2018-10-03T07:50:35.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-03</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/10/03/k8s-learn-6/">k8s learn(6) 隔离与限制</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
-
-    
-    <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/archives/">&laquo; Prev</a><a class="page-number" href="/archives/">1</a><span class="page-number current">2</span><a class="page-number" href="/archives/page/3/">3</a><a class="extend next" rel="next" href="/archives/page/3/">Next &raquo;</a>
-    </nav>
   
 
 
@@ -570,8 +395,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,
