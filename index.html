@@ -679,7 +679,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/11/29/linux-optimization-load-average/">linux optimization:load average</a>
+      <a class="article-title" href="/2018/11/29/linux-optimization-load-average/">linux性能优化系列（1）平均负载</a>
     </h1>
   
 
@@ -692,7 +692,30 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h1 id="获取平均负载"><a href="#获取平均负载" class="headerlink" title="获取平均负载"></a>获取平均负载</h1><p>————————————————————————————————————————————————————————————————————————————<br>笔者一般使用两条命令获取平均负载:<br>uptime<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 ~]# uptime</span><br><span class="line"> 15:37:00 up 814 days, 22:02,  4 users,  load average: 0.87, 0.83, 0.82</span><br></pre></td></tr></table></figure></p>
+<p>top<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">top - 15:37:37 up 814 days, 22:02,  4 users,  load average: 1.01, 0.87, 0.84</span><br><span class="line">Tasks: 644 total,   2 running, 642 sleeping,   0 stopped,   0 zombie</span><br><span class="line">%Cpu(s):  4.2 us,  0.9 sy,  0.0 ni, 94.8 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st</span><br><span class="line">KiB Mem : 65858136 total,  8405052 free, 37853144 used, 19599940 buff/cache</span><br><span class="line">KiB Swap:        0 total,        0 free,        0 used. 23213220 avail Mem</span><br><span class="line"></span><br><span class="line">  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                                                                                                  </span><br><span class="line">31919 nova      20   0 6284804 108152  16248 R  35.3  0.2  52:59.05 nova-compute                                                                                                                             </span><br><span class="line">32023 nova      20   0  499104  95988   3664 S  23.5  0.1   9:26.80 nova-conductor                                                                                                                           </span><br><span class="line">32005 nova      20   0  499616  96448   3660 S  17.6  0.1   9:23.34 nova-conductor                                                                                                                           </span><br><span class="line">32014 nova      20   0  499288  96220   3664 S  17.6  0.1   9:19.99 nova-conductor                                                                                                                           </span><br><span class="line">32025 nova      20   0  499008  95772   3664 S  17.6  0.1   9:24.99 nova-conductor                                                                                                                           </span><br><span class="line">21167 root      20   0  147744   2452   1388 R  11.8  0.0   0:00.02 top                                                                                                                                      </span><br><span class="line">32028 nova      20   0  499692  96616   3660 S  11.8  0.1  10:28.59 nova-conductor                                                                                                                           </span><br><span class="line">   72 root      20   0       0      0      0 S   5.9  0.0  90:48.89 ksoftirqd/3                                                                                                                              </span><br><span class="line"> 7329 root      20   0   41992  23172  21824 S   5.9  0.0  30:39.54 sap1007                                                                                                                                  </span><br><span class="line"> 7893 qemu      20   0 10.171g 5.320g  12468 S   5.9  8.5  92:06.55 qemu-kvm                                                                                                                                 </span><br><span class="line">10461 qemu      20   0 6319884 224920  12192 S   5.9  0.3  80:59.01 qemu-kvm                                                                                                                                 </span><br><span class="line">13771 glance    20   0  714392  66352   5760 S   5.9  0.1 557:17.33 glance-api                                                                                                                               </span><br><span class="line">31637 mysql     20   0 15.114g 3.001g 138444 S   5.9  4.8   2315:34 mysqld                                                                                                                                   </span><br><span class="line">32002 nova      20   0  498576  95528   3664 S   5.9  0.1  10:26.97 nova-conductor                                                                                                                           </span><br><span class="line">32004 nova      20   0  499644  96488   3664 S   5.9  0.1  10:43.25 nova-conductor                                                                                                                           </span><br><span class="line">32007 nova      20   0  499436  96344   3660 S   5.9  0.1  10:26.56 nova-conductor                                                                                                                           </span><br><span class="line">32021 nova      20   0  498600  95548   3660 S   5.9  0.1   9:46.67 nova-conductor                                                                                                                           </span><br><span class="line">    1 root      20   0  338680   4888   1940 S   0.0  0.0  80:02.58 systemd                                                                                                                                  </span><br><span class="line">    2 root      20   0       0      0      0 S   0.0  0.0   0:42.26 kthreadd                                                                                                                                 </span><br><span class="line">    3 root      20   0       0      0      0 S   0.0  0.0 132:42.57 ksoftirqd/0                                                                                                                              </span><br><span class="line">    5 root       0 -20       0      0      0 S   0.0  0.0   0:00.00 kworker/0:0H                                                                                                                             </span><br><span class="line">    8 root      rt   0       0      0      0 S   0.0  0.0  10:13.38 migration/0                                                                                                                              </span><br><span class="line">    9 root      20   0       0      0      0 S   0.0  0.0   0:00.01 rcu_bh                                                                                                                                   </span><br><span class="line">   10 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/0                                                                                                                                  </span><br><span class="line">   11 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/1                                                                                                                                  </span><br><span class="line">   12 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/2                                                                                                                                  </span><br><span class="line">   13 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/3                                                                                                                                  </span><br><span class="line">   14 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/4                                                                                                                                  </span><br><span class="line">   15 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/5                                                                                                                                  </span><br><span class="line">   16 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/6                                                                                                                                  </span><br><span class="line">   17 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/7                                                                                                                                  </span><br><span class="line">   18 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/8                                                                                                                                  </span><br><span class="line">   19 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/9                                                                                                                                  </span><br><span class="line">   20 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/10                                                                                                                                 </span><br><span class="line">   21 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/11                                                                                                                                 </span><br><span class="line">   22 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/12                                                                                                                                 </span><br><span class="line">   23 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/13                                                                                                                                 </span><br><span class="line">   24 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/14                                                                                                                                 </span><br><span class="line">   25 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/15                                                                                                                                 </span><br><span class="line">   26 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/16                                                                                                                                 </span><br><span class="line">   27 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/17                                                                                                                                 </span><br><span class="line">   28 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/18                                                                                                                                 </span><br><span class="line">   29 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/19                                                                                                                                 </span><br><span class="line">   30 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/20                                                                                                                                 </span><br><span class="line">   31 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/21                                                                                                                                 </span><br><span class="line">   32 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/22                                                                                                                                 </span><br><span class="line">   33 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/23                                                                                                                                 </span><br><span class="line">   34 root      20   0       0      0      0 S   0.0  0.0   5143:32 rcu_sched</span><br></pre></td></tr></table></figure></p>
+<p>负载就是上面的load average: 0.87, 0.83, 0.82，分别表示过去一分钟，五分钟，十五分钟的负载</p>
+<h1 id="负载代表什么"><a href="#负载代表什么" class="headerlink" title="负载代表什么"></a>负载代表什么</h1><p>——————————————————————————————————————————————————————————————————————————————<br>上面的负载值代表的其实是系统中的活跃进程数，包括正在运行和不可中断运行（比如一些内核态的写磁盘调度）</p>
+<h1 id="如何判断负载是高还是低"><a href="#如何判断负载是高还是低" class="headerlink" title="如何判断负载是高还是低"></a>如何判断负载是高还是低</h1><p>——————————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li><p>1.首先需要查看系统中有多少cpu</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 ~]# grep &quot;model name&quot; /proc/cpuinfo | wc -l</span><br><span class="line">24</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2.比较负载值和cpu数目<br>如果负载值大于cpu数目，name系统就处于超负载状态</p>
+</li>
+</ul>
+<h1 id="查看分析负载工具"><a href="#查看分析负载工具" class="headerlink" title="查看分析负载工具"></a>查看分析负载工具</h1><p>—————————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li><p>1.mpstat<br>查看多个cpu的性能使用情况</p>
+</li>
+<li><p>2.pidstat<br>查看进程的性能</p>
+</li>
+</ul>
+<h1 id="压测工具"><a href="#压测工具" class="headerlink" title="压测工具"></a>压测工具</h1><p>—————————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li>1.stress<br>这个stress可以压测cpu，内存和磁盘io</li>
+</ul>
+
       
 
       
@@ -700,6 +723,17 @@
     <div class="article-info article-info-index">
       
       
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">linux 性能</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
       
 
       
@@ -1110,19 +1144,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1130,11 +1156,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1142,7 +1164,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1150,15 +1172,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1166,7 +1180,27 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1175,6 +1209,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
             
             <div class="clearfix"></div>
