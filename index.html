@@ -170,7 +170,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>neutron作为openstack的核心组件用来管理网络，比如network，subnet和port核心资源，lbaas，fwaas等扩展资源，但是对于用户来说最基础的是ip，以及这个ip所在的网络，这部分功能是由neutron的ipam管理。</p>
+        <p><img src="c.png" alt="c"><br>neutron作为openstack的核心组件用来管理网络，比如network，subnet和port核心资源，lbaas，fwaas等扩展资源，但是对于用户来说最基础的是ip，以及这个ip所在的网络，这部分功能是由neutron的ipam管理。</p>
 <h1 id="哪些地方需要ip"><a href="#哪些地方需要ip" class="headerlink" title="哪些地方需要ip"></a>哪些地方需要ip</h1><p>————————————————————————————————————————————————————————————————————————————<br>neutron哪些地方用需要ip？too many，比如说虚拟机的网卡，路由器的外部网关、内部接口，浮动ip，dhcp port，ha路由器的管理口，其他组件lbaas，manila等都需要ip，这些ip的分配其实在neutron看来都是创建port资源，只是各种device owner不同，都需要通过neutron的ipam分配和管理。</p>
 <h1 id="IPAM是个啥"><a href="#IPAM是个啥" class="headerlink" title="IPAM是个啥"></a>IPAM是个啥</h1><p>————————————————————————————————————————————————————————————————————————————<br>IPAM（IP Address Management）,也可以叫做ip地址管理子系统。L版neutron的ipam是一个分水岭，L版之前ip的管理只能使用neutron本身的数据库，分配和回收都是通过数据库来实现。L版开始，社区对IPAM进行了重构，把ip的分配和释放以及子网的增删改查作为标准的接口提取出来，使用driver的方式来接入各种拥有ip和子网管理功能的系统，这样就实现了IPAM可插拔实现，接入用户一些现有的ip管理系统，而对neutron其他功能基本没有影响，L版之前使用数据库实现的ip管理作为了IPAM一种默认的driver。<br>k版neutron的ipam目录下结构<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ipam(keystone_admin)]# ll</span><br><span class="line">total 32</span><br><span class="line">-rw-r--r-- 1 root root  7428 Aug 21  2015 __init__.py</span><br><span class="line">-rw-r--r-- 1 root root  4124 Aug 21  2015 driver.py</span><br><span class="line">-rw-r--r-- 1 root root 16282 Aug 21  2015 subnet_alloc.py</span><br></pre></td></tr></table></figure></p>
 <p>P版neutron的ipam目录下结构<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 /usr/lib/python2.7/site-packages/neutron/ipam]# ll</span><br><span class="line">total 52</span><br><span class="line">-rw-r--r-- 1 root root     0 Aug 31 16:29 __init__.py</span><br><span class="line">-rw-r--r-- 1 root root  6733 Aug 31 16:29 driver.py</span><br><span class="line">drwxr-xr-x 4 root root  4096 Jan 24 14:31 drivers</span><br><span class="line">-rw-r--r-- 1 root root  2916 Aug 31 16:29 exceptions.py</span><br><span class="line">-rw-r--r-- 1 root root 11534 Aug 31 16:29 requests.py</span><br><span class="line">-rw-r--r-- 1 root root 19006 Aug 31 16:29 subnet_alloc.py</span><br><span class="line">-rw-r--r-- 1 root root  2616 Aug 31 16:29 utils.py</span><br></pre></td></tr></table></figure></p>
@@ -1123,11 +1123,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1143,6 +1143,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
@@ -1151,7 +1155,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1168,10 +1172,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1195,7 +1195,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
             
             <div class="clearfix"></div>
