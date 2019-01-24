@@ -150,6 +150,85 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-neutron-ipam" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/01/24/neutron-ipam/">neutron的ipam还可以这么使用</a>
+    </h1>
+  
+
+        
+        <a href="/2019/01/24/neutron-ipam/" class="archive-article-date">
+  	<time datetime="2019-01-24T03:35:41.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-24</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>neutron作为openstack的核心组件用来管理网络，比如network，subnet和port核心资源，lbaas，fwaas等扩展资源，但是对于用户来说最基础的是ip，以及这个ip所在的网络，这部分功能是由neutron的ipam管理。</p>
+<h1 id="哪些地方需要ip"><a href="#哪些地方需要ip" class="headerlink" title="哪些地方需要ip"></a>哪些地方需要ip</h1><p>————————————————————————————————————————————————————————————————————————————<br>neutron哪些地方用需要ip？too many，比如说虚拟机的网卡，路由器的外部网关、内部接口，浮动ip，dhcp port，ha路由器的管理口，其他组件lbaas，manila等都需要ip，这些ip的分配其实在neutron看来都是创建port资源，只是各种device owner不同，都需要通过neutron的ipam分配和管理。</p>
+<h1 id="IPAM是个啥"><a href="#IPAM是个啥" class="headerlink" title="IPAM是个啥"></a>IPAM是个啥</h1><p>————————————————————————————————————————————————————————————————————————————<br>IPAM（IP Address Management）,也可以叫做ip地址管理子系统。L版neutron的ipam是一个分水岭，L版之前ip的管理只能使用neutron本身的数据库，分配和回收都是通过数据库来实现。L版开始，社区对IPAM进行了重构，把ip的分配和释放以及子网的增删改查作为标准的接口提取出来，使用driver的方式来接入各种拥有ip和子网管理功能的系统，这样就实现了IPAM可插拔实现，接入用户一些现有的ip管理系统，而对neutron其他功能基本没有影响，L版之前使用数据库实现的ip管理作为了IPAM一种默认的driver。<br>k版neutron的ipam目录下结构<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ipam(keystone_admin)]# ll</span><br><span class="line">total 32</span><br><span class="line">-rw-r--r-- 1 root root  7428 Aug 21  2015 __init__.py</span><br><span class="line">-rw-r--r-- 1 root root  4124 Aug 21  2015 driver.py</span><br><span class="line">-rw-r--r-- 1 root root 16282 Aug 21  2015 subnet_alloc.py</span><br></pre></td></tr></table></figure></p>
+<p>P版neutron的ipam目录下结构<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 /usr/lib/python2.7/site-packages/neutron/ipam]# ll</span><br><span class="line">total 52</span><br><span class="line">-rw-r--r-- 1 root root     0 Aug 31 16:29 __init__.py</span><br><span class="line">-rw-r--r-- 1 root root  6733 Aug 31 16:29 driver.py</span><br><span class="line">drwxr-xr-x 4 root root  4096 Jan 24 14:31 drivers</span><br><span class="line">-rw-r--r-- 1 root root  2916 Aug 31 16:29 exceptions.py</span><br><span class="line">-rw-r--r-- 1 root root 11534 Aug 31 16:29 requests.py</span><br><span class="line">-rw-r--r-- 1 root root 19006 Aug 31 16:29 subnet_alloc.py</span><br><span class="line">-rw-r--r-- 1 root root  2616 Aug 31 16:29 utils.py</span><br></pre></td></tr></table></figure></p>
+<h1 id="ip和子网创建流程"><a href="#ip和子网创建流程" class="headerlink" title="ip和子网创建流程"></a>ip和子网创建流程</h1><p>————————————————————————————————————————————————————————————————————————————<br>IPAM只管理ip和子网，网络不属于IPAM管理，对于ip和子网的管理分别用一张架构图以简要的表明其流程。<br><img src="a.png" alt="a"><br>port创建流程图<br><img src="b.png" alt="b"><br>子网创建流程图</p>
+<h1 id="IPAM-Tstack-driver"><a href="#IPAM-Tstack-driver" class="headerlink" title="IPAM Tstack driver"></a>IPAM Tstack driver</h1><p>————————————————————————————————————————————————————————————————————————————<br>Tstack有自研的ip系统管理平台，用于管理Tstack整个平台ip，子网，网络以及其他资源，比IPAM默认的db drier更加丰富，出于项目的考虑和neutron驱动设计的初衷，都需要设计实现Tstack自己的IPAM驱动。通过实现IPAM抽象出来的ip和子网的管理接口来实现Tstack的驱动，根据后端ip管理系统的不同，driver的实现细节可能不太一样。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">openstack neutron</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/01/24/neutron-ipam/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-rbd-lock" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -181,7 +260,7 @@
 </li>
 </ul>
 <p>同时在ceph的某一个池中生成一个rbd，作为rbd锁，类似文件锁<br>大致思想是每一个nova-compute在准备启动flatten操作前都去rbd锁申请一下排他锁，只有第一个申请的才能申请到，其他nova-compute要执行flatten时，都会申请不到报出错，这样就保证了nova-compute并发flatten，导致ceph压力过大</p>
-<h1 id="具体实现"><a href="#具体实现" class="headerlink" title="具体实现"></a>具体实现</h1><p>———————————————————————————————————————————————————————————————————————————<br>为什么实现上锁，解锁，以及异常也能释放锁，决定封装一个rbdlock类，使用python的with操作<br>实现大致如下：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">RbdLock</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, pool, name, driver)</span>:</span></span><br><span class="line">        self.pool = pool</span><br><span class="line">        self.name = name</span><br><span class="line">        self.driver = driver</span><br><span class="line">        self.lock_time = <span class="keyword">None</span></span><br><span class="line">        self.volume = <span class="keyword">None</span></span><br><span class="line">        self.ioctx = <span class="keyword">None</span></span><br><span class="line">        self.client = <span class="keyword">None</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__enter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.lock()</span><br><span class="line">        <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">lock</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.driver.lock_rbd_exist(CONF.libvirt.portrait_image_pool, <span class="string">"flattening_lock"</span>):</span><br><span class="line">            LOG.info(<span class="string">"periodic: create lock rbd use to lock flattening opertion"</span>)</span><br><span class="line">            self.driver.create_lock_rbd(CONF.libvirt.portrait_image_pool, <span class="string">"flattening_lock"</span>)</span><br><span class="line"></span><br><span class="line">        start_time = time.time()</span><br><span class="line">        self.client = rados.Rados(rados_id=CONF.libvirt.rbd_user,</span><br><span class="line">                                  conffile=CONF.libvirt.images_rbd_ceph_conf)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.client.connect()</span><br><span class="line">            self.ioctx = self.client.open_ioctx(self.pool)</span><br><span class="line">        <span class="keyword">except</span> rados.Error:</span><br><span class="line">            <span class="comment"># shutdown cannot raise an exception</span></span><br><span class="line">            self.client.shutdown()</span><br><span class="line">            <span class="keyword">raise</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.volume = rbd.Image(self.ioctx, self.name)</span><br><span class="line">        <span class="keyword">except</span> rbd.ImageNotFound:</span><br><span class="line">            <span class="keyword">with</span> excutils.save_and_reraise_exception():</span><br><span class="line">                LOG.debug(<span class="string">"rbd image %s does not exist"</span>, self.name)</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line">        <span class="keyword">except</span> rbd.Error:</span><br><span class="line">            <span class="keyword">with</span> excutils.save_and_reraise_exception():</span><br><span class="line">                LOG.exception(<span class="string">"error opening rbd image %s"</span> % self.name)</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.trylock()</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.volume.close()</span><br><span class="line">            <span class="keyword">finally</span>:</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line">                <span class="keyword">raise</span></span><br><span class="line"></span><br><span class="line">        self.lock_time = time.time()</span><br><span class="line">        LOG.info(<span class="string">'Acquired rbd lock "%s/%s" after waiting %0.3fs'</span>, self.pool, self.name,</span><br><span class="line">                 (self.lock_time - start_time))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">unlock</span><span class="params">(self)</span>:</span></span><br><span class="line">        LOG.info(<span class="string">"unlock rbd lock..."</span>)</span><br><span class="line">        <span class="keyword">if</span> self.lock_time <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> Exception(<span class="string">'Unable to release an unacquired "%s/%s" lock'</span> % (self.pool, self.name))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            unlock_time = time.time()</span><br><span class="line">            LOG.debug(<span class="string">'Releasing rbd lock "%s/%s" after holding it for %0.3fs'</span>,</span><br><span class="line">                      self.pool, self.name, (unlock_time - self.lock_time))</span><br><span class="line">            self.tryunlock()</span><br><span class="line">            self.lock_time = <span class="keyword">None</span></span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            LOG.exception(<span class="string">'Could not unlock the acquired lock "%s/%s"'</span> % (self.pool, self.name))</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.volume.close()</span><br><span class="line">            <span class="keyword">finally</span>:</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">trylock</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.volume.lock_acquire(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">tryunlock</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.volume.lock_release()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__exit__</span><span class="params">(self, exc_type, exc_value, exc_tb)</span>:</span></span><br><span class="line">        self.unlock()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">disconnect_from_rados</span><span class="params">(self)</span>:</span></span><br><span class="line">        LOG.info(<span class="string">'disconnect from "%s/%s"'</span> % (self.pool, self.name))</span><br><span class="line">        self.ioctx.close()</span><br><span class="line">        self.client.shutdown()</span><br></pre></td></tr></table></figure></p>
+<h1 id="具体实现"><a href="#具体实现" class="headerlink" title="具体实现"></a>具体实现</h1><p>———————————————————————————————————————————————————————————————————————————<br>为了实现上锁，解锁，以及异常也能释放锁，决定封装一个rbdlock类，使用python的with操作<br>实现大致如下：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">RbdLock</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, pool, name, driver)</span>:</span></span><br><span class="line">        self.pool = pool</span><br><span class="line">        self.name = name</span><br><span class="line">        self.driver = driver</span><br><span class="line">        self.lock_time = <span class="keyword">None</span></span><br><span class="line">        self.volume = <span class="keyword">None</span></span><br><span class="line">        self.ioctx = <span class="keyword">None</span></span><br><span class="line">        self.client = <span class="keyword">None</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__enter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.lock()</span><br><span class="line">        <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">lock</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.driver.lock_rbd_exist(CONF.libvirt.portrait_image_pool, <span class="string">"flattening_lock"</span>):</span><br><span class="line">            LOG.info(<span class="string">"periodic: create lock rbd use to lock flattening opertion"</span>)</span><br><span class="line">            self.driver.create_lock_rbd(CONF.libvirt.portrait_image_pool, <span class="string">"flattening_lock"</span>)</span><br><span class="line"></span><br><span class="line">        start_time = time.time()</span><br><span class="line">        self.client = rados.Rados(rados_id=CONF.libvirt.rbd_user,</span><br><span class="line">                                  conffile=CONF.libvirt.images_rbd_ceph_conf)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.client.connect()</span><br><span class="line">            self.ioctx = self.client.open_ioctx(self.pool)</span><br><span class="line">        <span class="keyword">except</span> rados.Error:</span><br><span class="line">            <span class="comment"># shutdown cannot raise an exception</span></span><br><span class="line">            self.client.shutdown()</span><br><span class="line">            <span class="keyword">raise</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.volume = rbd.Image(self.ioctx, self.name)</span><br><span class="line">        <span class="keyword">except</span> rbd.ImageNotFound:</span><br><span class="line">            <span class="keyword">with</span> excutils.save_and_reraise_exception():</span><br><span class="line">                LOG.debug(<span class="string">"rbd image %s does not exist"</span>, self.name)</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line">        <span class="keyword">except</span> rbd.Error:</span><br><span class="line">            <span class="keyword">with</span> excutils.save_and_reraise_exception():</span><br><span class="line">                LOG.exception(<span class="string">"error opening rbd image %s"</span> % self.name)</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.trylock()</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.volume.close()</span><br><span class="line">            <span class="keyword">finally</span>:</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line">                <span class="keyword">raise</span></span><br><span class="line"></span><br><span class="line">        self.lock_time = time.time()</span><br><span class="line">        LOG.info(<span class="string">'Acquired rbd lock "%s/%s" after waiting %0.3fs'</span>, self.pool, self.name,</span><br><span class="line">                 (self.lock_time - start_time))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">unlock</span><span class="params">(self)</span>:</span></span><br><span class="line">        LOG.info(<span class="string">"unlock rbd lock..."</span>)</span><br><span class="line">        <span class="keyword">if</span> self.lock_time <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> Exception(<span class="string">'Unable to release an unacquired "%s/%s" lock'</span> % (self.pool, self.name))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            unlock_time = time.time()</span><br><span class="line">            LOG.debug(<span class="string">'Releasing rbd lock "%s/%s" after holding it for %0.3fs'</span>,</span><br><span class="line">                      self.pool, self.name, (unlock_time - self.lock_time))</span><br><span class="line">            self.tryunlock()</span><br><span class="line">            self.lock_time = <span class="keyword">None</span></span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            LOG.exception(<span class="string">'Could not unlock the acquired lock "%s/%s"'</span> % (self.pool, self.name))</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.volume.close()</span><br><span class="line">            <span class="keyword">finally</span>:</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">trylock</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.volume.lock_acquire(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">tryunlock</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.volume.lock_release()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__exit__</span><span class="params">(self, exc_type, exc_value, exc_tb)</span>:</span></span><br><span class="line">        self.unlock()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">disconnect_from_rados</span><span class="params">(self)</span>:</span></span><br><span class="line">        LOG.info(<span class="string">'disconnect from "%s/%s"'</span> % (self.pool, self.name))</span><br><span class="line">        self.ioctx.close()</span><br><span class="line">        self.client.shutdown()</span><br></pre></td></tr></table></figure></p>
 
       
 
@@ -936,85 +1015,6 @@
 
 
   
-    <article id="post-go-learn-5" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/27/go-learn-5/">每天5分钟go（5）</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/27/go-learn-5/" class="archive-article-date">
-  	<time datetime="2018-10-27T11:54:14.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-27</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-并发机制是在runtime库中实现的"><a href="#1-并发机制是在runtime库中实现的" class="headerlink" title="1. 并发机制是在runtime库中实现的"></a>1. 并发机制是在runtime库中实现的</h1><h1 id="2-go程序理论上可以运行10000个协程"><a href="#2-go程序理论上可以运行10000个协程" class="headerlink" title="2. go程序理论上可以运行10000个协程"></a>2. go程序理论上可以运行10000个协程</h1><h1 id="3-M-P-G模型中"><a href="#3-M-P-G模型中" class="headerlink" title="3. M P G模型中"></a>3. M P G模型中</h1><h2 id="3-1-M值的两种设置方法"><a href="#3-1-M值的两种设置方法" class="headerlink" title="3.1 M值的两种设置方法"></a>3.1 M值的两种设置方法</h2><ul>
-<li>初始化的时候可以设置</li>
-<li>之后可以通过runtime/debug设置<h2 id="3-2-P值的两种设置方法"><a href="#3-2-P值的两种设置方法" class="headerlink" title="3.2 P值的两种设置方法"></a>3.2 P值的两种设置方法</h2></li>
-<li>通过runtime.GOMAXPROCS设置</li>
-<li>通过环境变量GOMAXPROCS设置<br>p值有一个硬性上限 256<br>注意：通过runtime.GOMAXPROCS设置的时候会停止所有p和G，影响程序的性能，所以设置P值的时候一般是在main函数之前<h2 id="P有状态"><a href="#P有状态" class="headerlink" title="P有状态"></a>P有状态</h2>见go并发实践136页<br>P有两个队列，一个是可运行队列，用来存放即将运行的程序，另一个是自由队列，用来重用G，就不需要创建新的G<h2 id="go语句的执行顺序"><a href="#go语句的执行顺序" class="headerlink" title="go语句的执行顺序"></a>go语句的执行顺序</h2>步骤1：go 语句<br>步骤2：生成newporc<br>步骤3：本地p和调度器看看有没有可用的自由G，没有新建一个<br>步骤4：初始化关联go函数，G的状态以及ID<br>步骤5：存到本地P的runnext,然后会把原来runnext上面的G放到p的可运行队列的尾，如果队列满了，则追加到调度器的课运行队列中<h2 id="G也有状态"><a href="#G也有状态" class="headerlink" title="G也有状态"></a>G也有状态</h2>见go并发实践140页</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/27/go-learn-5/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
@@ -1116,11 +1116,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1128,19 +1124,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1148,11 +1136,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1160,7 +1156,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1168,15 +1164,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1185,6 +1181,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
               </li>
             
             <div class="clearfix"></div>
