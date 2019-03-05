@@ -150,6 +150,199 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-ceph-rgw-talk-2" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/02/21/ceph-rgw-talk-2/">ceph rgw talk(2)</a>
+    </h1>
+  
+
+        
+        <a href="/2019/02/21/ceph-rgw-talk-2/" class="archive-article-date">
+  	<time datetime="2019-02-21T12:03:18.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-02-21</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/02/21/ceph-rgw-talk-2/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-ceph-talk-1" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/02/15/ceph-talk-1/">ceph talk(1)</a>
+    </h1>
+  
+
+        
+        <a href="/2019/02/15/ceph-talk-1/" class="archive-article-date">
+  	<time datetime="2019-02-15T09:21:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-02-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="以下是ceph的知识随笔"><a href="#以下是ceph的知识随笔" class="headerlink" title="以下是ceph的知识随笔"></a>以下是ceph的知识随笔</h1><ul>
+<li><ol>
+<li>M版将增加pg的合并功能</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>osd之间传播osdmap只是增量传播</li>
+</ol>
+</li>
+<li><ol start="3">
+<li>增加了两个工具用来部署osd，ceph-disk和ceph-volume</li>
+</ol>
+</li>
+<li><ol start="4">
+<li>L版osd增加了标签，如HDD或者SSD</li>
+</ol>
+</li>
+<li><ol start="5">
+<li>L版pool也增加了标签，如rbd或者rgw</li>
+</ol>
+</li>
+<li><ol start="6">
+<li>一个请求如果32s没有解决就会成为慢请求</li>
+</ol>
+</li>
+<li><ol start="7">
+<li>L版增加了Mgr，分离了一部分mon的能力</li>
+</ol>
+</li>
+<li><ol start="8">
+<li>osd中monclient的作用用来封装跟mon交互的细节</li>
+</ol>
+</li>
+<li><ol start="9">
+<li>ceph分public网和集群网，主要是因为public网是client操作的请求，优先级比较高，集群网是ceph内部的请求，流量比较大，分开之后可以快速响应client的请求</li>
+</ol>
+</li>
+<li><ol start="10">
+<li>M版osd的线程池减少了，只留了两个，一个用来处理用户命令，一个用来处理其他</li>
+</ol>
+</li>
+<li><ol start="11">
+<li>osd的down状态表示临时故障，out表示永久性故障</li>
+</ol>
+</li>
+<li><ol start="12">
+<li>每个host上面的osd编号最好不要连续，因为心跳检测的时候有用</li>
+</ol>
+</li>
+<li>13.读是同步，写一般是异步</li>
+<li>14.数据的可靠性引入了日志储存系统</li>
+<li>15.数据的一致性引入事务</li>
+<li>16.bluestore没有开启数据压缩，《rados设计与实现》92页</li>
+<li>17.磁盘空间管理有位图和段式管理</li>
+<li>18.bluestore采用位图性能不好，在L版之后切到了段式管理</li>
+<li>19.L版之后snapdir废弃</li>
+<li>20.副本时，读是同步操作，写是异步操作</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/02/15/ceph-talk-1/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-neutron-ipam" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -174,7 +367,38 @@
 <h1 id="哪些地方需要ip"><a href="#哪些地方需要ip" class="headerlink" title="哪些地方需要ip"></a>哪些地方需要ip</h1><p>————————————————————————————————————————————————————————————————————————————<br>neutron哪些地方用需要ip？too many，比如说虚拟机的网卡，路由器的外部网关、内部接口，浮动ip，dhcp port，ha路由器的管理口，其他组件lbaas，manila等都需要ip，这些ip的分配其实在neutron看来都是创建port资源，只是各种device owner不同，都需要通过neutron的ipam分配和管理。</p>
 <h1 id="IPAM是个啥"><a href="#IPAM是个啥" class="headerlink" title="IPAM是个啥"></a>IPAM是个啥</h1><p>————————————————————————————————————————————————————————————————————————————<br>IPAM（IP Address Management）,也可以叫做ip地址管理子系统。L版neutron的ipam是一个分水岭，L版之前ip的管理只能使用neutron本身的数据库，分配和回收都是通过数据库来实现。L版开始，社区对IPAM进行了重构，把ip的分配和释放以及子网的增删改查作为标准的接口提取出来，使用driver的方式来接入各种拥有ip和子网管理功能的系统，这样就实现了IPAM可插拔实现，接入用户一些现有的ip管理系统，而对neutron其他功能基本没有影响，L版之前使用数据库实现的ip管理作为了IPAM一种默认的driver。<br>k版neutron的ipam目录下结构<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ipam(keystone_admin)]# ll</span><br><span class="line">total 32</span><br><span class="line">-rw-r--r-- 1 root root  7428 Aug 21  2015 __init__.py</span><br><span class="line">-rw-r--r-- 1 root root  4124 Aug 21  2015 driver.py</span><br><span class="line">-rw-r--r-- 1 root root 16282 Aug 21  2015 subnet_alloc.py</span><br></pre></td></tr></table></figure></p>
 <p>P版neutron的ipam目录下结构<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 /usr/lib/python2.7/site-packages/neutron/ipam]# ll</span><br><span class="line">total 52</span><br><span class="line">-rw-r--r-- 1 root root     0 Aug 31 16:29 __init__.py</span><br><span class="line">-rw-r--r-- 1 root root  6733 Aug 31 16:29 driver.py</span><br><span class="line">drwxr-xr-x 4 root root  4096 Jan 24 14:31 drivers</span><br><span class="line">-rw-r--r-- 1 root root  2916 Aug 31 16:29 exceptions.py</span><br><span class="line">-rw-r--r-- 1 root root 11534 Aug 31 16:29 requests.py</span><br><span class="line">-rw-r--r-- 1 root root 19006 Aug 31 16:29 subnet_alloc.py</span><br><span class="line">-rw-r--r-- 1 root root  2616 Aug 31 16:29 utils.py</span><br></pre></td></tr></table></figure></p>
-<h1 id="ip和子网创建流程"><a href="#ip和子网创建流程" class="headerlink" title="ip和子网创建流程"></a>ip和子网创建流程</h1><p>————————————————————————————————————————————————————————————————————————————<br>IPAM只管理ip和子网，网络不属于IPAM管理，对于ip和子网的管理分别用一张架构图以简要的表明其流程。<br><img src="a.png" alt="a"><br>port创建流程图<br><img src="b.png" alt="b"><br>子网创建流程图</p>
+<p>其中drivers目录下面就是各个driver的实现，其他文件定义了ip和子网管理相关的标准接口，各个driver根据后端管理平台具体实现标准接口<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ~]# ll /usr/lib/python2.7/site-packages/neutron/ipam/drivers/</span><br><span class="line">total 16</span><br><span class="line">-rw-r--r--. 1 root root    0 Oct 31 06:27 __init__.py</span><br><span class="line">drwxr-xr-x. 2 root root 4096 Dec 24 16:09 neutrondb_ipam</span><br></pre></td></tr></table></figure></p>
+<p>从上图中的driver文件夹的名字也可以看出，默认的driver就是使用数据库来管理ip和子网。</p>
+<h1 id="默认driver分析"><a href="#默认driver分析" class="headerlink" title="默认driver分析"></a>默认driver分析</h1><p>————————————————————————————————————————————————————————————————————————————<br><img src="markdown-img-paste-20190305200031114.png" alt="d"><br>架构图<br>因为ipam主要管理子网和port，网络ipam不管理，这里主要分析一下port和子网的创建</p>
+<ul>
+<li><p>port的创建流程：</p>
+<ol>
+<li>neutron server接受创建port的请求之后，到达ML2 plugin模块进行处理，ML2 plugin主要处理网络、子网和port资源</li>
+<li>ML2 plugin把请求交给Ipam处理，Ipam主要是用来给port分配一个可用的ip或者用户指定ip，对于具体使用什么分配算法根据driver不同而不同，默认的neutronDB driver使用的是如下算法：<br>首先从Ipam相关的数据库取出已经使用的ip，然后列举子网上面所有的ip，取个差集，就是可用的ip池，然后通过一个随机ip窗口在可用ip池中获取一个可用的ip。</li>
+<li>通过Ipam获取完ip之后，创建port数据结构加入到neutron的db中，这里Ipam db和neutron db其实都是在neutron数据库中，小甲之所以这么叫，主要是区分它们的作用，Ipam db主要是用来管理ip分配、可用池等，neutron db主要是为了记录port信息，ip只是它的一个属性。</li>
+<li>后面会把请求交给type manager和Mechainsm manager创建相应的底层资源<br><img src="a.png" alt="a"></li>
+</ol>
+</li>
+<li><p>子网的创建流程：</p>
+<ol>
+<li>neutron server接受创建子网的请求之后，还是ML2 plugin模块处理</li>
+<li>ML2 plugin把请求交给Ipam处理，Ipam主要是在Ipam db中创建子网的数据模型实例，记录子网信息，比如子网的默认网关、dhcp的ip、有效的ip地址</li>
+<li>在Ipam创建完数据库实例之后，会在neutron db创建子网资源，跟port一样，Ipam数据库中的子网只要是用来分配ip的，neutron数据库中主要是neutron层记录子网，比如我们进程用到neutron subnet-list就是这个neutron数据库获取的。</li>
+<li>后面会把请求交给type manager和Mechainsm manager创建相应的底层资源。</li>
+<li>子网的创建，会触发创建这个子网上面的dhcp port，创建流程跟上面port一样，然后dhcp agent会创建相应的资源。<br><img src="b.png" alt="b"></li>
+</ol>
+</li>
+</ul>
+<h1 id="基础数据模型"><a href="#基础数据模型" class="headerlink" title="基础数据模型"></a>基础数据模型</h1><ul>
+<li>请求工厂基类，主要创建ip分配请求和子网创建请求：</li>
+</ul>
+<ol>
+<li>SubnetRequestFactory：子网创建请求</li>
+<li>AddressRequestFactory： ip分配请求<br>各个driver可以根据需求通过不同工厂创建不通的请求</li>
+</ol>
+<ul>
+<li>ip和子网操作基类模型</li>
+</ul>
 <h1 id="IPAM-Tstack-driver"><a href="#IPAM-Tstack-driver" class="headerlink" title="IPAM Tstack driver"></a>IPAM Tstack driver</h1><p>————————————————————————————————————————————————————————————————————————————<br>Tstack有自研的ip系统管理平台，用于管理Tstack整个平台ip，子网，网络以及其他资源，比IPAM默认的db drier更加丰富，出于项目的考虑和neutron驱动设计的初衷，都需要设计实现Tstack自己的IPAM驱动。通过实现IPAM抽象出来的ip和子网的管理接口来实现Tstack的驱动，根据后端ip管理系统的不同，driver的实现细节可能不太一样，这里不做详细的介绍。</p>
 <h1 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h1><p>————————————————————————————————————————————————————————————————————————————<br>在实现IPAM驱动的过程中，遇到过很多问题，并一一进行了解决，大致列举一两个问题已引起大家注意</p>
 <ul>
@@ -842,186 +1066,6 @@
 
 
   
-    <article id="post-allow-other-lvm-in-lvmgroup" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/15/allow-other-lvm-in-lvmgroup/">allow other lvm in lvmgroup</a>
-    </h1>
-  
-
-        
-        <a href="/2018/12/15/allow-other-lvm-in-lvmgroup/" class="archive-article-date">
-  	<time datetime="2018-12-15T04:47:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-15</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题描述："><a href="#问题描述：" class="headerlink" title="问题描述："></a>问题描述：</h1><p>笔者有一套openstack环境，没有对接ceph，使用的lvm作为虚拟机的存储，虚拟机的系统卷都存放在一个叫做vms-group的lvmgroup中，不过其下有其他人创建了一个lvm的逻辑卷，但是不是给openstack的用的，导致OpenStack hypvisor中的local_gb_free不准确，导致虚拟机创建有问题</p>
-<h1 id="原理分析"><a href="#原理分析" class="headerlink" title="原理分析"></a>原理分析</h1><p>通过源码分析可以知道，nova compute会定时同步hypervisor的资源，包括存储，那按理来说，从宿主机上面获取lvmgroup的总量和使用量应该是没有问题的，那为什么会导致出现最后hypervisor上面的资源统计不正确呢？<br>我们来看一下代码，代码是不会说谎的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">def update_available_resource(self, context):</span><br><span class="line"></span><br><span class="line">    LOG.info(_LI(&quot;Auditing locally available compute resources for &quot;</span><br><span class="line">                 &quot;node %(node)s&quot;),</span><br><span class="line">             &#123;&apos;node&apos;: self.nodename&#125;)</span><br><span class="line">    resources = self.driver.get_available_resource(self.nodename)</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure></p>
-<p>在nova/compute/resource_tracker.py文件中的update_available_resource函数调用了get_available_resource函数，这个函数其实就是调用libvirt的接口，其实调用的是如下的命令<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vgs --noheadings --nosuffix --separator --units b -o vg_size,vg_free vg</span><br></pre></td></tr></table></figure></p>
-<p>就是取出vg这个逻辑组的总量和剩余量，而使用量是这样计算的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;&apos;total&apos;: int(info[0]),</span><br><span class="line">  &apos;free&apos;: int(info[1]),</span><br><span class="line">  &apos;used&apos;: int(info[0]) - int(info[1])&#125;</span><br></pre></td></tr></table></figure></p>
-<p>可以看出这个使用量是包括这个lvmgroup中不是openstack创建使用的，那为什么最后的hypervisor统计不正确呢<br>我们继续往下看<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">def update_available_resource(self, context):</span><br><span class="line">    .....</span><br><span class="line">    self._update_available_resource(context, resources)</span><br></pre></td></tr></table></figure></p>
-<p>在update_available_resource函数中还调用了更新可用量的请求，_update_available_resource<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">def _update_available_resource(self, context, resources):</span><br><span class="line"></span><br><span class="line">    ....</span><br><span class="line">    self._update_usage_from_instances(context, resources, instances)</span><br><span class="line">    .....</span><br></pre></td></tr></table></figure></p>
-<p>这个函数调用_update_usage_from_instances函数，统计虚拟机的使用量，我们好像有点眉目了，我们可以猜测一下，通过统计数据库中虚拟机存盘的使用量（系统盘）来统计openstack的使用量，这就不包含了lvmgroup中其他用途创建的逻辑卷，是不是这样，我们看一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">def _update_usage_from_instances(self, context, resources, instances):</span><br><span class="line"></span><br><span class="line">        # set some initial values, reserve room for host/hypervisor:</span><br><span class="line">        resources[&apos;local_gb_used&apos;] = CONF.reserved_host_disk_mb / 1024</span><br><span class="line">        resources[&apos;memory_mb_used&apos;] = CONF.reserved_host_memory_mb</span><br><span class="line">        resources[&apos;free_ram_mb&apos;] = (resources[&apos;memory_mb&apos;] -</span><br><span class="line">                                    resources[&apos;memory_mb_used&apos;])</span><br><span class="line">        resources[&apos;free_disk_gb&apos;] = (resources[&apos;local_gb&apos;] -</span><br><span class="line">                                     resources[&apos;local_gb_used&apos;])</span><br><span class="line">        resources[&apos;current_workload&apos;] = 0</span><br><span class="line">        resources[&apos;running_vms&apos;] = 0</span><br><span class="line"></span><br><span class="line">        # Reset values for extended resources</span><br><span class="line">        self.ext_resources_handler.reset_resources(resources, self.driver)</span><br><span class="line"></span><br><span class="line">        for instance in instances:</span><br><span class="line">            if instance.vm_state != vm_states.DELETED:</span><br><span class="line">                self._update_usage_from_instance(context, resources, instance)</span><br></pre></td></tr></table></figure></p>
-<p>上面关键的是<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">resources[&apos;local_gb_used&apos;] = CONF.reserved_host_disk_mb / 1024</span><br></pre></td></tr></table></figure></p>
-<p>local_gb_used这个参数被重新赋值了，之前的值就是通过上面调用命令之后计算出来的也就是真实值，这里进行了重新赋值，赋予了保留值，然后通过遍历数据库中的所有虚拟机，根据它们的机型中定义的系统盘值统计使用量，就是下面这个函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_update_usage_from_instance</span><br></pre></td></tr></table></figure></p>
-<p>最后可以使用的free_gb，就是通过命令取出来的总值，减去预留值，减去虚拟机的使用量，这就导致没有包括其他用途使用的逻辑卷</p>
-<h1 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h1><p>通过修改小修改_update_usage_from_instances函数来解决，笔者通过取两个使用量统计的最大值最为使用量，<br>一个是通过命令行获取，一个是预留值加上所有虚拟机的总使用量<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">def _update_usage_from_instances(self, context, resources, instances):</span><br><span class="line">    &quot;&quot;&quot;Calculate resource usage based on instance utilization.  This is</span><br><span class="line">    different than the hypervisor&apos;s view as it will account for all</span><br><span class="line">    instances assigned to the local compute host, even if they are not</span><br><span class="line">    currently powered on.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    self.tracked_instances.clear()</span><br><span class="line"></span><br><span class="line">    # purge old stats and init with anything passed in by the driver</span><br><span class="line">    self.stats.clear()</span><br><span class="line">    self.stats.digest_stats(resources.get(&apos;stats&apos;))</span><br><span class="line"></span><br><span class="line">    # set some initial values, reserve room for host/hypervisor:</span><br><span class="line">    resources[&apos;local_gb_used_orig&apos;] = resources[&apos;local_gb_used&apos;]</span><br><span class="line">    resources[&apos;local_gb_used&apos;] = 0</span><br><span class="line">    resources[&apos;memory_mb_used&apos;] = CONF.reserved_host_memory_mb</span><br><span class="line">    resources[&apos;free_ram_mb&apos;] = (resources[&apos;memory_mb&apos;] -</span><br><span class="line">                                resources[&apos;memory_mb_used&apos;])</span><br><span class="line">    resources[&apos;free_disk_gb&apos;] = (resources[&apos;local_gb&apos;] -</span><br><span class="line">                                 resources[&apos;local_gb_used&apos;])</span><br><span class="line">    resources[&apos;current_workload&apos;] = 0</span><br><span class="line">    resources[&apos;running_vms&apos;] = 0</span><br><span class="line"></span><br><span class="line">    # Reset values for extended resources</span><br><span class="line">    self.ext_resources_handler.reset_resources(resources, self.driver)</span><br><span class="line"></span><br><span class="line">    for instance in instances:</span><br><span class="line">        if instance.vm_state != vm_states.DELETED:</span><br><span class="line">            self._update_usage_from_instance(context, resources, instance)</span><br><span class="line"></span><br><span class="line">    resources[&apos;local_gb_used&apos;] = max(resources[&apos;local_gb_used&apos;], resources[&apos;local_gb_used_orig&apos;]) + \</span><br><span class="line">                                 CONF.reserved_host_disk_mb / 1024</span><br><span class="line">    resources[&apos;free_disk_gb&apos;] = (resources[&apos;local_gb&apos;] -</span><br><span class="line">                                 resources[&apos;local_gb_used&apos;])</span><br></pre></td></tr></table></figure></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack lvm</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/12/15/allow-other-lvm-in-lvmgroup/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-linux-optimization-load-average" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/11/29/linux-optimization-load-average/">linux性能优化系列（1）平均负载</a>
-    </h1>
-  
-
-        
-        <a href="/2018/11/29/linux-optimization-load-average/" class="archive-article-date">
-  	<time datetime="2018-11-29T01:50:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-11-29</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="获取平均负载"><a href="#获取平均负载" class="headerlink" title="获取平均负载"></a>获取平均负载</h1><p>————————————————————————————————————————————————————————————————————————————<br>笔者一般使用两条命令获取平均负载:<br>uptime<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 ~]# uptime</span><br><span class="line"> 15:37:00 up 814 days, 22:02,  4 users,  load average: 0.87, 0.83, 0.82</span><br></pre></td></tr></table></figure></p>
-<p>top<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">top - 15:37:37 up 814 days, 22:02,  4 users,  load average: 1.01, 0.87, 0.84</span><br><span class="line">Tasks: 644 total,   2 running, 642 sleeping,   0 stopped,   0 zombie</span><br><span class="line">%Cpu(s):  4.2 us,  0.9 sy,  0.0 ni, 94.8 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st</span><br><span class="line">KiB Mem : 65858136 total,  8405052 free, 37853144 used, 19599940 buff/cache</span><br><span class="line">KiB Swap:        0 total,        0 free,        0 used. 23213220 avail Mem</span><br><span class="line"></span><br><span class="line">  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                                                                                                  </span><br><span class="line">31919 nova      20   0 6284804 108152  16248 R  35.3  0.2  52:59.05 nova-compute                                                                                                                             </span><br><span class="line">32023 nova      20   0  499104  95988   3664 S  23.5  0.1   9:26.80 nova-conductor                                                                                                                           </span><br><span class="line">32005 nova      20   0  499616  96448   3660 S  17.6  0.1   9:23.34 nova-conductor                                                                                                                           </span><br><span class="line">32014 nova      20   0  499288  96220   3664 S  17.6  0.1   9:19.99 nova-conductor                                                                                                                           </span><br><span class="line">32025 nova      20   0  499008  95772   3664 S  17.6  0.1   9:24.99 nova-conductor                                                                                                                           </span><br><span class="line">21167 root      20   0  147744   2452   1388 R  11.8  0.0   0:00.02 top                                                                                                                                      </span><br><span class="line">32028 nova      20   0  499692  96616   3660 S  11.8  0.1  10:28.59 nova-conductor                                                                                                                           </span><br><span class="line">   72 root      20   0       0      0      0 S   5.9  0.0  90:48.89 ksoftirqd/3                                                                                                                              </span><br><span class="line"> 7329 root      20   0   41992  23172  21824 S   5.9  0.0  30:39.54 sap1007                                                                                                                                  </span><br><span class="line"> 7893 qemu      20   0 10.171g 5.320g  12468 S   5.9  8.5  92:06.55 qemu-kvm                                                                                                                                 </span><br><span class="line">10461 qemu      20   0 6319884 224920  12192 S   5.9  0.3  80:59.01 qemu-kvm                                                                                                                                 </span><br><span class="line">13771 glance    20   0  714392  66352   5760 S   5.9  0.1 557:17.33 glance-api                                                                                                                               </span><br><span class="line">31637 mysql     20   0 15.114g 3.001g 138444 S   5.9  4.8   2315:34 mysqld                                                                                                                                   </span><br><span class="line">32002 nova      20   0  498576  95528   3664 S   5.9  0.1  10:26.97 nova-conductor                                                                                                                           </span><br><span class="line">32004 nova      20   0  499644  96488   3664 S   5.9  0.1  10:43.25 nova-conductor                                                                                                                           </span><br><span class="line">32007 nova      20   0  499436  96344   3660 S   5.9  0.1  10:26.56 nova-conductor                                                                                                                           </span><br><span class="line">32021 nova      20   0  498600  95548   3660 S   5.9  0.1   9:46.67 nova-conductor                                                                                                                           </span><br><span class="line">    1 root      20   0  338680   4888   1940 S   0.0  0.0  80:02.58 systemd                                                                                                                                  </span><br><span class="line">    2 root      20   0       0      0      0 S   0.0  0.0   0:42.26 kthreadd                                                                                                                                 </span><br><span class="line">    3 root      20   0       0      0      0 S   0.0  0.0 132:42.57 ksoftirqd/0                                                                                                                              </span><br><span class="line">    5 root       0 -20       0      0      0 S   0.0  0.0   0:00.00 kworker/0:0H                                                                                                                             </span><br><span class="line">    8 root      rt   0       0      0      0 S   0.0  0.0  10:13.38 migration/0                                                                                                                              </span><br><span class="line">    9 root      20   0       0      0      0 S   0.0  0.0   0:00.01 rcu_bh                                                                                                                                   </span><br><span class="line">   10 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/0                                                                                                                                  </span><br><span class="line">   11 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/1                                                                                                                                  </span><br><span class="line">   12 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/2                                                                                                                                  </span><br><span class="line">   13 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/3                                                                                                                                  </span><br><span class="line">   14 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/4                                                                                                                                  </span><br><span class="line">   15 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/5                                                                                                                                  </span><br><span class="line">   16 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/6                                                                                                                                  </span><br><span class="line">   17 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/7                                                                                                                                  </span><br><span class="line">   18 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/8                                                                                                                                  </span><br><span class="line">   19 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/9                                                                                                                                  </span><br><span class="line">   20 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/10                                                                                                                                 </span><br><span class="line">   21 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/11                                                                                                                                 </span><br><span class="line">   22 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/12                                                                                                                                 </span><br><span class="line">   23 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/13                                                                                                                                 </span><br><span class="line">   24 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/14                                                                                                                                 </span><br><span class="line">   25 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/15                                                                                                                                 </span><br><span class="line">   26 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/16                                                                                                                                 </span><br><span class="line">   27 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/17                                                                                                                                 </span><br><span class="line">   28 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/18                                                                                                                                 </span><br><span class="line">   29 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/19                                                                                                                                 </span><br><span class="line">   30 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/20                                                                                                                                 </span><br><span class="line">   31 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/21                                                                                                                                 </span><br><span class="line">   32 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/22                                                                                                                                 </span><br><span class="line">   33 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/23                                                                                                                                 </span><br><span class="line">   34 root      20   0       0      0      0 S   0.0  0.0   5143:32 rcu_sched</span><br></pre></td></tr></table></figure></p>
-<p>负载就是上面的load average: 0.87, 0.83, 0.82，分别表示过去一分钟，五分钟，十五分钟的负载</p>
-<h1 id="负载代表什么"><a href="#负载代表什么" class="headerlink" title="负载代表什么"></a>负载代表什么</h1><p>——————————————————————————————————————————————————————————————————————————————<br>上面的负载值代表的其实是系统中的活跃进程数，包括正在运行和不可中断运行（比如一些内核态的写磁盘调度）</p>
-<h1 id="如何判断负载是高还是低"><a href="#如何判断负载是高还是低" class="headerlink" title="如何判断负载是高还是低"></a>如何判断负载是高还是低</h1><p>——————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.首先需要查看系统中有多少cpu</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 ~]# grep &quot;model name&quot; /proc/cpuinfo | wc -l</span><br><span class="line">24</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.比较负载值和cpu数目<br>如果负载值大于cpu数目，name系统就处于超负载状态</p>
-</li>
-</ul>
-<h1 id="查看分析负载工具"><a href="#查看分析负载工具" class="headerlink" title="查看分析负载工具"></a>查看分析负载工具</h1><p>—————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.mpstat<br>查看多个cpu的性能使用情况</p>
-</li>
-<li><p>2.pidstat<br>查看进程的性能</p>
-</li>
-</ul>
-<h1 id="压测工具"><a href="#压测工具" class="headerlink" title="压测工具"></a>压测工具</h1><p>—————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li>1.stress<br>这个stress可以压测cpu，内存和磁盘io</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">linux 性能</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/11/29/linux-optimization-load-average/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
@@ -1123,19 +1167,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1143,15 +1175,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1163,7 +1191,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1175,11 +1203,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1187,11 +1215,27 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
