@@ -6,12 +6,12 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>neutron的ipam还可以这么使用 | 小甲师兄</title>
+  <title>neutron的ipam还可以这么玩 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="neutron作为openstack的核心组件用来管理网络，比如network，subnet和port核心资源，lbaas，fwaas等扩展资源，但是对于用户来说最基础的是ip，以及这个ip所在的网络，这部分功能是由neutron的ipam管理。 哪些地方需要ip————————————————————————————————————————————————————————————————————">
 <meta name="keywords" content="openstack neutron">
 <meta property="og:type" content="article">
-<meta property="og:title" content="neutron的ipam还可以这么使用">
+<meta property="og:title" content="neutron的ipam还可以这么玩">
 <meta property="og:url" content="http://yoursite.com/2019/01/24/neutron-ipam/index.html">
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="neutron作为openstack的核心组件用来管理网络，比如network，subnet和port核心资源，lbaas，fwaas等扩展资源，但是对于用户来说最基础的是ip，以及这个ip所在的网络，这部分功能是由neutron的ipam管理。 哪些地方需要ip————————————————————————————————————————————————————————————————————">
@@ -21,9 +21,9 @@
 <meta property="og:image" content="http://yoursite.com/2019/01/24/neutron-ipam/a.png">
 <meta property="og:image" content="http://yoursite.com/2019/01/24/neutron-ipam/b.png">
 <meta property="og:image" content="http://yoursite.com/2019/01/24/neutron-ipam/f.png">
-<meta property="og:updated_time" content="2019-03-05T13:52:52.496Z">
+<meta property="og:updated_time" content="2019-03-05T14:22:01.618Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="neutron的ipam还可以这么使用">
+<meta name="twitter:title" content="neutron的ipam还可以这么玩">
 <meta name="twitter:description" content="neutron作为openstack的核心组件用来管理网络，比如network，subnet和port核心资源，lbaas，fwaas等扩展资源，但是对于用户来说最基础的是ip，以及这个ip所在的网络，这部分功能是由neutron的ipam管理。 哪些地方需要ip————————————————————————————————————————————————————————————————————">
 <meta name="twitter:image" content="http://yoursite.com/2019/01/24/neutron-ipam/c.png">
   
@@ -166,7 +166,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      neutron的ipam还可以这么使用
+      neutron的ipam还可以这么玩
     </h1>
   
 
@@ -185,7 +185,7 @@
 <p>P版neutron的ipam目录下结构<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 /usr/lib/python2.7/site-packages/neutron/ipam]# ll</span><br><span class="line">total 52</span><br><span class="line">-rw-r--r-- 1 root root     0 Aug 31 16:29 __init__.py</span><br><span class="line">-rw-r--r-- 1 root root  6733 Aug 31 16:29 driver.py</span><br><span class="line">drwxr-xr-x 4 root root  4096 Jan 24 14:31 drivers</span><br><span class="line">-rw-r--r-- 1 root root  2916 Aug 31 16:29 exceptions.py</span><br><span class="line">-rw-r--r-- 1 root root 11534 Aug 31 16:29 requests.py</span><br><span class="line">-rw-r--r-- 1 root root 19006 Aug 31 16:29 subnet_alloc.py</span><br><span class="line">-rw-r--r-- 1 root root  2616 Aug 31 16:29 utils.py</span><br></pre></td></tr></table></figure></p>
 <p>其中drivers目录下面就是各个driver的实现，其他文件定义了ip和子网管理相关的标准接口，各个driver根据后端管理平台具体实现标准接口<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ~]# ll /usr/lib/python2.7/site-packages/neutron/ipam/drivers/</span><br><span class="line">total 16</span><br><span class="line">-rw-r--r--. 1 root root    0 Oct 31 06:27 __init__.py</span><br><span class="line">drwxr-xr-x. 2 root root 4096 Dec 24 16:09 neutrondb_ipam</span><br></pre></td></tr></table></figure></p>
 <p>从上图中的driver文件夹的名字也可以看出，默认的driver就是使用数据库来管理ip和子网。</p>
-<h1 id="默认driver分析"><a href="#默认driver分析" class="headerlink" title="默认driver分析"></a>默认driver分析</h1><p>————————————————————————————————————————————————————————————————————————————<br><img src="d.png" alt="d"><br>架构图<br>因为ipam主要管理子网和port，网络ipam不管理，这里主要分析一下port和子网的创建</p>
+<h1 id="默认driver分析"><a href="#默认driver分析" class="headerlink" title="默认driver分析"></a>默认driver分析</h1><p>————————————————————————————————————————————————————————————————————————————<br><img src="d.png" alt="d"><br>架构图<br>从架构图可以看出ipam主要和ML2 plugin和Ipam db交互，那我们下面主要分析一下怎么交流的，由于ipam主要管理子网和port，网络ipam不管理，主要分析一下port和子网的创建</p>
 <ul>
 <li><p>port的创建流程：</p>
 <ol>
@@ -205,17 +205,24 @@
 </ol>
 </li>
 </ul>
-<h1 id="基础数据模型"><a href="#基础数据模型" class="headerlink" title="基础数据模型"></a>基础数据模型</h1><ul>
+<h1 id="如何写自己的Ipam-driver"><a href="#如何写自己的Ipam-driver" class="headerlink" title="如何写自己的Ipam driver"></a>如何写自己的Ipam driver</h1><p>（1）知道要实现基类数据模型：</p>
+<ul>
 <li>请求工厂基类，主要创建ip分配请求和子网创建请求：</li>
 </ul>
 <ol>
-<li>SubnetRequestFactory：子网创建请求</li>
-<li>AddressRequestFactory： ip分配请求<br>各个driver可以根据需求通过不同工厂创建不通的请求</li>
+<li>SubnetRequestFactory：用于子网创建请求</li>
+<li>AddressRequestFactory： 用于ip分配请求<br>各个driver可以根据需求通过不同工厂创建不通的请求</li>
 </ol>
 <ul>
-<li>ip和子网操作基类模型<br><img src="f.png" alt="f"></li>
+<li>ip和子网操作基类模型如下图：<br><img src="f.png" alt="f"><br>各个driver根据自己ip系统的不同而不同<br>（2）driver请求调用ip系统流程<br>这个主要看个人代码结构，可以直接调用后端ip系统的restful api，也可以逻辑清楚的划分各个层，Tstack划分了controller、manager和对象映射api层</li>
 </ul>
-<h1 id="IPAM-Tstack-driver"><a href="#IPAM-Tstack-driver" class="headerlink" title="IPAM Tstack driver"></a>IPAM Tstack driver</h1><p>————————————————————————————————————————————————————————————————————————————<br>Tstack有自研的ip系统管理平台，用于管理Tstack整个平台ip，子网，网络以及其他资源，比IPAM默认的db drier更加丰富，出于项目的考虑和neutron驱动设计的初衷，都需要设计实现Tstack自己的IPAM驱动。通过实现IPAM抽象出来的ip和子网的管理接口来实现Tstack的驱动，根据后端ip管理系统的不同，driver的实现细节可能不太一样，这里不做详细的介绍。</p>
+<h1 id="Ipam扩展有什么好处"><a href="#Ipam扩展有什么好处" class="headerlink" title="Ipam扩展有什么好处"></a>Ipam扩展有什么好处</h1><p>————————————————————————————————————————————————————————————————————————————<br>那么问题来了，ipam driver有什么好处，以我们Tstack为例</p>
+<ol>
+<li>我们Ip系统比neutron默认的功能更强大丰富，默认的ipam有些场景不能满足我们需求</li>
+<li>Tstack借助Ipam driver可以使Ip系统统一管理整个平台的网络资源</li>
+<li>上层应用可以接入Ip系统实现运维管理</li>
+<li>…</li>
+</ol>
 <h1 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h1><p>————————————————————————————————————————————————————————————————————————————<br>在实现IPAM驱动的过程中，遇到过很多问题，并一一进行了解决，大致列举一两个问题以引起大家注意</p>
 <ul>
 <li>1.neutron数据模型跟自研ip系统模型不匹配，比如少一些模型，或者一些模型不完全对应，会导致IPAM在跟自研ip系统交互的时候出现问题。</li>
@@ -366,7 +373,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="neutron-ipam" data-title="neutron的ipam还可以这么使用" data-url="http://yoursite.com/2019/01/24/neutron-ipam/"></div>
+	<div class="ds-thread" data-thread-key="neutron-ipam" data-title="neutron的ipam还可以这么玩" data-url="http://yoursite.com/2019/01/24/neutron-ipam/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
@@ -488,11 +495,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -500,11 +507,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -512,7 +523,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -520,19 +531,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -549,10 +560,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
