@@ -6,12 +6,12 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>小甲师兄陪你一起看Ceph（osdc篇） | 小甲师兄</title>
+  <title>小甲师兄陪你一起看Ceph(osdc篇) | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="1. 深圳天气：小雨到阵雨到大雨  小甲师兄有个喜好：喜欢下雨天。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc代码分享一下，这些都是小甲本人的理解，如果不对还望指正。 2.osdcosdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：  （1）：">
 <meta name="keywords" content="Ceph Cephfs osdc">
 <meta property="og:type" content="article">
-<meta property="og:title" content="小甲师兄陪你一起看Ceph（osdc篇）">
+<meta property="og:title" content="小甲师兄陪你一起看Ceph(osdc篇)">
 <meta property="og:url" content="http://yoursite.com/2019/04/13/osdc-code-analysis/index.html">
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="1. 深圳天气：小雨到阵雨到大雨  小甲师兄有个喜好：喜欢下雨天。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc代码分享一下，这些都是小甲本人的理解，如果不对还望指正。 2.osdcosdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：  （1）：">
@@ -36,9 +36,9 @@
 <meta property="og:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a18.png">
 <meta property="og:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a19.png">
 <meta property="og:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a20.png">
-<meta property="og:updated_time" content="2019-04-13T06:56:28.495Z">
+<meta property="og:updated_time" content="2019-04-13T07:08:01.030Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄陪你一起看Ceph（osdc篇）">
+<meta name="twitter:title" content="小甲师兄陪你一起看Ceph(osdc篇)">
 <meta name="twitter:description" content="1. 深圳天气：小雨到阵雨到大雨  小甲师兄有个喜好：喜欢下雨天。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc代码分享一下，这些都是小甲本人的理解，如果不对还望指正。 2.osdcosdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：  （1）：">
 <meta name="twitter:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a1.png">
   
@@ -181,7 +181,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      小甲师兄陪你一起看Ceph（osdc篇）
+      小甲师兄陪你一起看Ceph(osdc篇)
     </h1>
   
 
@@ -201,17 +201,17 @@
 <li>（2）：objectcacher：一个object级别的缓存</li>
 <li>（3）：Crush算法定位osd：在转化为三维地址空间之后，就使用Crush算法进行对象的数据定位</li>
 </ul>
-<p>本文主要是介绍前两点，小甲师兄14年最开始接触ceph使用的是0.80.5版本（firefly），本文的分析是基于10.2.2（jewel），现在使用的是12.2.10（luminous），虽然版本跨度比较大，但是这部分代码还是比较稳定的，基本大的框架没有变化。这里以cephfs的文件读流程进行分析。</p>
+<p>本文主要是介绍前两点，小甲师兄14年刚开始接触ceph使用的是0.80.5版本（firefly），本文的分析是基于10.2.2（jewel），现在使用的是12.2.10（luminous），虽然版本跨度比较大，但是这部分代码还是比较稳定的，基本大的框架没有变化。这里以cephfs的文件读流程进行分析。</p>
 <h1 id="3-介绍一个文件的读"><a href="#3-介绍一个文件的读" class="headerlink" title="3.介绍一个文件的读"></a>3.介绍一个文件的读</h1><p>这里使用fuse进行挂载cephfs，因为用户态的客户端才会调用osdc，如果使用内核态的客户端的话，是不会经过osdc代码的，会走内核的一个osd client代码，估计功能跟osdc类似，不过内核的osd client的缓存是使用的内核中的一些缓存机制。</p>
 <h2 id="3-1-用户态文件请求"><a href="#3-1-用户态文件请求" class="headerlink" title="3.1 用户态文件请求"></a>3.1 用户态文件请求</h2><p>用户态文件请求的流程大致如下：</p>
 <ul>
-<li>（1）posix标准：open，read，write</li>
+<li>（1）posix标准：open、read、write</li>
 <li>（2）系统调用</li>
 <li>（3）vfs虚拟机文件系统</li>
 <li>（4）fuse内核模块</li>
 <li>（5）fuse的用户态库</li>
 <li>（6）cephfs的用户态客户端代码</li>
-<li>（7）最终到达client：:read（）或者client：：write（）处理函数</li>
+<li>（7）最终到达client::read（）或者client::write（）处理函数</li>
 </ul>
 <h2 id="3-2-client-read"><a href="#3-2-client-read" class="headerlink" title="3.2 client::read()"></a>3.2 client::read()</h2><p>从client::read()起的流程图如下：<br><img src="a1.png" alt="a1"></p>
 <p>其中file_to_extents函数就是完成osdc的第一个功能：地址空间的转换</p>
@@ -408,7 +408,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="osdc-code-analysis" data-title="小甲师兄陪你一起看Ceph（osdc篇）" data-url="http://yoursite.com/2019/04/13/osdc-code-analysis/"></div>
+	<div class="ds-thread" data-thread-key="osdc-code-analysis" data-title="小甲师兄陪你一起看Ceph(osdc篇)" data-url="http://yoursite.com/2019/04/13/osdc-code-analysis/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
@@ -530,10 +530,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
@@ -542,11 +538,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -554,15 +550,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -590,15 +586,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -606,7 +606,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
