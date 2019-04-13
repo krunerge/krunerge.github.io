@@ -8,13 +8,13 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>小甲师兄陪你一起看Ceph(osdc篇) | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="1. 深圳天气：小雨到阵雨到大雨  小甲师兄有个喜好：喜欢下雨天。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc代码分享一下，这些都是小甲本人的理解，如果不对还望指正。 2.osdcosdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：  （1）：">
+  <meta name="description" content="1. 深圳天气：小雨到阵雨到大雨  小甲师兄有个喜好：喜欢下雨。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc代码分享一下，这些都是小甲本人的理解，如果不对还望指正。 2.osdcosdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：  （1）：地">
 <meta name="keywords" content="Ceph Cephfs osdc">
 <meta property="og:type" content="article">
 <meta property="og:title" content="小甲师兄陪你一起看Ceph(osdc篇)">
 <meta property="og:url" content="http://yoursite.com/2019/04/13/osdc-code-analysis/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="1. 深圳天气：小雨到阵雨到大雨  小甲师兄有个喜好：喜欢下雨天。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc代码分享一下，这些都是小甲本人的理解，如果不对还望指正。 2.osdcosdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：  （1）：">
+<meta property="og:description" content="1. 深圳天气：小雨到阵雨到大雨  小甲师兄有个喜好：喜欢下雨。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc代码分享一下，这些都是小甲本人的理解，如果不对还望指正。 2.osdcosdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：  （1）：地">
 <meta property="og:locale" content="default">
 <meta property="og:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a1.png">
 <meta property="og:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a2.png">
@@ -36,10 +36,10 @@
 <meta property="og:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a18.png">
 <meta property="og:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a19.png">
 <meta property="og:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a20.png">
-<meta property="og:updated_time" content="2019-04-13T07:08:01.030Z">
+<meta property="og:updated_time" content="2019-04-13T07:14:38.235Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="小甲师兄陪你一起看Ceph(osdc篇)">
-<meta name="twitter:description" content="1. 深圳天气：小雨到阵雨到大雨  小甲师兄有个喜好：喜欢下雨天。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc代码分享一下，这些都是小甲本人的理解，如果不对还望指正。 2.osdcosdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：  （1）：">
+<meta name="twitter:description" content="1. 深圳天气：小雨到阵雨到大雨  小甲师兄有个喜好：喜欢下雨。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc代码分享一下，这些都是小甲本人的理解，如果不对还望指正。 2.osdcosdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：  （1）：地">
 <meta name="twitter:image" content="http://yoursite.com/2019/04/13/osdc-code-analysis/a1.png">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
@@ -194,7 +194,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="1-深圳天气：小雨到阵雨到大雨"><a href="#1-深圳天气：小雨到阵雨到大雨" class="headerlink" title="1. 深圳天气：小雨到阵雨到大雨"></a>1. 深圳天气：小雨到阵雨到大雨</h1><p>  小甲师兄有个喜好：喜欢下雨天。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc<br>代码分享一下，这些都是小甲本人的理解，如果不对还望指正。</p>
+        <h1 id="1-深圳天气：小雨到阵雨到大雨"><a href="#1-深圳天气：小雨到阵雨到大雨" class="headerlink" title="1. 深圳天气：小雨到阵雨到大雨"></a>1. 深圳天气：小雨到阵雨到大雨</h1><p>  小甲师兄有个喜好：喜欢下雨。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc<br>代码分享一下，这些都是小甲本人的理解，如果不对还望指正。</p>
 <h1 id="2-osdc"><a href="#2-osdc" class="headerlink" title="2.osdc"></a>2.osdc</h1><p>osdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：</p>
 <ul>
 <li>（1）：地址空间的转换：从rbd或者cephfs文件的一维地址空间转换到对象的三维地址空间，也简称为对象化</li>
@@ -530,11 +530,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -542,7 +542,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -550,11 +554,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -562,15 +562,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -586,19 +590,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -606,7 +606,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
