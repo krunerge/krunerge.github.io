@@ -150,6 +150,240 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-osdc-code-analysis" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/13/osdc-code-analysis/">小甲师兄陪你一起看Ceph（osdc篇）</a>
+    </h1>
+  
+
+        
+        <a href="/2019/04/13/osdc-code-analysis/" class="archive-article-date">
+  	<time datetime="2019-04-13T03:19:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-13</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-深圳天气：小雨到阵雨到大雨"><a href="#1-深圳天气：小雨到阵雨到大雨" class="headerlink" title="1. 深圳天气：小雨到阵雨到大雨"></a>1. 深圳天气：小雨到阵雨到大雨</h1><p>  小甲师兄有个喜好：喜欢下雨天。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc<br>代码分享一下，这些都是小甲本人的理解，如果不对还望指正。</p>
+<h1 id="2-osdc"><a href="#2-osdc" class="headerlink" title="2.osdc"></a>2.osdc</h1><p>osdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：</p>
+<ul>
+<li>（1）：地址空间的转换：从rbd或者cephfs文件的一维地址空间转换到对象的三维地址空间，也简称为对象化</li>
+<li>（2）：objectcacher：一个object级别的缓存</li>
+<li>（3）：Crush算法定位osd：在转化为三维地址空间之后，就使用Crush算法进行对象的数据定位</li>
+</ul>
+<p>本文主要是介绍前两点，小甲师兄14年最开始接触ceph使用的是0.80.5版本（firefly），本文的分析是基于10.2.2（jewel），现在使用的是12.2.10（luminous），虽然版本跨度比较大，但是这部分代码还是比较稳定的，基本大的框架没有变化。这里以cephfs的文件读流程进行分析。</p>
+<h1 id="3-介绍一个文件的读"><a href="#3-介绍一个文件的读" class="headerlink" title="3.介绍一个文件的读"></a>3.介绍一个文件的读</h1><p>这里使用fuse进行挂载cephfs，因为用户态的客户端才会调用osdc，如果使用内核态的客户端的话，是不会经过osdc代码的，会走内核的一个osd client代码，估计功能跟osdc类似，不过内核的osd client的缓存是使用的内核中的一些缓存机制。</p>
+<h2 id="3-1-用户态文件请求"><a href="#3-1-用户态文件请求" class="headerlink" title="3.1 用户态文件请求"></a>3.1 用户态文件请求</h2><p>用户态文件请求的流程大致如下：</p>
+<ul>
+<li>（1）posix标准：open，read，write</li>
+<li>（2）系统调用</li>
+<li>（3）vfs虚拟机文件系统</li>
+<li>（4）fuse内核模块</li>
+<li>（5）fuse的用户态库</li>
+<li>（6）cephfs的用户态客户端代码</li>
+<li>（7）最终到达client：:read（）或者client：：write（）处理函数</li>
+</ul>
+<h2 id="3-2-client-read"><a href="#3-2-client-read" class="headerlink" title="3.2 client::read()"></a>3.2 client::read()</h2><p>从client::read()起的流程图如下：<br><img src="a1.png" alt="a1"></p>
+<p>其中file_to_extents函数就是完成osdc的第一个功能：地址空间的转换</p>
+<h2 id="3-3-地址空间的转换"><a href="#3-3-地址空间的转换" class="headerlink" title="3.3 地址空间的转换"></a>3.3 地址空间的转换</h2><p>先贴一个对象条带分片图，也就是地址空间转换图，如下图所示：<br><img src="a2.png" alt="a2"><br>这个对象分片图，是不是有点像raid0，对，就是将raid0中的磁盘换成了对象，并对对象进行了条带分片。</p>
+<ul>
+<li>按上图介绍几个概念<br>（1）蓝色柱状代表一个个rados底层对象，默认为4M<br>（2）绿色的su代表条带单元<br>（3）红色的stripe代表一个个条带<br>（4）objectset代表对象组，一般一个对象组属于同一个文件（cephfs）</li>
+</ul>
+<p>这里要说明一点，Ceph系统默认没有开启对象条带分片</p>
+<ul>
+<li><p>再介绍几个变量<br>（1）object_size：对象的大小，就是rados底层对象的大小，一般默认是4M<br>（2）su：对象分片大小，以上面的图为例就是4/3M<br>（3）stripe_count：条带宽度，也就是一个strip跨多少个对象，也就是一个objectset中对象的个数，以上面的图为例，值为3<br>（4）stripes_per_object：一个对象包含的对象分片数，以上图为例值为3</p>
+</li>
+<li><p>file_to_extent<br>file_to_extent函数就是以raid0的思想来分片，一个个条带连起来可以看成是逻辑上面连续的，相当于线性的一维地址空间。现在要通过file_to_extent函数把一维坐标转化成三维坐标(objectset，stripeno，stripepos)，这三维坐标分别表示哪一个objectset，哪一个条带，条带中的哪一个对象分片。小甲以一个读操作来分析，示例分析如下：<br><img src="a3.png" alt="a3"><br>这里假设一个对象大小是3M，一个对象分片大小是1M，假设我们要读的文件占用两个objectset，占用6个rados的对象，18个对象分片，小甲这里要读取这个文件的对象分片的序号是从第1到第6，也就是文件的2M~7M的范围，相应的变量如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">offset = 1M 表示读偏移量</span><br><span class="line">len = 6M 表示要读取的大小</span><br><span class="line">su = 1M</span><br><span class="line">object_size = 3M</span><br><span class="line">stripe_count = 3</span><br><span class="line">stripes_per_object = 3</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看到上面的地址空间已经从一维转化成了三维：比如读取su1<br>一维地址空间：(offset, len) ==&gt;（1M，1M）<br>三维地址空间：(objectset，stripeno，stripepos) ==&gt; （objectset0，stripe0，object1）</p>
+<h2 id="3-4-读流程分析"><a href="#3-4-读流程分析" class="headerlink" title="3.4 读流程分析"></a>3.4 读流程分析</h2>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Ceph Cephfs osdc</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/04/13/osdc-code-analysis/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-docker-registry-s3" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/03/16/docker-registry-s3/">听说你的harbor不能使用s3</a>
+    </h1>
+  
+
+        
+        <a href="/2019/03/16/docker-registry-s3/" class="archive-article-date">
+  	<time datetime="2019-03-16T11:06:53.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-03-16</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="harbor"><a href="#harbor" class="headerlink" title="harbor"></a>harbor</h1><p>harbor主要是用来存储容器镜像的开源项目，也就是所谓的容器镜像仓库，跟OpenStack的glance功能类似，不同的是后者存放的是虚拟机镜像。<br>harbor除了可以存储容器镜像，还可以存储chart，chart是容器环境下的应用打包格式，类似于centos下的rpm包，ubuntu下的debian包。<br>下图是harbor的架构图<br><img src="markdown-img-paste-20190316192938181.png" alt="a"><br>这两种资源都需要放在存储介质上，镜像和chart可以分开用不同的存储，也可以使用相同的存储后端，这里主要讨论一下镜像的存储。<br>从上图可以看到harbor对镜像的实际存储使用的是docker原生的registry，那研究harbor的镜像存储，就是研究docker registry的镜像存储。一般都存放在本地文件系统上，</p>
+<p>即后端存储driver使用filesystem，由于harbor是跑在容器里的，此driver根据具体实现又可分为以下三种情况：</p>
+<ul>
+<li>(1)服务器本地存储：这种方式就是把服务器本地文件目录挂载到容器中做为harbor存储镜像的位置</li>
+<li>(2)ceph rbd pv:这种方式首先通过k8s的pvc申请一个ceph rbd卷，然后把rbd卷mount到服务器，最后再把这个目录挂载到容器中</li>
+<li>(3)ceph cephfs pv:这种方式直接使用cephfs功能，通过pvc申请一个cephfs中的一个目录，然后mount到服务器，最后在把这个目录挂载到容器中</li>
+</ul>
+<p>简单说明一下这三种：第一种不是共享存储，是harbor高可用的拦路虎；第二种ceph rbd卷出于数据一致性的考虑，不能同时挂载在对各宿主机上，也是harbor高可用的拦路虎；第三种cephfs是共享存储，通过文件系统是可以进行多挂载，同时读写，但是由于cephfs storageclass driver不是官方指定的，可能driver质量还不够高，同时cephfs本身也质疑比较多（不过社区一致在对cephfs投入很大）<br>好像没有一种比较十全十美的，那还有其他的driver吗？</p>
+<h1 id="ceph-rgw可用否"><a href="#ceph-rgw可用否" class="headerlink" title="ceph rgw可用否"></a>ceph rgw可用否</h1><p>ceph一共就三种应用，块、文件、对象，前两种都试过了，那ceph的rgw对象存储可以使用不，看了一下docker registry中的driver是用s3，ceph的rgw是支持s3的，那应该可以？！不过网上搜了一下好多人说，都有问题，一直卡主retry，比如一下连接：<a href="https://github.com/docker/distribution/issues/2189，" target="_blank" rel="noopener">https://github.com/docker/distribution/issues/2189，</a><br><img src="b.png" alt="b"><br>小甲以为这个问题应该解决了，毕竟这是2017的issue，先实验试一下</p>
+<h1 id="docker-registry接ceph-rgw-s3实验"><a href="#docker-registry接ceph-rgw-s3实验" class="headerlink" title="docker registry接ceph rgw s3实验"></a>docker registry接ceph rgw s3实验</h1><ul>
+<li>版本：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">harbor</span><br><span class="line">docker registry(distribution)  2.6.2</span><br><span class="line">aws-sdk-go</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>docker registry后来v2版改名叫distribution，上面表是实验使用的代码版本</p>
+<ul>
+<li>配置：<br>distribution配置<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">s3:</span><br><span class="line">  region: us-east-1</span><br><span class="line">  bucket: gkkbucket1</span><br><span class="line">  accesskey: tstackqwer666</span><br><span class="line">  secretkey: tstackqwer666</span><br><span class="line">  regionendpoint: http://10.85.46.87:8080</span><br><span class="line">  secure: false</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>10.85.46.87:8080是ceph rgw的地址<br>docker的/etc/docker/daemon.json配置如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;insecure-registries&quot;: [&quot;192.168.127.1:5000&quot;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>192.168.127.1:5000是distribution服务的地址，也就是让docker使用私有镜像仓库</p>
+<p>docker tag scratch:latest 192.168.127.1:5000/scratch:1.11</p>
+<h1 id="实验结果：registry接s3有问题"><a href="#实验结果：registry接s3有问题" class="headerlink" title="实验结果：registry接s3有问题"></a>实验结果：registry接s3有问题</h1><p>运行distribution，然后docker push私有镜像，实验表明确实还存在问题，一致在retry<br>假装有图。<br>网上没有解决办法，那就手撸一下。</p>
+<h1 id="调试及分析"><a href="#调试及分析" class="headerlink" title="调试及分析"></a>调试及分析</h1><ul>
+<li><p>1.首先制作一个只有一层的镜像，要不然distribution调试的时候请求会很多，眼花缭乱，不要给自己添麻烦，<br>这里使用如下命令制作一个只有一层的镜像</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar cv --files-from /dev/null | docker import - scratch</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2.设置tag</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker tag scratch:latest 192.168.127.1:5000/scratch:1.11</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>通过调试发现docker registry是先上传数据，最后再上传manifest，通过调试发现<br><img src="c.png" alt="c"><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">192.168.127.133 - - [23/Mar/2019:20:30:45 +0800] &quot;PUT /v2/docker.io/alpine/blobs/uploads/4f495fbb-876f-43b7-8aad-166701220985?_state=BbHh5XVtlX93j2I3vYVRWNluZ96_3wIhkMKd-9W3YeB7Ik5hbWUiOiJkb2NrZXIuaW8vYWxwaW5lIiwiVVVJRCI6IjRmNDk1ZmJiLTg3NmYtNDNiNy04YWFkLTE2NjcwMTIyMDk4NSIsIk9mZnNldCI6Mjc1NDcyOCwiU3RhcnRlZEF0IjoiMjAxOS0wMy0yM1QxMjozMDozNVoifQ%3D%3D&amp;digest=sha256%3A6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0 HTTP/1.1&quot; 201 0 &quot;&quot; &quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot;</span><br><span class="line">time=&quot;2019-03-23T20:30:47.8196001+08:00&quot; level=debug msg=&quot;authorizing request&quot; environment=development go.version=go1.11.5 http.request.host=&quot;192.168.127.1:5000&quot; http.request.id=5ab88eed-272e-4c63-ac4e-4395284f1647 http.request.method=HEAD http.request.remoteaddr=&quot;192.168.127.133:34417&quot; http.request.uri=&quot;/v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; http.request.useragent=&quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot; instance.id=ea6a2d2d-5f9e-4a14-8e66-f373a70a9298 service=registry vars.digest=&quot;sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; vars.name=&quot;docker.io/alpine&quot; version=&quot;v2.6.2+unknown&quot;</span><br><span class="line">time=&quot;2019-03-23T20:30:47.8196001+08:00&quot; level=debug msg=GetBlob environment=development go.version=go1.11.5 http.request.host=&quot;192.168.127.1:5000&quot; http.request.id=5ab88eed-272e-4c63-ac4e-4395284f1647 http.request.method=HEAD http.request.remoteaddr=&quot;192.168.127.133:34417&quot; http.request.uri=&quot;/v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; http.request.useragent=&quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot; instance.id=ea6a2d2d-5f9e-4a14-8e66-f373a70a9298 service=registry vars.digest=&quot;sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; vars.name=&quot;docker.io/alpine&quot; version=&quot;v2.6.2+unknown&quot;</span><br><span class="line">time=&quot;2019-03-23T20:30:47.8196001+08:00&quot; level=debug msg=&quot;s3aws.URLFor(\&quot;/docker/registry/v2/blobs/sha256/6c/6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0/data\&quot;)&quot; environment=development go.version=go1.11.5 http.request.host=&quot;192.168.127.1:5000&quot; http.request.id=5ab88eed-272e-4c63-ac4e-4395284f1647 http.request.method=HEAD http.request.remoteaddr=&quot;192.168.127.133:34417&quot; http.request.uri=&quot;/v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; http.request.useragent=&quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot; instance.id=ea6a2d2d-5f9e-4a14-8e66-f373a70a9298 service=registry trace.duration=0s trace.file=&quot;D:/Go/src/github.com/docker/distribution/registry/storage/driver/base/base.go&quot; trace.func=&quot;github.com/docker/distribution/registry/storage/driver/base.(*Base).URLFor&quot; trace.id=83cf9b9e-46a4-43a3-9db2-095ece7dda28 trace.line=189 vars.digest=&quot;sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; vars.name=&quot;docker.io/alpine&quot; version=&quot;v2.6.2+unknown&quot;</span><br><span class="line">time=&quot;2019-03-23T20:30:47.8206001+08:00&quot; level=info msg=&quot;response completed&quot; environment=development go.version=go1.11.5 http.request.host=&quot;192.168.127.1:5000&quot; http.request.id=5ab88eed-272e-4c63-ac4e-4395284f1647 http.request.method=HEAD http.request.remoteaddr=&quot;192.168.127.133:34417&quot; http.request.uri=&quot;/v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; http.request.useragent=&quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot; http.response.contenttype=&quot;application/octet-stream&quot; http.response.duration=2ms http.response.status=307 http.response.written=0 instance.id=ea6a2d2d-5f9e-4a14-8e66-f373a70a9298 service=registry version=&quot;v2.6.2+unknown&quot;</span><br><span class="line">192.168.127.133 - - [23/Mar/2019:20:30:47 +0800] &quot;HEAD /v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0 HTTP/1.1&quot; 307 0 &quot;&quot; &quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot;</span><br></pre></td></tr></table></figure></p>
+<p>在这里卡主了，上面有一个url从定向,<br>ceph rgw的日志如下：<br><img src="d.png" alt="d"><br>首先请求包认证错误，怎么会认证错误呢，再查看请求头发现这请求奇怪<br><img src="e.png" alt="e"><br>rgw请求的s3 v4认证怎么在这个QUERY_STRING字段，这个字段一般是url后面的查询条件，小甲思考3秒，可能是url重定向导致，屡一下可能是这样</p>
+<ul>
+<li>1.docker向distribution发送了一个head请求</li>
+<li>2.distribution接收到请求之后，进行了url重定向，把signure认证放在了url查询部分，放在location中返回docker</li>
+<li>3.docker根据返回请求中location中的重定向的url，也就是上面ceph rgw的地址，然后发送请求，可是docker没有调用任何s3的sdk，所以不会进行s3的signure算法，直接head发给了ceph rgw</li>
+<li>4.ceph rgw接收到head请求，还是根据s3的v4认证，所以报错了。</li>
+</ul>
+<p>后面调试代码发现问题确实是这样。</p>
+<h1 id="修改方法"><a href="#修改方法" class="headerlink" title="修改方法"></a>修改方法</h1><p>那如何修改呢，其实修改很简单，只要把url直接抛异常就可以，这个filesystem也是这样处理的。小甲本来的想法是新建一个结构体，继承现有的s3 driver，然后重载URLFor函数就可以，但是发现s3的driver是包外不可见，这就无法继承，最后通过增加一个配置参数，是否是使用的ceph s3还是aws s3，在使用ceph s3的时候直接抛异常退出URLFor函数。</p>
+<p>#等等还没结束<br>docker push和pull现在都可以正常了，但是镜像的删除也有问题，那镜像是怎么删除的呢？</p>
+<ul>
+<li>1.调用api删除</li>
+<li>2.distribution 运行garbage-collect命令<br>发现有问题，ceph接受不到请求，调试了好久发现是distribution中vendor目录下的aws-sdk-go版本比较老，小甲用较高的版本就可以了<br>这下应该结束了吧，no no no</li>
+</ul>
+<h1 id="distribution-master问题"><a href="#distribution-master问题" class="headerlink" title="distribution master问题"></a>distribution master问题</h1><p>小甲又下载了distribution的master分支试了一下，发现前面的修改之后docker push/pull都ok，删除换了高版本的aws-sdk-go还是有问题，什么问题呢？</p>
+<ul>
+<li>1.空指针异常，What？<br><img src="f.png" alt="f"><br>在doWalk函数中出现了空指针，这个函数在distribution 2.6.2中还没有</li>
+<li>2.代码分析从ceph返回来的<br>ListObjectsV2Output这个对象的KeyCount这个成员是一个空指针，而代码中使用这个进行了运算导致了错误，看来distribution确实没有验证ceph</li>
+<li>3.修改也比较简单，通过之前加的一个ceph配置对ceph的请求情况做一下特殊处理就可以了。</li>
+</ul>
+<h1 id="修改代码后重新编译"><a href="#修改代码后重新编译" class="headerlink" title="修改代码后重新编译"></a>修改代码后重新编译</h1><h1 id="重新制作harbor-registry镜像"><a href="#重新制作harbor-registry镜像" class="headerlink" title="重新制作harbor-registry镜像"></a>重新制作harbor-registry镜像</h1><p>  编写dockerfile文件<br>  上传到docker hub</p>
+<h1 id="chart配置修改"><a href="#chart配置修改" class="headerlink" title="chart配置修改"></a>chart配置修改</h1><p>  value.yaml修改<br>  配置参数填写<br>  chart起harbor验证</p>
+<h1 id="harbor功能验证图"><a href="#harbor功能验证图" class="headerlink" title="harbor功能验证图"></a>harbor功能验证图</h1><h1 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h1><p><a href="http://dockone.io/article/93" target="_blank" rel="noopener">http://dockone.io/article/93</a></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">harbor docker ceph s3</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/03/16/docker-registry-s3/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-ceph-rgw-talk-2" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -170,7 +404,12 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <p>#小记</p>
+<ul>
+<li>1.一个用户存一个对象，里面是对象的内容，包括名字，ak，sk和别名，在uid池中，email，keys和swift是3个索引池，里面也是一个对象索引一个用户，用户id是对象的数据</li>
+<li>2.</li>
+</ul>
+
       
 
       
@@ -178,6 +417,17 @@
     <div class="article-info article-info-index">
       
       
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph rgw</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
       
 
       
@@ -912,167 +1162,6 @@
 
 
   
-    <article id="post-k8s-configmap" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/16/k8s-configmap/">k8s:configmap</a>
-    </h1>
-  
-
-        
-        <a href="/2018/12/16/k8s-configmap/" class="archive-article-date">
-  	<time datetime="2018-12-16T15:21:00.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-16</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-configmap创建方式"><a href="#1-configmap创建方式" class="headerlink" title="1.configmap创建方式"></a>1.configmap创建方式</h1><ul>
-<li>从字符串创建</li>
-<li>从env文件创建</li>
-<li>从目录创建</li>
-<li>从json/yaml文件创建</li>
-</ul>
-<h1 id="2-configmap使用"><a href="#2-configmap使用" class="headerlink" title="2.configmap使用"></a>2.configmap使用</h1><ul>
-<li>用作pod的环境变量</li>
-<li>通过环境变量作为pod命令参数</li>
-<li>使用volume将configmap作为文件或者目录直接挂载</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">k8s configmap</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/12/16/k8s-configmap/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-how-to-change-horizon-chinese" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/15/how-to-change-horizon-chinese/">how to change horizon chinese</a>
-    </h1>
-  
-
-        
-        <a href="/2018/12/15/how-to-change-horizon-chinese/" class="archive-article-date">
-  	<time datetime="2018-12-15T05:17:08.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-15</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>最近笔者想修改一下openstack dashboard上面中文，比如我想把”主机聚合”改成”主机集群”，笔者的openstack的版本是Pike，虽然这个问题网上有很多说明，但是不能解决我的全部问题</p>
-<h1 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h1><p>网上都说在/usr/share/openstack-dashboard/openstack_dashboard/locale/zh_CN/LC_MESSAGES这个目录下会有一个po文件，只要把里面的相应中文改成你想要的就可以了，但是Pike版环境上这个目录下面没有这po文件，只有一个mo文件<br><img src="1.png" alt="aa"><br>而且还是二进制文件，打开看不出啥一对乱码<br>然后笔者想到的是去github的原理里面找po文件<br><a href="https://sourcegraph.com/github.com/openstack/horizon@master/-/blob/horizon/locale/zh_CN/LC_MESSAGES/django.po" target="_blank" rel="noopener">https://sourcegraph.com/github.com/openstack/horizon@master/-/blob/horizon/locale/zh_CN/LC_MESSAGES/django.po</a><br>然而。。。。<br>我在这个文件里面搜索竟然没有找到我要求的中文，什么鬼，那到底在哪里<br>然后很无奈的全局搜索了一下，最后竟然在上面mo二进制文件中有match，那就说有，那为什么源码的po文件没有，估计应该是编译的时候加入一些</p>
-<h1 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h1><p>那问题就是如果把mo反编译会po，然后修改po，最后在编译会mo<br>mo到po<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msgunfmt xxx.mo -o xxx.po</span><br></pre></td></tr></table></figure></p>
-<p>po到mo<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msgfmt -o xxx.mo xxx.po</span><br></pre></td></tr></table></figure></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">openstack horizon</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/12/15/how-to-change-horizon-chinese/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
@@ -1170,7 +1259,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1178,11 +1279,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1191,10 +1288,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1210,15 +1303,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1226,11 +1319,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1243,10 +1348,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
             
             <div class="clearfix"></div>

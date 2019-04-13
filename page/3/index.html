@@ -150,6 +150,174 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-miss-image-base-image-ref" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/12/miss-image-base-image-ref/">rebuild虚拟机之后做快照少base_image_ref信息</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/12/miss-image-base-image-ref/" class="archive-article-date">
+  	<time datetime="2018-10-12T13:05:03.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-12</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>由于nova rebuild操作一般用于之前做了虚拟机快照镜像之后由于回滚，但是也可以用来更换镜像，比如从windows换成linux，但是rebuild操作不成功，直到P版的源码这个patch也没有合进去，patch传输门<br><a href="https://review.openstack.org/#/c/305079/22/nova/compute/manager.py" target="_blank" rel="noopener">https://review.openstack.org/#/c/305079/22/nova/compute/manager.py</a><br>，笔者手动合了这个patch到p版，心想美滋滋，不过了今天测试测出了一个bug</p>
+<h2 id="情景如下"><a href="#情景如下" class="headerlink" title="情景如下"></a>情景如下</h2><p>我们一般会使用虚拟机创建快照，这个快照会作为镜像上传到glance，这个镜像我们可以称之为用户镜像，这个镜像跟一般的镜像有一个不同，会增加几个属性<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Name	Value</span><br><span class="line">image_type	snapshot</span><br><span class="line">instance_uuid	&lt;uuid of instance that was snapshotted&gt;</span><br><span class="line">base_image_ref	&lt;uuid of original image of instance that was snapshotted&gt;</span><br><span class="line">image_location	snapshot</span><br></pre></td></tr></table></figure></p>
+<p>其中笔者业务需要base_image_ref这个属性，但是在虚拟机重建之后，做了镜像快照之后没有这个属性了，</p>
+<h1 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h1><h2 id="创建虚拟机的时候这个属性怎么来的"><a href="#创建虚拟机的时候这个属性怎么来的" class="headerlink" title="创建虚拟机的时候这个属性怎么来的"></a>创建虚拟机的时候这个属性怎么来的</h2><ul>
+<li>1.创建虚拟机源码分析<br><img src="1.png" alt="aa"><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">def _populate_instance_for_create(self, context, instance, image,</span><br><span class="line">                                      index, security_groups, instance_type,</span><br><span class="line">                                      num_instances, shutdown_terminate):</span><br><span class="line">    ....</span><br><span class="line">    # In case we couldn&apos;t find any suitable base_image</span><br><span class="line">    system_meta.setdefault(&apos;image_base_image_ref&apos;, instance.image_ref)</span><br><span class="line"></span><br><span class="line">    system_meta[&apos;owner_user_name&apos;] = context.user_name</span><br><span class="line">    system_meta[&apos;owner_project_name&apos;] = context.project_name</span><br><span class="line">    ....</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看见在创建虚拟机时在nova-api中加入的</p>
+<ul>
+<li>2.创建虚拟机快照源码分析<br>创建虚拟机快照的函数是_action_create_image函数，这个是入口<br><img src="2.png" alt="bb"><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">def _create_image(self, context, instance, name, image_type,</span><br><span class="line">                  extra_properties=None):</span><br><span class="line">    properties = &#123;</span><br><span class="line">        &apos;instance_uuid&apos;: instance.uuid,</span><br><span class="line">        &apos;user_id&apos;: str(context.user_id),</span><br><span class="line">        &apos;image_type&apos;: image_type,</span><br><span class="line">    &#125;</span><br><span class="line">    properties.update(extra_properties or &#123;&#125;)</span><br><span class="line"></span><br><span class="line">    image_meta = self._initialize_instance_snapshot_metadata(</span><br><span class="line">        instance, name, properties)</span><br><span class="line">    ....</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>主要是通过上面的_initialize_instance_snapshot_metadata函数从虚拟机的系统元数据中找出base_image_ref，就是上面创建虚拟机的时候加入，那rebuild虚拟机之后没有是怎么回事呢，来看一下rebuild源码分析</p>
+<ul>
+<li>3.rebuild源码分析<br>rebuild虚拟机的入口函数是_action_rebuild<br><img src="3.png" alt="cc"><br>rebuild函数内部有一个内部函数<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">def _reset_image_metadata():</span><br><span class="line">    orig_sys_metadata = dict(instance.system_metadata)</span><br><span class="line">    # Remove the old keys</span><br><span class="line">    for key in list(instance.system_metadata.keys()):</span><br><span class="line">        if key.startswith(utils.SM_IMAGE_PROP_PREFIX):</span><br><span class="line">            del instance.system_metadata[key]</span><br><span class="line"></span><br><span class="line">    # Add the new ones</span><br><span class="line">    new_sys_metadata = utils.get_system_metadata_from_image(</span><br><span class="line">        image, flavor)</span><br><span class="line"></span><br><span class="line">    instance.system_metadata.update(new_sys_metadata)</span><br><span class="line">    instance.save()</span><br><span class="line">    return orig_sys_metadata</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这个函数就是用来删除虚拟机中image前缀的，而base_image_ref正好有一个image前缀，就是创建虚拟机的时候计入的，但是加加入新的虚拟机系统元数据的时候没有加入，导致这个元数据没了，笔者的做法是在这里加上，毕竟系统元数据作为一个扩展属性，类似用户自定义的，增加一个影响不是很大，修改之后如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">def _reset_image_metadata(image_id):</span><br><span class="line">    orig_sys_metadata = dict(instance.system_metadata)</span><br><span class="line">    # Remove the old keys</span><br><span class="line">    for key in list(instance.system_metadata.keys()):</span><br><span class="line">        if key.startswith(utils.SM_IMAGE_PROP_PREFIX):</span><br><span class="line">            del instance.system_metadata[key]</span><br><span class="line"></span><br><span class="line">    # Add the new ones</span><br><span class="line">    new_sys_metadata = utils.get_system_metadata_from_image(</span><br><span class="line">        image, flavor)</span><br><span class="line">    new_sys_metadata[&quot;image_base_image_ref&quot;] = image_id  </span><br><span class="line"></span><br><span class="line">    instance.system_metadata.update(new_sys_metadata)</span><br><span class="line">    instance.save()</span><br><span class="line">    return orig_sys_metadata</span><br></pre></td></tr></table></figure></p>
+<p>之后rebuild的虚拟机再创建快照镜像之后就没有问题了</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/12/miss-image-base-image-ref/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-k8s-learn-10" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/09/k8s-learn-10/">k8s learn(10)kubeadm使用</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/09/k8s-learn-10/" class="archive-article-date">
+  	<time datetime="2018-10-09T14:44:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-09</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="kubelet不能容器话"><a href="#kubelet不能容器话" class="headerlink" title="kubelet不能容器话"></a>kubelet不能容器话</h1><ul>
+<li>1.kubelet不止管理容器的生命周期，还管理网络和卷的，虽然网络比较好操作宿主机的网络，使用network=host，但是卷不能逾越到宿主机</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/09/k8s-learn-10/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-virsh-domain" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -989,179 +1157,6 @@
 
 
   
-    <article id="post-No-space-left-on-device-when-boot-vms" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/29/No-space-left-on-device-when-boot-vms/">从镜像和卷启动虚拟机遇到No space left on device问题</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/29/No-space-left-on-device-when-boot-vms/" class="archive-article-date">
-  	<time datetime="2018-09-29T11:39:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-29</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
-<li>使用windows的qcow2镜像从镜像和卷启动虚拟机的时候，出现No space left on device问题，由于公司环境的机器分配下来之后，根目录都是20G，so small</li>
-</ul>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>分别对镜像启动和卷启动两种情况进行解决：</p>
-<h2 id="镜像启动虚拟机"><a href="#镜像启动虚拟机" class="headerlink" title="镜像启动虚拟机"></a>镜像启动虚拟机</h2><ul>
-<li>原因分析<br>从镜像启动虚拟机按理来说在glance配置开启了show_image_direct_url配置之后应该可以秒级启动虚拟机，即对glance池里面镜像的rbd做快照snap，然后clone到vms池作为虚拟机的系统盘，但是这里有一个前提，ceph只支持raw格式的虚拟机镜像，如果是qcow2格式的镜像需要先从ceph的images池把镜像下载到本地目录（/var/lib/nova/instances/_base），然后使用qemu镜像镜像格式的转化，而我使用的镜像正好的qcow2格式的，而且是windows，这个转化成raw格式的镜像需要50G，已经超过了根目录的大小，所以会报上面的No space left on device的错误。</li>
-<li>cephfs解决<br>ceph也提高文件系统功能，我们可以把这个cephfs挂载各个计算节点的/var/lib/nova/instances/_base目录，还能达到共享存储的效果，不过一个问题，ceph mon的level数据存储默认是在根目录，而我们的根目录只有20G，所以往往会把ceph mon撑爆（我们测试环境一般计算节点也是存储节点），mon挂了之后会导致ceph的命令都不能用，由于我们把cephfs挂载了本地目录，会导致df命令不能使用，出现一脸懵逼，发生了什么</li>
-<li>软连接数据盘<br>幸亏公司的机器还是有其他数据盘的，数据盘的容量还是慷慨的，我们可以在数据建个软连接过去<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># mkdir /data/base</span><br><span class="line"># ln -s /data/base /var/lib/nova/instances/_base</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="卷启动虚拟机"><a href="#卷启动虚拟机" class="headerlink" title="卷启动虚拟机"></a>卷启动虚拟机</h2><ul>
-<li>从卷启动类型也需要先下载到本地进行转化，不过卷启动会先创建一个空的rbd卷在volumes池，然后把转化后的本地镜像通过rbd import命令导入到rbd卷中，这里的本地转化发生在/var/lib/cinder/conversion目录下，也是在根目录，解决方法跟上面类似</li>
-</ul>
-<p>我用的是软连接，ok问题解决</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack nova cinder</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/29/No-space-left-on-device-when-boot-vms/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-虚拟机镜像上传问题" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/28/虚拟机镜像上传问题/">虚拟机快照镜像上传问题</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/28/虚拟机镜像上传问题/" class="archive-article-date">
-  	<time datetime="2018-09-28T09:21:06.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
-<li>环境P版在虚拟机创建快照的时候，上传镜像的时候出现如下错误信息：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ImageNotAuthorized: Not authorized for image 4fb7c773-0ab3-4123-a6cc-2a9e38373793</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><ul>
-<li><p>本人在之前对glance设置了一个配置show_image_direct_url，用来支持虚拟机从镜像秒启动，跟踪了错误日志</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server Traceback (most recent call last):</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_messaging/rpc/server.py&quot;, line 160, in _process_incoming</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     res = self.dispatcher.dispatch(message)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_messaging/rpc/dispatcher.py&quot;, line 213, in dispatch</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return self._do_dispatch(endpoint, method, ctxt, args)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_messaging/rpc/dispatcher.py&quot;, line 183, in _do_dispatch</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     result = func(ctxt, **new_args)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/exception_wrapper.py&quot;, line 76, in wrapped</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     function_name, call_dict, binary)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/exception_wrapper.py&quot;, line 67, in wrapped</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return f(self, context, *args, **kw)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 191, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     &quot;Error: %s&quot;, e, instance=instance)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 161, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return function(self, context, *args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 219, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     kwargs[&apos;instance&apos;], e, sys.exc_info())</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 207, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return function(self, context, *args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 248, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     image_id, instance=instance)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 235, in decorated_function</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     *args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 3221, in snapshot_instance</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     task_states.IMAGE_SNAPSHOT)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/compute/manager.py&quot;, line 3253, in _snapshot_instance</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     update_task_state)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/virt/libvirt/driver.py&quot;, line 1827, in snapshot</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     ignore_errors=True)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 220, in __exit__</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     self.force_reraise()</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/oslo_utils/excutils.py&quot;, line 196, in force_reraise</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(self.type_, self.value, self.tb)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/virt/libvirt/driver.py&quot;, line 1768, in snapshot</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     purge_props=False)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/api.py&quot;, line 132, in update</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     purge_props=purge_props)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 503, in update</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     _reraise_translated_image_exception(image_id)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 820, in _reraise_translated_image_exception</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     six.reraise(type(new_exc), new_exc, exc_trace)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 501, in update</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     image = self._update_v2(context, sent_service_image_meta, data)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 515, in _update_v2</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     image = self._add_location(context, image_id, location)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 400, in _add_location</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     location, &#123;&#125;)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/nova/image/glance.py&quot;, line 166, in call</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     result = getattr(controller, method)(*args, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/v2/images.py&quot;, line 368, in add_location</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     response = self._send_image_update_request(image_id, add_patch)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/common/utils.py&quot;, line 545, in inner</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return RequestIdProxy(wrapped(*args, **kwargs))</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/v2/images.py&quot;, line 352, in _send_image_update_request</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     data=json.dumps(patch_body))</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/keystoneauth1/adapter.py&quot;, line 300, in patch</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return self.request(url, &apos;PATCH&apos;, **kwargs)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/common/http.py&quot;, line 349, in request</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     return self._handle_response(resp)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server   File &quot;/usr/lib/python2.7/site-packages/glanceclient/common/http.py&quot;, line 98, in _handle_response</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server     raise exc.from_response(resp, resp.content)</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server ImageNotAuthorized: Not authorized for image 4fb7c773-0ab3-4123-a6cc-2a9e38373793.</span><br><span class="line">2018-09-28 16:58:31.419 1040857 ERROR oslo_messaging.rpc.server</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>在代码里面看到这段注释</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">/usr/lib/python2<span class="number">.7</span>/site-packages/nova/image/glance.py</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_add_location</span><span class="params">(self, context, image_id, location)</span>:</span></span><br><span class="line">        <span class="comment"># 'show_multiple_locations' must be enabled in glance api conf file.</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> self._client.call(context, <span class="number">2</span>, <span class="string">'add_location'</span>, image_id,</span><br><span class="line">                                     location, &#123;&#125;)</span><br><span class="line">        <span class="keyword">except</span> glanceclient.exc.HTTPBadRequest:</span><br><span class="line">            _reraise_translated_exception()</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>需要打开show_multiple_locations配置，打开之后就OK了</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack nova glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/28/虚拟机镜像上传问题/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/2/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/4/">Next &raquo;</a>
@@ -1259,7 +1254,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1267,11 +1274,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1280,10 +1283,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1299,15 +1298,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1315,11 +1314,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1332,10 +1343,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
             
             <div class="clearfix"></div>
