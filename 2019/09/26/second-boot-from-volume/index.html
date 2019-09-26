@@ -6,20 +6,16 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>virsh-domain.c文件下命令分析 | 小甲师兄</title>
+  <title>second boot from volume | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="libvirt由于最近要做虚拟机在线快照，熟悉一下libvirt源码以及使用 virsh attach-device,通过xml给虚拟机添加设备virsh attach-disk，增加盘virsh attach-interface，增加网卡virsh autostart，设置自动启动，当libvirtd重启的时候虚拟机重启virsh blkdeviotune，设置磁盘I/O节流virsh blki">
-<meta name="keywords" content="libvirt">
-<meta property="og:type" content="article">
-<meta property="og:title" content="virsh-domain.c文件下命令分析">
-<meta property="og:url" content="http://yoursite.com/2018/10/09/virsh-domain/index.html">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="second boot from volume">
+<meta property="og:url" content="http://yoursite.com/2019/09/26/second-boot-from-volume/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="libvirt由于最近要做虚拟机在线快照，熟悉一下libvirt源码以及使用 virsh attach-device,通过xml给虚拟机添加设备virsh attach-disk，增加盘virsh attach-interface，增加网卡virsh autostart，设置自动启动，当libvirtd重启的时候虚拟机重启virsh blkdeviotune，设置磁盘I/O节流virsh blki">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-12T14:16:18.477Z">
+<meta property="og:updated_time" content="2019-09-26T11:37:16.196Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="virsh-domain.c文件下命令分析">
-<meta name="twitter:description" content="libvirt由于最近要做虚拟机在线快照，熟悉一下libvirt源码以及使用 virsh attach-device,通过xml给虚拟机添加设备virsh attach-disk，增加盘virsh attach-interface，增加网卡virsh autostart，设置自动启动，当libvirtd重启的时候虚拟机重启virsh blkdeviotune，设置磁盘I/O节流virsh blki">
+<meta name="twitter:title" content="second boot from volume">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,28 +149,27 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-virsh-domain" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-second-boot-from-volume" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      virsh-domain.c文件下命令分析
+      second boot from volume
     </h1>
   
 
         
-        <a href="/2018/10/09/virsh-domain/" class="archive-article-date">
-  	<time datetime="2018-10-09T13:34:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-09</time>
+        <a href="/2019/09/26/second-boot-from-volume/" class="archive-article-date">
+  	<time datetime="2019-09-26T11:37:16.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="libvirt"><a href="#libvirt" class="headerlink" title="libvirt"></a>libvirt</h1><p>由于最近要做虚拟机在线快照，熟悉一下libvirt源码以及使用</p>
-<h2 id="virsh-attach-device-通过xml给虚拟机添加设备"><a href="#virsh-attach-device-通过xml给虚拟机添加设备" class="headerlink" title="virsh attach-device,通过xml给虚拟机添加设备"></a>virsh attach-device,通过xml给虚拟机添加设备</h2><h2 id="virsh-attach-disk，增加盘"><a href="#virsh-attach-disk，增加盘" class="headerlink" title="virsh attach-disk，增加盘"></a>virsh attach-disk，增加盘</h2><h2 id="virsh-attach-interface，增加网卡"><a href="#virsh-attach-interface，增加网卡" class="headerlink" title="virsh attach-interface，增加网卡"></a>virsh attach-interface，增加网卡</h2><h2 id="virsh-autostart，设置自动启动，当libvirtd重启的时候虚拟机重启"><a href="#virsh-autostart，设置自动启动，当libvirtd重启的时候虚拟机重启" class="headerlink" title="virsh autostart，设置自动启动，当libvirtd重启的时候虚拟机重启"></a>virsh autostart，设置自动启动，当libvirtd重启的时候虚拟机重启</h2><h2 id="virsh-blkdeviotune，设置磁盘I-O节流"><a href="#virsh-blkdeviotune，设置磁盘I-O节流" class="headerlink" title="virsh blkdeviotune，设置磁盘I/O节流"></a>virsh blkdeviotune，设置磁盘I/O节流</h2><h2 id="virsh-blkiotune-设置磁盘I-O节流"><a href="#virsh-blkiotune-设置磁盘I-O节流" class="headerlink" title="virsh blkiotune,设置磁盘I/O节流"></a>virsh blkiotune,设置磁盘I/O节流</h2>
+        
       
 
       
@@ -203,17 +198,6 @@
     <div class="article-info article-info-index">
       
       
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">libvirt</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
       
 
       
@@ -264,7 +248,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/10/09/virsh-domain/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2019/09/26/second-boot-from-volume/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -278,18 +262,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2018/10/09/k8s-learn-10/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          k8s learn(10)kubeadm使用
-        
-      </div>
-    </a>
   
-  
-    <a href="/2018/10/08/k8s-learn-8/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">k8s learn(8)重新认识Docker容器</div>
+    <a href="/2019/04/15/cpu-100/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">cpu 100%</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -317,7 +292,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="virsh-domain" data-title="virsh-domain.c文件下命令分析" data-url="http://yoursite.com/2018/10/09/virsh-domain/"></div>
+	<div class="ds-thread" data-thread-key="second-boot-from-volume" data-title="second boot from volume" data-url="http://yoursite.com/2019/09/26/second-boot-from-volume/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
