@@ -6,16 +6,22 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>second boot from volume | 小甲师兄</title>
+  <title>glance backend with cinder | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="article">
-<meta property="og:title" content="second boot from volume">
+  <meta name="description" content="glance对接cinder————————————————————————————————————————————————————————————————————————————glance-api.conf修改12default_store = cinderstores = cinder cinder.conf修改1234glance_api_version = 2allowed_direct">
+<meta property="og:type" content="article">
+<meta property="og:title" content="glance backend with cinder">
 <meta property="og:url" content="http://yoursite.com/2019/09/26/glance-backend-with-cinder/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="glance对接cinder————————————————————————————————————————————————————————————————————————————glance-api.conf修改12default_store = cinderstores = cinder cinder.conf修改1234glance_api_version = 2allowed_direct">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2019-09-26T11:37:16.196Z">
+<meta property="og:image" content="http://yoursite.com/2019/09/26/glance-backend-with-cinder/1.png">
+<meta property="og:image" content="http://yoursite.com/2019/09/26/glance-backend-with-cinder/2.png">
+<meta property="og:updated_time" content="2019-09-26T11:54:25.031Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="second boot from volume">
+<meta name="twitter:title" content="glance backend with cinder">
+<meta name="twitter:description" content="glance对接cinder————————————————————————————————————————————————————————————————————————————glance-api.conf修改12default_store = cinderstores = cinder cinder.conf修改1234glance_api_version = 2allowed_direct">
+<meta name="twitter:image" content="http://yoursite.com/2019/09/26/glance-backend-with-cinder/1.png">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -156,7 +162,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      second boot from volume
+      glance backend with cinder
     </h1>
   
 
@@ -169,7 +175,16 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h1 id="glance对接cinder"><a href="#glance对接cinder" class="headerlink" title="glance对接cinder"></a>glance对接cinder</h1><p>————————————————————————————————————————————————————————————————————————————<br>glance-api.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">default_store = cinder</span><br><span class="line">stores = cinder</span><br></pre></td></tr></table></figure></p>
+<p>cinder.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">glance_api_version = 2</span><br><span class="line">allowed_direct_url_schemes = cinder</span><br><span class="line">image_upload_use_cinder_backend = True</span><br><span class="line">image_upload_use_internal_tenant = True</span><br></pre></td></tr></table></figure></p>
+<h1 id="对接结果"><a href="#对接结果" class="headerlink" title="对接结果"></a>对接结果</h1><p>————————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li><p>glance 数据库<br><img src="1.png" alt="1"></p>
+</li>
+<li><p>ceph中的显示<br><img src="2.png" alt="2"></p>
+</li>
+</ul>
+
       
 
       
@@ -292,7 +307,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="glance-backend-with-cinder" data-title="second boot from volume" data-url="http://yoursite.com/2019/09/26/glance-backend-with-cinder/"></div>
+	<div class="ds-thread" data-thread-key="glance-backend-with-cinder" data-title="glance backend with cinder" data-url="http://yoursite.com/2019/09/26/glance-backend-with-cinder/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
@@ -410,7 +425,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -418,7 +433,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -431,6 +446,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -470,11 +489,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -486,19 +505,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
