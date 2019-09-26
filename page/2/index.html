@@ -150,6 +150,89 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-cpu-context-switch" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/01/05/cpu-context-switch/">linux性能优化系列（2）cpu上下文切换</a>
+    </h1>
+  
+
+        
+        <a href="/2019/01/05/cpu-context-switch/" class="archive-article-date">
+  	<time datetime="2019-01-05T09:21:32.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="测试cpu上下文切换工具"><a href="#测试cpu上下文切换工具" class="headerlink" title="测试cpu上下文切换工具"></a>测试cpu上下文切换工具</h1><p>—————————————————————————————————————————————————————————————————————————————<br>使用sysbench这个工具，这个工具是线程基准测试工具，用来测试线程，这样可以测试调度和cpu上下文切换<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sysbench --num-threads=10 --max-time=300 --max-requests=10000000 --test=threads run</span><br></pre></td></tr></table></figure></p>
+<h1 id="如何查看系统cpu上下文切换情况"><a href="#如何查看系统cpu上下文切换情况" class="headerlink" title="如何查看系统cpu上下文切换情况"></a>如何查看系统cpu上下文切换情况</h1><p>—————————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li><p>1.vmstat工具可以查看系统的cpu上下文切换</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ~(keystone_admin)]# vmstat 1</span><br><span class="line">procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----</span><br><span class="line"> r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st</span><br><span class="line"> 8  0   2928 28614520 7066708 11676172    0    0     3    34    0    0  1  5 94  0  0</span><br><span class="line"> 4  0   2928 28616408 7066708 11676196    0    0     0    12 8510 19720  2 14 85  0  0</span><br><span class="line"> 2  0   2928 28615164 7066708 11676208    0    0     0   116 7205 7983  2 14 85  0  0</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2.pidstat加-w</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pidstat -wt -u 5</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">linux 性能</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/01/05/cpu-context-switch/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-ceph-osd-pg-sum" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -962,91 +1045,6 @@
 
 
   
-    <article id="post-k8s-learn-14" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/17/k8s-learn-14/">k8s learn(14)为什么我们需要pod</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/17/k8s-learn-14/" class="archive-article-date">
-  	<time datetime="2018-10-17T14:58:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-17</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="k8s中api对象"><a href="#k8s中api对象" class="headerlink" title="k8s中api对象"></a>k8s中api对象</h1><ul>
-<li>1.metadata表示对象，主要有label</li>
-<li>2.spec具体api对象信息</li>
-</ul>
-<h1 id="volume属于pod，类似于磁盘属于虚拟机"><a href="#volume属于pod，类似于磁盘属于虚拟机" class="headerlink" title="volume属于pod，类似于磁盘属于虚拟机"></a>volume属于pod，类似于磁盘属于虚拟机</h1><h1 id="empty宿主机临时目录，hostpath宿主机某个目录"><a href="#empty宿主机临时目录，hostpath宿主机某个目录" class="headerlink" title="empty宿主机临时目录，hostpath宿主机某个目录"></a>empty宿主机临时目录，hostpath宿主机某个目录</h1><h1 id="kubectl-exec进入容器"><a href="#kubectl-exec进入容器" class="headerlink" title="kubectl exec进入容器"></a>kubectl exec进入容器</h1><h1 id="pod的生命周期跟基础容器相同"><a href="#pod的生命周期跟基础容器相同" class="headerlink" title="pod的生命周期跟基础容器相同"></a>pod的生命周期跟基础容器相同</h1><h1 id="有两种容器"><a href="#有两种容器" class="headerlink" title="有两种容器"></a>有两种容器</h1><ul>
-<li>initcontainer：运行网就退出，先于container运行</li>
-<li>container：initcontainer运行完在运行</li>
-</ul>
-<h1 id="容器设计模式–sidecar"><a href="#容器设计模式–sidecar" class="headerlink" title="容器设计模式–sidecar"></a>容器设计模式–sidecar</h1><ul>
-<li>运用网络共享：Istio</li>
-<li>运用卷共享：日志收集</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/17/k8s-learn-14/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
@@ -1144,7 +1142,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1152,15 +1150,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1184,11 +1182,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1208,11 +1210,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1228,11 +1230,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
