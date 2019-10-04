@@ -8,14 +8,18 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>how-to-debug-osd | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="article">
+  <meta name="description" content="OSD是驻留进程怎么调试OSD使用的驻留进程，在启动会断开进程连接在global section下面增加这个配置1daemonize = false 可以取消驻留进程调试">
+<meta name="keywords" content="ceph osd">
+<meta property="og:type" content="article">
 <meta property="og:title" content="how-to-debug-osd">
 <meta property="og:url" content="http://yoursite.com/2019/09/26/how-to-debug-osd/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="OSD是驻留进程怎么调试OSD使用的驻留进程，在启动会断开进程连接在global section下面增加这个配置1daemonize = false 可以取消驻留进程调试">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2019-09-26T14:53:21.935Z">
+<meta property="og:updated_time" content="2019-10-01T03:14:18.042Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="how-to-debug-osd">
+<meta name="twitter:description" content="OSD是驻留进程怎么调试OSD使用的驻留进程，在启动会断开进程连接在global section下面增加这个配置1daemonize = false 可以取消驻留进程调试">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -169,7 +173,9 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h1 id="OSD是驻留进程怎么调试"><a href="#OSD是驻留进程怎么调试" class="headerlink" title="OSD是驻留进程怎么调试"></a>OSD是驻留进程怎么调试</h1><p>OSD使用的驻留进程，在启动会断开进程连接<br>在global section下面增加这个配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">daemonize = false</span><br></pre></td></tr></table></figure></p>
+<p>可以取消驻留进程调试</p>
+
       
 
       
@@ -198,6 +204,17 @@
     <div class="article-info article-info-index">
       
       
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph osd</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
       
 
       
@@ -261,6 +278,15 @@
 
   
 <nav id="article-nav">
+  
+    <a href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？
+        
+      </div>
+    </a>
   
   
     <a href="/2019/09/26/glance-backend-with-cinder/" id="article-nav-older" class="article-nav-link-wrap">
@@ -410,10 +436,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
@@ -422,11 +444,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -434,7 +456,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -450,7 +472,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -458,11 +480,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -470,11 +496,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -491,6 +521,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">

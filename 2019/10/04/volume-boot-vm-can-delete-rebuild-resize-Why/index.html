@@ -6,15 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Archives: 2018 | 小甲师兄</title>
+  <title>卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？ | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="小甲师兄">
-<meta property="og:url" content="http://yoursite.com/archives/2018/page/3/index.html">
+  <meta name="description" content="问题————————————————————————————————————————————————————————————————————————————最近在使用卷启动虚拟机，比如配秒起，glance接cinder，这个过程遇到一个很奇怪的问题，秒起之后卷启动的虚拟机可以delete，resize，rebuild？为什么？镜像秒起的虚拟机就不行，在秒起之后，如果后端接的ceph，秒起其实就是s">
+<meta name="keywords" content="Openstack nova ceph">
+<meta property="og:type" content="article">
+<meta property="og:title" content="卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？">
+<meta property="og:url" content="http://yoursite.com/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="问题————————————————————————————————————————————————————————————————————————————最近在使用卷启动虚拟机，比如配秒起，glance接cinder，这个过程遇到一个很奇怪的问题，秒起之后卷启动的虚拟机可以delete，resize，rebuild？为什么？镜像秒起的虚拟机就不行，在秒起之后，如果后端接的ceph，秒起其实就是s">
 <meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2019-10-04T08:25:44.121Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄">
+<meta name="twitter:title" content="卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？">
+<meta name="twitter:description" content="问题————————————————————————————————————————————————————————————————————————————最近在使用卷启动虚拟机，比如配秒起，glance接cinder，这个过程遇到一个很奇怪的问题，秒起之后卷启动的虚拟机可以delete，resize，rebuild？为什么？镜像秒起的虚拟机就不行，在秒起之后，如果后端接的ceph，秒起其实就是s">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -148,367 +153,190 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-volume-boot-vm-can-delete-rebuild-resize-Why" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？
+    </h1>
+  
+
+        
+        <a href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/" class="archive-article-date">
+  	<time datetime="2019-10-04T08:14:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-10-04</time>
+</a>
+        
+      </header>
     
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>————————————————————————————————————————————————————————————————————————————<br>最近在使用卷启动虚拟机，比如配秒起，glance接cinder，这个过程遇到一个很奇怪的问题，秒起之后卷启动的虚拟机可以delete，resize，rebuild？<br>为什么？镜像秒起的虚拟机就不行，在秒起之后，如果后端接的ceph，秒起其实就是snap和clone。<br>首先我们使用卷启动一个虚拟机，然后创建一个镜像，然后通过这个size为0的镜像在创建一个虚拟机，这里其实是从第一个虚拟机的卷的快照创建第二个虚拟机的卷，这个时候第二个虚拟机的卷就依赖于第一个虚拟机。此时如果要删除第一个虚拟机的卷应该是删除不掉的，那为什么虚拟机操作可以呢？</p>
+<h1 id="根源"><a href="#根源" class="headerlink" title="根源"></a>根源</h1><p>————————————————————————————————————————————————————————————————————————————<br>看了一下代码，上面的delete，rebuild，resize都会涉及到删除操作，但是nova在删除虚拟机的时候会根据需求destroy调磁盘，代码在nova/virt/libvirt/driver.py下面<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">if destroy_disks:</span><br><span class="line">    # NOTE(haomai): destroy volumes if needed</span><br><span class="line">    if CONF.libvirt.images_type == &apos;lvm&apos;:</span><br><span class="line">        self._cleanup_lvm(instance, block_device_info)</span><br><span class="line">    if CONF.libvirt.images_type == &apos;rbd&apos;:</span><br><span class="line">        self._cleanup_rbd(instance)</span><br></pre></td></tr></table></figure></p>
+<p>在看一下_cleanup_rbd函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">def _cleanup_rbd(self, instance):</span><br><span class="line">    # NOTE(nic): On revert_resize, the cleanup steps for the root</span><br><span class="line">    # volume are handled with an &quot;rbd snap rollback&quot; command,</span><br><span class="line">    # and none of this is needed (and is, in fact, harmful) so</span><br><span class="line">    # filter out non-ephemerals from the list</span><br><span class="line">    if instance.task_state == task_states.RESIZE_REVERTING:</span><br><span class="line">        filter_fn = lambda disk: (disk.startswith(instance.uuid) and</span><br><span class="line">                                  disk.endswith(&apos;disk.local&apos;))</span><br><span class="line">    else:</span><br><span class="line">        filter_fn = lambda disk: disk.startswith(instance.uuid)</span><br><span class="line">    LibvirtDriver._get_rbd_driver().cleanup_volumes(filter_fn)</span><br></pre></td></tr></table></figure></p>
+<p>会走else分支，关键就在这个cleanup_volumes函数，一看就是清理卷，但是前面的rbd_driver<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">def _get_rbd_driver():</span><br><span class="line">    return rbd_utils.RBDDriver(</span><br><span class="line">            pool=CONF.libvirt.images_rbd_pool,</span><br><span class="line">            ceph_conf=CONF.libvirt.images_rbd_ceph_conf,</span><br><span class="line">            rbd_user=CONF.libvirt.rbd_user)</span><br></pre></td></tr></table></figure></p>
+<p>哦，其实是在nova对接的ceph池vms中去查找虚拟机id开头的rbd卷，然后删除，其实这个是对镜像启动的操作，也就是说nova没有处理卷启动情况的删除操作</p>
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
       
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2018" class="archive-year">2018</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/29/modify-openstack-code-then-make-rpm-package/" class="archive-article-date">
-  	<time datetime="2018-09-29T12:18:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-29</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/29/modify-openstack-code-then-make-rpm-package/">修改openstack源码之后如何做rpm包</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Openstack nova ceph</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/29/No-space-left-on-device-when-boot-vms/" class="archive-article-date">
-  	<time datetime="2018-09-29T11:39:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-29</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2019/09/26/how-to-debug-osd/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">how-to-debug-osd</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/29/No-space-left-on-device-when-boot-vms/">从镜像和卷启动虚拟机遇到No space left on device问题</a>
-    </h1>
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="volume-boot-vm-can-delete-rebuild-resize-Why" data-title="卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？" data-url="http://yoursite.com/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+  
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack nova cinder</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/28/虚拟机镜像上传问题/" class="archive-article-date">
-  	<time datetime="2018-09-28T09:21:06.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/28/虚拟机镜像上传问题/">虚拟机快照镜像上传问题</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack nova glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/28/k8s learn(16)/" class="archive-article-date">
-  	<time datetime="2018-09-28T05:18:39.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/28/k8s learn(16)/">张磊k8s学习(16)</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/28/k8s use cephfs as StorageClass/" class="archive-article-date">
-  	<time datetime="2018-09-28T05:16:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/28/k8s use cephfs as StorageClass/">k8s use cephfs as StorageClass</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">k8s cephfs</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/27/glance local image add to ceph/" class="archive-article-date">
-  	<time datetime="2018-09-27T09:11:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-27</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/27/glance local image add to ceph/">glance本地镜像补齐到ceph</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">openstack glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/26/nova-Pike-changelog分析/" class="archive-article-date">
-  	<time datetime="2018-09-26T08:14:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-26</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/26/nova-Pike-changelog分析/">nova Pike changelog分析</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/21/每天5分钟go-2/" class="archive-article-date">
-  	<time datetime="2018-09-20T23:13:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-21</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/21/每天5分钟go-2/">每天5分钟go(2)</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/09/20/每天5分钟go-1/" class="archive-article-date">
-  	<time datetime="2018-09-19T23:22:19.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-20</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/09/20/每天5分钟go-1/">每天5分钟go(1)</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
-
-    
-    <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/archives/2018/page/2/">&laquo; Prev</a><a class="page-number" href="/archives/2018/">1</a><a class="page-number" href="/archives/2018/page/2/">2</a><span class="page-number current">3</span>
-    </nav>
   
 
 
@@ -532,8 +360,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,

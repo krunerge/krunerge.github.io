@@ -150,6 +150,91 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-rbd-lock" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/01/12/rbd-lock/">使用rbd来实现分布式锁</a>
+    </h1>
+  
+
+        
+        <a href="/2019/01/12/rbd-lock/" class="archive-article-date">
+  	<time datetime="2019-01-12T11:37:39.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-12</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>————————————————————————————————————————————————————————————————————————————<br>最近在做虚拟机的在线快照，使用的是ceph后端存储，快照使用的是对虚拟机的所有盘进行snap+clone，处于对ceph性能的考虑，准备半夜对ceph进行flatten操作，同时限制同一时刻只有一个rbd卷在做flatten操作，这就涉及到多个计算节点在做flatten的时候如何保证ceph集群只有一个clone的卷在做flatten，由于，flatten都是计算节点的nova-compute定时触发的</p>
+<h1 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h1><p>————————————————————————————————————————————————————————————————————————————<br>可以使用rbd卷的排他锁实现，ceph的rbd提供了两个接口</p>
+<ul>
+<li><p>获取锁</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">lock_acquire(self, lock_mode)</span><br><span class="line">Acquire a managed lock on the image.</span><br><span class="line"></span><br><span class="line">Parameters:	lock_mode (int) – lock mode to set</span><br><span class="line">Raises:	ImageBusy <span class="keyword">if</span> the lock could <span class="keyword">not</span> be acquired</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>释放锁</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lock_release(self)</span><br><span class="line">Release a managed lock on the image that was previously acquired.</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>同时在ceph的某一个池中生成一个rbd，作为rbd锁，类似文件锁<br>大致思想是每一个nova-compute在准备启动flatten操作前都去rbd锁申请一下排他锁，只有第一个申请的才能申请到，其他nova-compute要执行flatten时，都会申请不到报出错，这样就保证了nova-compute并发flatten，导致ceph压力过大</p>
+<h1 id="具体实现"><a href="#具体实现" class="headerlink" title="具体实现"></a>具体实现</h1><p>———————————————————————————————————————————————————————————————————————————<br>为了实现上锁，解锁，以及异常也能释放锁，决定封装一个rbdlock类，使用python的with操作<br>实现大致如下：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">RbdLock</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, pool, name, driver)</span>:</span></span><br><span class="line">        self.pool = pool</span><br><span class="line">        self.name = name</span><br><span class="line">        self.driver = driver</span><br><span class="line">        self.lock_time = <span class="keyword">None</span></span><br><span class="line">        self.volume = <span class="keyword">None</span></span><br><span class="line">        self.ioctx = <span class="keyword">None</span></span><br><span class="line">        self.client = <span class="keyword">None</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__enter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.lock()</span><br><span class="line">        <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">lock</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.driver.lock_rbd_exist(CONF.libvirt.portrait_image_pool, <span class="string">"flattening_lock"</span>):</span><br><span class="line">            LOG.info(<span class="string">"periodic: create lock rbd use to lock flattening opertion"</span>)</span><br><span class="line">            self.driver.create_lock_rbd(CONF.libvirt.portrait_image_pool, <span class="string">"flattening_lock"</span>)</span><br><span class="line"></span><br><span class="line">        start_time = time.time()</span><br><span class="line">        self.client = rados.Rados(rados_id=CONF.libvirt.rbd_user,</span><br><span class="line">                                  conffile=CONF.libvirt.images_rbd_ceph_conf)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.client.connect()</span><br><span class="line">            self.ioctx = self.client.open_ioctx(self.pool)</span><br><span class="line">        <span class="keyword">except</span> rados.Error:</span><br><span class="line">            <span class="comment"># shutdown cannot raise an exception</span></span><br><span class="line">            self.client.shutdown()</span><br><span class="line">            <span class="keyword">raise</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.volume = rbd.Image(self.ioctx, self.name)</span><br><span class="line">        <span class="keyword">except</span> rbd.ImageNotFound:</span><br><span class="line">            <span class="keyword">with</span> excutils.save_and_reraise_exception():</span><br><span class="line">                LOG.debug(<span class="string">"rbd image %s does not exist"</span>, self.name)</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line">        <span class="keyword">except</span> rbd.Error:</span><br><span class="line">            <span class="keyword">with</span> excutils.save_and_reraise_exception():</span><br><span class="line">                LOG.exception(<span class="string">"error opening rbd image %s"</span> % self.name)</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.trylock()</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.volume.close()</span><br><span class="line">            <span class="keyword">finally</span>:</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line">                <span class="keyword">raise</span></span><br><span class="line"></span><br><span class="line">        self.lock_time = time.time()</span><br><span class="line">        LOG.info(<span class="string">'Acquired rbd lock "%s/%s" after waiting %0.3fs'</span>, self.pool, self.name,</span><br><span class="line">                 (self.lock_time - start_time))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">unlock</span><span class="params">(self)</span>:</span></span><br><span class="line">        LOG.info(<span class="string">"unlock rbd lock..."</span>)</span><br><span class="line">        <span class="keyword">if</span> self.lock_time <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> Exception(<span class="string">'Unable to release an unacquired "%s/%s" lock'</span> % (self.pool, self.name))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            unlock_time = time.time()</span><br><span class="line">            LOG.debug(<span class="string">'Releasing rbd lock "%s/%s" after holding it for %0.3fs'</span>,</span><br><span class="line">                      self.pool, self.name, (unlock_time - self.lock_time))</span><br><span class="line">            self.tryunlock()</span><br><span class="line">            self.lock_time = <span class="keyword">None</span></span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            LOG.exception(<span class="string">'Could not unlock the acquired lock "%s/%s"'</span> % (self.pool, self.name))</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.volume.close()</span><br><span class="line">            <span class="keyword">finally</span>:</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">trylock</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.volume.lock_acquire(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">tryunlock</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.volume.lock_release()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__exit__</span><span class="params">(self, exc_type, exc_value, exc_tb)</span>:</span></span><br><span class="line">        self.unlock()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">disconnect_from_rados</span><span class="params">(self)</span>:</span></span><br><span class="line">        LOG.info(<span class="string">'disconnect from "%s/%s"'</span> % (self.pool, self.name))</span><br><span class="line">        self.ioctx.close()</span><br><span class="line">        self.client.shutdown()</span><br></pre></td></tr></table></figure></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova ceph</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/01/12/rbd-lock/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-cpu-context-switch" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -930,121 +1015,6 @@
 
 
   
-    <article id="post-add-nova-periodic-task" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/20/add-nova-periodic-task/">nova周期性任务分析</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/20/add-nova-periodic-task/" class="archive-article-date">
-  	<time datetime="2018-10-20T03:14:24.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-20</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-周期任务"><a href="#1-周期任务" class="headerlink" title="1.周期任务"></a>1.周期任务</h1><p>周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？</p>
-<h1 id="2-从nova-compute服务启动说起"><a href="#2-从nova-compute服务启动说起" class="headerlink" title="2.从nova-compute服务启动说起"></a>2.从nova-compute服务启动说起</h1><p>对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒<br>1<br>2<br>3<br>好，应该是在nova-compute服务启动的时候就启动这些周期性的任务，至于这些任务是以何种方式运行，比如是以脱离nova-compute进程的外部进程(exec),还是子进程，还是以一个线程又或者是一个协程？我们来具体看一下。</p>
-<ul>
-<li>1.从cmd看服务启动流程<br>nova的所有服务都从cmd目录下面启动，nova-compute也不例外<br>main函数如下<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">def main():</span><br><span class="line">    config.parse_args(sys.argv)</span><br><span class="line">    logging.setup(CONF, &apos;nova&apos;)</span><br><span class="line">    utils.monkey_patch()</span><br><span class="line">    objects.register_all()</span><br><span class="line"></span><br><span class="line">    gmr.TextGuruMeditation.setup_autorun(version)</span><br><span class="line"></span><br><span class="line">    if not CONF.conductor.use_local:</span><br><span class="line">        block_db_access()</span><br><span class="line">        objects_base.NovaObject.indirection_api = \</span><br><span class="line">            conductor_rpcapi.ConductorAPI()</span><br><span class="line"></span><br><span class="line">    server = service.Service.create(binary=&apos;nova-compute&apos;,</span><br><span class="line">                                    topic=CONF.compute_topic,</span><br><span class="line">                                    db_allowed=CONF.conductor.use_local)</span><br><span class="line">    service.serve(server)</span><br><span class="line">    service.wait()</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>可以看出主要是生成一个service服务对象，这个对象是openstack抽出来的一个基础类，一个类代表一个服务，比如nova-api，nova-compute，这个有很多人已经分析过了，可以google一下<br>这里要注意我们要关注的是在创建service对象的时候，它有一个manager成员比较重要，我们来具体看一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">@classmethod</span><br><span class="line">def create(cls, host=None, binary=None, topic=None, manager=None,</span><br><span class="line">           report_interval=None, periodic_enable=None,</span><br><span class="line">           periodic_fuzzy_delay=None, periodic_interval_max=None,</span><br><span class="line">           db_allowed=True):</span><br><span class="line"></span><br><span class="line">    if not host:</span><br><span class="line">        host = CONF.host</span><br><span class="line">    if not binary:</span><br><span class="line">        binary = os.path.basename(sys.argv[0])</span><br><span class="line">    if not topic:</span><br><span class="line">        topic = binary.rpartition(&apos;nova-&apos;)[2]</span><br><span class="line">    if not manager:</span><br><span class="line">        manager_cls = (&apos;%s_manager&apos; %</span><br><span class="line">                       binary.rpartition(&apos;nova-&apos;)[2])</span><br><span class="line">        manager = CONF.get(manager_cls, None)</span><br><span class="line">    if report_interval is None:</span><br><span class="line">        report_interval = CONF.report_interval</span><br><span class="line">    if periodic_enable is None:</span><br><span class="line">        periodic_enable = CONF.periodic_enable</span><br><span class="line">    if periodic_fuzzy_delay is None:</span><br><span class="line">        periodic_fuzzy_delay = CONF.periodic_fuzzy_delay</span><br><span class="line"></span><br><span class="line">    debugger.init()</span><br><span class="line"></span><br><span class="line">    service_obj = cls(host, binary, topic, manager,</span><br><span class="line">                      report_interval=report_interval,</span><br><span class="line">                      periodic_enable=periodic_enable,</span><br><span class="line">                      periodic_fuzzy_delay=periodic_fuzzy_delay,</span><br><span class="line">                      periodic_interval_max=periodic_interval_max,</span><br><span class="line">                      db_allowed=db_allowed)</span><br><span class="line"></span><br><span class="line">    return service_obj</span><br></pre></td></tr></table></figure></p>
-<p>manager主要是nvoa-compute的业务处理入口，这个是在service初始化函数的时候，是通过类的动态函数加载的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">def __init__(self, host, binary, topic, manager, report_interval=None,</span><br><span class="line">             periodic_enable=None, periodic_fuzzy_delay=None,</span><br><span class="line">             periodic_interval_max=None, db_allowed=True,</span><br><span class="line">             *args, **kwargs):</span><br><span class="line">    ....</span><br><span class="line">    self.manager_class_name = manager</span><br><span class="line">    ....</span><br><span class="line">    manager_class = importutils.import_class(self.manager_class_name)</span><br><span class="line">    self.manager = manager_class(host=self.host, *args, **kwargs)</span><br><span class="line">    ....</span><br></pre></td></tr></table></figure></p>
-<p>这个manager对应的代码其实就是ComputeManager函数<br><img src="1.png" alt="aaa"><br>除了manager之外，还有一个periodic_enable属性,用来指示这个service支持周期性事件<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">periodic_enable = CONF.periodic_enable</span><br></pre></td></tr></table></figure></p>
-<p>上面会在service创建完之后，serve服务，就是启动服务，我们跟踪代码<br><img src="2.png" alt="bbb"></p>
-<ul>
-<li>2.服务start分析<br>service函数如下<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">def start(self):</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    if self.periodic_enable:</span><br><span class="line">        if self.periodic_fuzzy_delay:</span><br><span class="line">            initial_delay = random.randint(0, self.periodic_fuzzy_delay)</span><br><span class="line">        else:</span><br><span class="line">            initial_delay = None</span><br><span class="line"></span><br><span class="line">        self.tg.add_dynamic_timer(self.periodic_tasks,</span><br><span class="line">                                 initial_delay=initial_delay,</span><br><span class="line">                                 periodic_interval_max=</span><br><span class="line">                                    self.periodic_interval_max)</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>过滤掉跟周期性调度无关的，可以看到如果service支持周期事件，则会在tg这个协程组中增加一个动态定时器，这个定时器就是用来做周期性任务的，可以看到定时器调用的是self.periodic_tasks，这个函数调用流程如下：<br><img src="3.png" alt="ccc"><br>可以有人会问PeriodicTasks是个啥，嗯，好吧，是时候亮出我的python本事了，解释一下nova的周期性事件调度框架</p>
-<ul>
-<li>3.manager继承关系<br>我一般比较喜欢看类的继承关系，通过继承关系能看项目的一个数据大概，想当年看ceph代码的时候就是靠着类的继承关系（好像扯远了）<br><img src="4.png" alt="ddd"><br>可以看到，我们nova的Computemanager间接继承了PeriodicTasks，是我们的compute的管理对象具有周期调度的能力，中间manager是服务管理对象的基类，nova api，conductor都会有一个，所以上面的periodic_tasks最终会调度到PeriodicTasks这个父类的方法中<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">def run_periodic_tasks(self, context, raise_on_error=False):</span><br><span class="line">    &quot;&quot;&quot;Tasks to be run at a periodic interval.&quot;&quot;&quot;</span><br><span class="line">    idle_for = DEFAULT_INTERVAL</span><br><span class="line">    for task_name, task in self._periodic_tasks:</span><br><span class="line">        full_task_name = &apos;.&apos;.join([self.__class__.__name__, task_name])</span><br><span class="line"></span><br><span class="line">        spacing = self._periodic_spacing[task_name]</span><br><span class="line">        last_run = self._periodic_last_run[task_name]</span><br><span class="line"></span><br><span class="line">        # Check if due, if not skip</span><br><span class="line">        idle_for = min(idle_for, spacing)</span><br><span class="line">        if last_run is not None:</span><br><span class="line">            delta = last_run + spacing - time.time()</span><br><span class="line">            if delta &gt; 0:</span><br><span class="line">                idle_for = min(idle_for, delta)</span><br><span class="line">                continue</span><br><span class="line"></span><br><span class="line">        LOG.debug(&quot;Running periodic task %(full_task_name)s&quot;,</span><br><span class="line">                  &#123;&quot;full_task_name&quot;: full_task_name&#125;)</span><br><span class="line">        self._periodic_last_run[task_name] = _nearest_boundary(</span><br><span class="line">            last_run, spacing)</span><br><span class="line"></span><br><span class="line">        try:</span><br><span class="line">            task(self, context)</span><br><span class="line">        except Exception as e:</span><br><span class="line">            if raise_on_error:</span><br><span class="line">                raise</span><br><span class="line">            LOG.exception(_LE(&quot;Error during %(full_task_name)s: %(e)s&quot;),</span><br><span class="line">                          &#123;&quot;full_task_name&quot;: full_task_name, &quot;e&quot;: e&#125;)</span><br><span class="line">        time.sleep(0)</span><br><span class="line"></span><br><span class="line">    return idle_for</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>可以看出这个代码就是循环调用周期函数，然后执行<br>这里有一个问题周期性的函数怎么注册的呢，我们可以看到Computemanager类中，很多函数有这个装饰器periodic_task.periodic_task<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@periodic_task.periodic_task</span><br><span class="line">def _check_instance_build_time()</span><br></pre></td></tr></table></figure></p>
-<p>这有什么用呢，好我们分析一下周期任务框架</p>
-<ul>
-<li>4.周期任务框架<h2 id="4-1周期任务注册"><a href="#4-1周期任务注册" class="headerlink" title="4.1周期任务注册"></a>4.1周期任务注册</h2>就是使用上面提到的periodic_task.periodic_task装饰器对一个普通的函数进行注册就可以变成周期性任务函数，可以看一下装饰器函数<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">def periodic_task(*args, **kwargs):</span><br><span class="line"></span><br><span class="line">    def decorator(f):</span><br><span class="line">        # Test for old style invocation</span><br><span class="line">        if &apos;ticks_between_runs&apos; in kwargs:</span><br><span class="line">            raise InvalidPeriodicTaskArg(arg=&apos;ticks_between_runs&apos;)</span><br><span class="line"></span><br><span class="line">        # Control if run at all</span><br><span class="line">        f._periodic_task = True</span><br><span class="line">        f._periodic_external_ok = kwargs.pop(&apos;external_process_ok&apos;, False)</span><br><span class="line">        if f._periodic_external_ok and not CONF.run_external_periodic_tasks:</span><br><span class="line">            f._periodic_enabled = False</span><br><span class="line">        else:</span><br><span class="line">            f._periodic_enabled = kwargs.pop(&apos;enabled&apos;, True)</span><br><span class="line">        f._periodic_name = kwargs.pop(&apos;name&apos;, f.__name__)</span><br><span class="line"></span><br><span class="line">        # Control frequency</span><br><span class="line">        f._periodic_spacing = kwargs.pop(&apos;spacing&apos;, 0)</span><br><span class="line">        f._periodic_immediate = kwargs.pop(&apos;run_immediately&apos;, False)</span><br><span class="line">        if f._periodic_immediate:</span><br><span class="line">            f._periodic_last_run = None</span><br><span class="line">        else:</span><br><span class="line">            f._periodic_last_run = time.time()</span><br><span class="line">        return f</span><br><span class="line"></span><br><span class="line">        return decorator</span><br><span class="line">    else:</span><br><span class="line">        return decorator(args[0])</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>函数很简单的就是给普通的函数增加了一些属性，可以周期调度的属性，这个是用了python中一切都是对象的特性，对象都可以增加属性</p>
-<h2 id="4-2周期任务的加载"><a href="#4-2周期任务的加载" class="headerlink" title="4.2周期任务的加载"></a>4.2周期任务的加载</h2><p>通过上面4.1周期性任务注册之后，任务是怎么加载到Computemanager的呢？<br>我们注意到<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@six.add_metaclass(_PeriodicTasksMeta)</span><br><span class="line">class PeriodicTasks(object):</span><br></pre></td></tr></table></figure></p>
-<p>PeriodicTasks这个类有一个元类，嗯，使用到了python的元编程，一般元类用来可以改变类对象的构造方法，python中的构造方法和初始化方法可以google，这里不是重点<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">class _PeriodicTasksMeta(type):</span><br><span class="line">    ...</span><br><span class="line">    def __init__(cls, names, bases, dict_):</span><br><span class="line">        ....</span><br><span class="line">        for value in cls.__dict__.values():</span><br><span class="line">            if getattr(value, &apos;_periodic_task&apos;, False):</span><br><span class="line">                cls._add_periodic_task(value)</span><br></pre></td></tr></table></figure></p>
-<p>这里面的__init__就是构造方案，就是在生成PeriodicTasks类对象的构造方法，也是生成Computemanager类对象的构造方法，里面有一个_add_periodic_task函数，嗯，这就是把周期性任务函数加入Computemanager的地方，这里的cls不是指代PeriodicTasks类，而是Computemanager,cls.__dict__这个可以找到一个类的所有属性，包括变量和方法，我们上面注册看到，周期性的方法是增加了_periodic_task属性，所以getattr(value, ‘_periodic_task’, False)这个函数就是捞出周期性任务<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">def _add_periodic_task(cls, task):</span><br><span class="line"></span><br><span class="line">    if task._periodic_spacing &lt; 0:</span><br><span class="line">        LOG.info(_LI(&apos;Skipping periodic task %(task)s because &apos;</span><br><span class="line">                     &apos;its interval is negative&apos;),</span><br><span class="line">                 &#123;&apos;task&apos;: name&#125;)</span><br><span class="line">        return False</span><br><span class="line">    if not task._periodic_enabled:</span><br><span class="line">        LOG.info(_LI(&apos;Skipping periodic task %(task)s because &apos;</span><br><span class="line">                     &apos;it is disabled&apos;),</span><br><span class="line">                 &#123;&apos;task&apos;: name&#125;)</span><br><span class="line">        return False</span><br><span class="line"></span><br><span class="line">    if task._periodic_spacing == 0:</span><br><span class="line">        task._periodic_spacing = DEFAULT_INTERVAL</span><br><span class="line"></span><br><span class="line">    cls._periodic_tasks.append((name, task))</span><br><span class="line">    cls._periodic_spacing[name] = task._periodic_spacing</span><br><span class="line">    return True</span><br></pre></td></tr></table></figure></p>
-<p>可以看出加入任务主要是在Computemanager对象中增加三个缓存对象_periodic_tasks,_periodic_spacing,以及下面的_periodic_last_run,分别代表任务队列，每个任务的执行间隔，每个任务的上次运行时间点，使用的dict存储<br>说到这里我们大致知道，在service服务对象创建的时候会生成computemanager对象，生成这个对象的时候会把这个类中使用periodic_task.periodic_task装饰的任务注册到computemanager对象的三个缓存dict中，然后再在service.start启动的时候，会根据是否本服务支持周期任务调度，在协程池中增加一个动态定时器，这个定时器会有周期性的调度在computermanager中注册的周期性任务</p>
-<ul>
-<li>5.周期任务是跑在线程还是协程<br>那么这些周期任务是怎么运行的呢？这个就需要我们去看一下那个动态定时器<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">def add_dynamic_timer(self, callback, initial_delay=None,</span><br><span class="line">                      periodic_interval_max=None, *args, **kwargs):</span><br><span class="line">    timer = loopingcall.DynamicLoopingCall(callback, *args, **kwargs)</span><br><span class="line">    timer.start(initial_delay=initial_delay,</span><br><span class="line">                periodic_interval_max=periodic_interval_max)</span><br><span class="line">    self.timers.append(timer)</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>可以看出定时器就是一个loopcall，只不过是会根据任务指定的时间间隔进行周期性的调度，进入timer.start函数看一下周期性任务是怎么运行的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">def start(self, initial_delay=None, periodic_interval_max=None):</span><br><span class="line">    self._running = True</span><br><span class="line">    done = event.Event()</span><br><span class="line"></span><br><span class="line">    def _inner():</span><br><span class="line">        if initial_delay:</span><br><span class="line">            greenthread.sleep(initial_delay)</span><br><span class="line"></span><br><span class="line">        try:</span><br><span class="line">            while self._running:</span><br><span class="line">                idle = self.f(*self.args, **self.kw)</span><br><span class="line">                if not self._running:</span><br><span class="line">                    break</span><br><span class="line"></span><br><span class="line">                if periodic_interval_max is not None:</span><br><span class="line">                    idle = min(idle, periodic_interval_max)</span><br><span class="line">                LOG.debug(&apos;Dynamic looping call %(func_name)r sleeping &apos;</span><br><span class="line">                          &apos;for %(idle).02f seconds&apos;,</span><br><span class="line">                          &#123;&apos;func_name&apos;: self.f, &apos;idle&apos;: idle&#125;)</span><br><span class="line">                greenthread.sleep(idle)</span><br><span class="line">        except LoopingCallDone as e:</span><br><span class="line">            self.stop()</span><br><span class="line">            done.send(e.retvalue)</span><br><span class="line">        except Exception:</span><br><span class="line">            LOG.exception(_LE(&apos;in dynamic looping call&apos;))</span><br><span class="line">            done.send_exception(*sys.exc_info())</span><br><span class="line">            return</span><br><span class="line">        else:</span><br><span class="line">            done.send(True)</span><br><span class="line"></span><br><span class="line">    self.done = done</span><br><span class="line"></span><br><span class="line">    greenthread.spawn(_inner)</span><br><span class="line">    return self.done</span><br></pre></td></tr></table></figure></p>
-<p>找到答案了，周期任务是以协程方式运行的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">greenthread.spawn(_inner)</span><br></pre></td></tr></table></figure></p>
-<p>而且是所有的周期任务都在一个协程里面使用死循环运行<br>到这里，周期性任务框架讲完，那我们如何增加自己的周期性任务呢</p>
-<h1 id="3-增加周期性的任务"><a href="#3-增加周期性的任务" class="headerlink" title="3.增加周期性的任务"></a>3.增加周期性的任务</h1><ul>
-<li>1.在computemanager中增加需要周期性任务运行的逻辑代码函数然后使用periodic_task.periodic_task装饰器进行修饰</li>
-<li>2.可以要增加一个周期任务的间隔时间的配置参数作为spacing参数，例如<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">periodic_task.periodic_task(spacing=CONF.scheduler_instance_sync_interval)</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h1 id="4-后续有空可以分享一下ceph代码中的周期性任务调度方法"><a href="#4-后续有空可以分享一下ceph代码中的周期性任务调度方法" class="headerlink" title="4.后续有空可以分享一下ceph代码中的周期性任务调度方法"></a>4.后续有空可以分享一下ceph代码中的周期性任务调度方法</h1>
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">nova periodic</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/20/add-nova-periodic-task/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
@@ -1142,10 +1112,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
@@ -1154,11 +1120,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1166,7 +1132,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1182,7 +1148,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1190,11 +1156,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1202,11 +1172,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1223,6 +1197,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
