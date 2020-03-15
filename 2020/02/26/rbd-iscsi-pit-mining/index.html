@@ -8,18 +8,18 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>rbd iscsi 采坑 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="坑  target的创建时create命令，删除是clearconfig    tpg有创建，没有删除接口">
+  <meta name="description" content="坑  target的创建时create命令，删除是clearconfig    tpg有创建，没有删除接口    创建新gateway没有进行同步    lun在后端ceph的创建者，只有lun的owner节点">
 <meta name="keywords" content="rbd iscsi python">
 <meta property="og:type" content="article">
 <meta property="og:title" content="rbd iscsi 采坑">
 <meta property="og:url" content="http://yoursite.com/2020/02/26/rbd-iscsi-pit-mining/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="坑  target的创建时create命令，删除是clearconfig    tpg有创建，没有删除接口">
+<meta property="og:description" content="坑  target的创建时create命令，删除是clearconfig    tpg有创建，没有删除接口    创建新gateway没有进行同步    lun在后端ceph的创建者，只有lun的owner节点">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2020-02-27T03:55:23.984Z">
+<meta property="og:updated_time" content="2020-03-15T12:54:29.753Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="rbd iscsi 采坑">
-<meta name="twitter:description" content="坑  target的创建时create命令，删除是clearconfig    tpg有创建，没有删除接口">
+<meta name="twitter:description" content="坑  target的创建时create命令，删除是clearconfig    tpg有创建，没有删除接口    创建新gateway没有进行同步    lun在后端ceph的创建者，只有lun的owner节点">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -180,6 +180,14 @@
 </li>
 <li><ol start="2">
 <li>tpg有创建，没有删除接口</li>
+</ol>
+</li>
+<li><ol start="3">
+<li>创建新gateway没有进行同步</li>
+</ol>
+</li>
+<li><ol start="4">
+<li>lun在后端ceph的创建者，只有lun的owner节点</li>
 </ol>
 </li>
 </ul>
@@ -448,10 +456,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
@@ -461,6 +465,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -480,11 +488,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -492,11 +500,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -505,10 +517,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -544,10 +552,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
@@ -560,11 +564,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -580,7 +584,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
               </li>
             
             <div class="clearfix"></div>
