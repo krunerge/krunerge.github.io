@@ -150,6 +150,89 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-rbd-exclusive-lock" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/15/rbd-exclusive-lock/">rbd请求是互斥的？</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/15/rbd-exclusive-lock/" class="archive-article-date">
+  	<time datetime="2020-03-15T06:48:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>最近在分析rbd快照的时候，发现需要申请exclusive_lock，不止快照，基本上很多rbd操作都要求获取这个锁，那这个锁是怎么运行的呢，是不是只能有一个客户端可以获取到这个锁，然后进行rbd卷的操作？如果是这样那qemu虚拟机在写数据的时候的，nova-compute就根本不能操作这个卷了，因为qemu和nova-compute在rbd看来就是他的两个客户端，他们都要求申请互斥锁，这显然和我们的实验不同</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>以分析快照创建代码为例看rbd请求<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void Operations&lt;I&gt;::snap_create(const cls::rbd::SnapshotNamespace &amp;snap_namespace,</span><br><span class="line">				const std::string&amp; snap_name,</span><br><span class="line">				Context *on_finish) &#123;</span><br><span class="line">  CephContext *cct = m_image_ctx.cct;</span><br><span class="line">  ldout(cct, 5) &lt;&lt; this &lt;&lt; &quot; &quot; &lt;&lt; __func__ &lt;&lt; &quot;: snap_name=&quot; &lt;&lt; snap_name</span><br><span class="line">                &lt;&lt; dendl;</span><br><span class="line"></span><br><span class="line">  if (m_image_ctx.read_only) &#123;</span><br><span class="line">    on_finish-&gt;complete(-EROFS);</span><br><span class="line">    return;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  m_image_ctx.snap_lock.get_read();</span><br><span class="line">  if (m_image_ctx.get_snap_id(snap_namespace, snap_name) != CEPH_NOSNAP) &#123;</span><br><span class="line">    m_image_ctx.snap_lock.put_read();</span><br><span class="line">    on_finish-&gt;complete(-EEXIST);</span><br><span class="line">    return;</span><br><span class="line">  &#125;</span><br><span class="line">  m_image_ctx.snap_lock.put_read();</span><br><span class="line"></span><br><span class="line">  C_InvokeAsyncRequest&lt;I&gt; *req = new C_InvokeAsyncRequest&lt;I&gt;(</span><br><span class="line">    m_image_ctx, &quot;snap_create&quot;, true,</span><br><span class="line">    boost::bind(&amp;Operations&lt;I&gt;::execute_snap_create, this, snap_namespace, snap_name,</span><br><span class="line">		_1, 0, false),</span><br><span class="line">    boost::bind(&amp;ImageWatcher&lt;I&gt;::notify_snap_create, m_image_ctx.image_watcher,</span><br><span class="line">                snap_namespace, snap_name, _1),</span><br><span class="line">    &#123;-EEXIST&#125;, on_finish);</span><br><span class="line">  req-&gt;send();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>跟着librbd的接口我们会一路走到这里，在上面的函数中我们看到C_InvokeAsyncRequest请求中传了两个处理函数，execute_snap_create和notify_snap_create，为什么会传两个函数，难道。。。。，没错就是你想的那样，首先，这里要说一下，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1.rbd的exclusive_lock既然是互斥锁，那它的拥有者也就只有一个“人”，我们称他为owner</span><br><span class="line">2.另一方面，虽然这是个互斥锁，但是很多客户端可以同时“拥有”这个互斥锁进行rbd请求，（ps.我会告诉你我在拥有上面加了引号），这个我们平台在操作rbd的时候也知道这现象</span><br></pre></td></tr></table></figure></p>
+<p>再说说这两个请求：</p>
+<ul>
+<li>1.如果当前的客户端是exclusive_lock的拥有者，（这里我没有加引号，是真正唯一的拥有者），就执行execute_snap_create,也就是当前客户端区创建快照，创建快照主要是创建一些元数据，这些元数据主要用于管理使用</li>
+<li>2.如果当前的客户端不是exclusive_lock的拥有者，就执行notify_snap_create，看函数的名字notify，你猜notify谁，是的是notify exclusive_lock拥有者，让拥有这个互斥锁的客户端去运行创建快照操作，这样委托可以吗？可以反正创建快照，只是创建一些管理元数据，谁创建不是创建，nice</li>
+</ul>
+<p>那是不是这样呢，课代表来了<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">struct C_InvokeAsyncRequest : public Context &#123;</span><br><span class="line">  /**</span><br><span class="line">   * @verbatim</span><br><span class="line">   *</span><br><span class="line">   *               &lt;start&gt;</span><br><span class="line">   *                  |</span><br><span class="line">   *    . . . . . .   |   . . . . . . . . . . . . . . . . . .</span><br><span class="line">   *    .         .   |   .                                 .</span><br><span class="line">   *    .         v   v   v                                 .</span><br><span class="line">   *    .       REFRESH_IMAGE (skip if not needed)          .</span><br><span class="line">   *    .             |                                     .</span><br><span class="line">   *    .             v                                     .</span><br><span class="line">   *    .       ACQUIRE_LOCK (skip if exclusive lock        .</span><br><span class="line">   *    .             |       disabled or has lock)         .</span><br><span class="line">   *    .             |                                     .</span><br><span class="line">   *    .   /--------/ \--------\   . . . . . . . . . . . . .</span><br><span class="line">   *    .   |                   |   .</span><br><span class="line">   *    .   v                   v   .</span><br><span class="line">   *  LOCAL_REQUEST       REMOTE_REQUEST</span><br><span class="line">   *        |                   |</span><br><span class="line">   *        |                   |</span><br><span class="line">   *        \--------\ /--------/</span><br><span class="line">   *                  |</span><br><span class="line">   *                  v</span><br><span class="line">   *              &lt;finish&gt;</span><br><span class="line">   *</span><br><span class="line">   * @endverbatim</span><br><span class="line">   */</span><br></pre></td></tr></table></figure></p>
+<p>在C_InvokeAsyncRequest请求中有这样的注释，local_request 和 remote_request更加生动形象，至于具体流程的跟踪，可以使用两个python交互式客户端操作一个rbd，然后观察两个客户端的日志，这里就不多说了。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">rbd</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/15/rbd-exclusive-lock/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-rbd-watchers-how-store-in-rados" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -961,91 +1044,9 @@
 
 
   
-    <article id="post-glance-backend-with-cinder" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/09/26/glance-backend-with-cinder/">glance backend with cinder</a>
-    </h1>
-  
-
-        
-        <a href="/2019/09/26/glance-backend-with-cinder/" class="archive-article-date">
-  	<time datetime="2019-09-26T11:37:16.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="glance对接cinder"><a href="#glance对接cinder" class="headerlink" title="glance对接cinder"></a>glance对接cinder</h1><p>————————————————————————————————————————————————————————————————————————————<br>glance-api.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">default_store = cinder</span><br><span class="line">stores = cinder</span><br></pre></td></tr></table></figure></p>
-<p>cinder.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">glance_api_version = 2</span><br><span class="line">allowed_direct_url_schemes = cinder</span><br><span class="line">image_upload_use_cinder_backend = True</span><br><span class="line">image_upload_use_internal_tenant = True</span><br></pre></td></tr></table></figure></p>
-<h1 id="对接结果"><a href="#对接结果" class="headerlink" title="对接结果"></a>对接结果</h1><p>————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>glance 数据库<br><img src="1.png" alt="1"></p>
-</li>
-<li><p>ceph中的显示<br><img src="2.png" alt="2"></p>
-</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack cinder glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/09/26/glance-backend-with-cinder/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
     </nav>
   
 
@@ -1144,11 +1145,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1180,6 +1181,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
@@ -1192,15 +1197,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1208,11 +1205,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1220,7 +1213,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1228,7 +1225,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1236,11 +1233,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1248,7 +1241,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1256,15 +1249,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">

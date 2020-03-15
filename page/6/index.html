@@ -6,20 +6,15 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>使用rbd来实现分布式锁 | 小甲师兄</title>
+  <title>小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="问题————————————————————————————————————————————————————————————————————————————最近在做虚拟机的在线快照，使用的是ceph后端存储，快照使用的是对虚拟机的所有盘进行snap+clone，处于对ceph性能的考虑，准备半夜对ceph进行flatten操作，同时限制同一时刻只有一个rbd卷在做flatten操作，这就涉及到多个">
-<meta name="keywords" content="openstack nova ceph">
-<meta property="og:type" content="article">
-<meta property="og:title" content="使用rbd来实现分布式锁">
-<meta property="og:url" content="http://yoursite.com/2019/01/12/rbd-lock/index.html">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="小甲师兄">
+<meta property="og:url" content="http://yoursite.com/page/6/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="问题————————————————————————————————————————————————————————————————————————————最近在做虚拟机的在线快照，使用的是ceph后端存储，快照使用的是对虚拟机的所有盘进行snap+clone，处于对ceph性能的考虑，准备半夜对ceph进行flatten操作，同时限制同一时刻只有一个rbd卷在做flatten操作，这就涉及到多个">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2019-01-12T12:00:47.751Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="使用rbd来实现分布式锁">
-<meta name="twitter:description" content="问题————————————————————————————————————————————————————————————————————————————最近在做虚拟机的在线快照，使用的是ceph后端存储，快照使用的是对虚拟机的所有盘进行snap+clone，处于对ceph性能的考虑，准备半夜对ceph进行flatten操作，同时限制同一时刻只有一个rbd卷在做flatten操作，这就涉及到多个">
+<meta name="twitter:title" content="小甲师兄">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,62 +148,45 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-rbd-lock" class="article article-type-post " itemscope itemprop="blogPost">
+            
+  
+    <article id="post-每天5分钟go-1" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
-    <h1 class="article-title" itemprop="name">
-      使用rbd来实现分布式锁
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/09/20/每天5分钟go-1/">每天5分钟go(1)</a>
     </h1>
   
 
         
-        <a href="/2019/01/12/rbd-lock/" class="archive-article-date">
-  	<time datetime="2019-01-12T11:37:39.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-12</time>
+        <a href="/2018/09/20/每天5分钟go-1/" class="archive-article-date">
+  	<time datetime="2018-09-19T23:22:19.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-20</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>————————————————————————————————————————————————————————————————————————————<br>最近在做虚拟机的在线快照，使用的是ceph后端存储，快照使用的是对虚拟机的所有盘进行snap+clone，处于对ceph性能的考虑，准备半夜对ceph进行flatten操作，同时限制同一时刻只有一个rbd卷在做flatten操作，这就涉及到多个计算节点在做flatten的时候如何保证ceph集群只有一个clone的卷在做flatten，由于，flatten都是计算节点的nova-compute定时触发的</p>
-<h1 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h1><p>————————————————————————————————————————————————————————————————————————————<br>可以使用rbd卷的排他锁实现，ceph的rbd提供了两个接口</p>
-<ul>
-<li><p>获取锁</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">lock_acquire(self, lock_mode)</span><br><span class="line">Acquire a managed lock on the image.</span><br><span class="line"></span><br><span class="line">Parameters:	lock_mode (int) – lock mode to set</span><br><span class="line">Raises:	ImageBusy <span class="keyword">if</span> the lock could <span class="keyword">not</span> be acquired</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>释放锁</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lock_release(self)</span><br><span class="line">Release a managed lock on the image that was previously acquired.</span><br></pre></td></tr></table></figure>
-</li>
+        <h1 id="go-package"><a href="#go-package" class="headerlink" title="go package"></a>go package</h1><h2 id="包声明"><a href="#包声明" class="headerlink" title="包声明"></a>包声明</h2><ul>
+<li><strong>命令源码文件</strong>:<br>  命令源码文件使用main做包名</li>
+<li><strong>库源码文件</strong>：<br>  库源码文件使用文件所在的目录做包名</li>
 </ul>
-<p>同时在ceph的某一个池中生成一个rbd，作为rbd锁，类似文件锁<br>大致思想是每一个nova-compute在准备启动flatten操作前都去rbd锁申请一下排他锁，只有第一个申请的才能申请到，其他nova-compute要执行flatten时，都会申请不到报出错，这样就保证了nova-compute并发flatten，导致ceph压力过大</p>
-<h1 id="具体实现"><a href="#具体实现" class="headerlink" title="具体实现"></a>具体实现</h1><p>———————————————————————————————————————————————————————————————————————————<br>为了实现上锁，解锁，以及异常也能释放锁，决定封装一个rbdlock类，使用python的with操作<br>实现大致如下：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">RbdLock</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, pool, name, driver)</span>:</span></span><br><span class="line">        self.pool = pool</span><br><span class="line">        self.name = name</span><br><span class="line">        self.driver = driver</span><br><span class="line">        self.lock_time = <span class="keyword">None</span></span><br><span class="line">        self.volume = <span class="keyword">None</span></span><br><span class="line">        self.ioctx = <span class="keyword">None</span></span><br><span class="line">        self.client = <span class="keyword">None</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__enter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.lock()</span><br><span class="line">        <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">lock</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.driver.lock_rbd_exist(CONF.libvirt.portrait_image_pool, <span class="string">"flattening_lock"</span>):</span><br><span class="line">            LOG.info(<span class="string">"periodic: create lock rbd use to lock flattening opertion"</span>)</span><br><span class="line">            self.driver.create_lock_rbd(CONF.libvirt.portrait_image_pool, <span class="string">"flattening_lock"</span>)</span><br><span class="line"></span><br><span class="line">        start_time = time.time()</span><br><span class="line">        self.client = rados.Rados(rados_id=CONF.libvirt.rbd_user,</span><br><span class="line">                                  conffile=CONF.libvirt.images_rbd_ceph_conf)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.client.connect()</span><br><span class="line">            self.ioctx = self.client.open_ioctx(self.pool)</span><br><span class="line">        <span class="keyword">except</span> rados.Error:</span><br><span class="line">            <span class="comment"># shutdown cannot raise an exception</span></span><br><span class="line">            self.client.shutdown()</span><br><span class="line">            <span class="keyword">raise</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.volume = rbd.Image(self.ioctx, self.name)</span><br><span class="line">        <span class="keyword">except</span> rbd.ImageNotFound:</span><br><span class="line">            <span class="keyword">with</span> excutils.save_and_reraise_exception():</span><br><span class="line">                LOG.debug(<span class="string">"rbd image %s does not exist"</span>, self.name)</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line">        <span class="keyword">except</span> rbd.Error:</span><br><span class="line">            <span class="keyword">with</span> excutils.save_and_reraise_exception():</span><br><span class="line">                LOG.exception(<span class="string">"error opening rbd image %s"</span> % self.name)</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.trylock()</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.volume.close()</span><br><span class="line">            <span class="keyword">finally</span>:</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line">                <span class="keyword">raise</span></span><br><span class="line"></span><br><span class="line">        self.lock_time = time.time()</span><br><span class="line">        LOG.info(<span class="string">'Acquired rbd lock "%s/%s" after waiting %0.3fs'</span>, self.pool, self.name,</span><br><span class="line">                 (self.lock_time - start_time))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">unlock</span><span class="params">(self)</span>:</span></span><br><span class="line">        LOG.info(<span class="string">"unlock rbd lock..."</span>)</span><br><span class="line">        <span class="keyword">if</span> self.lock_time <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> Exception(<span class="string">'Unable to release an unacquired "%s/%s" lock'</span> % (self.pool, self.name))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            unlock_time = time.time()</span><br><span class="line">            LOG.debug(<span class="string">'Releasing rbd lock "%s/%s" after holding it for %0.3fs'</span>,</span><br><span class="line">                      self.pool, self.name, (unlock_time - self.lock_time))</span><br><span class="line">            self.tryunlock()</span><br><span class="line">            self.lock_time = <span class="keyword">None</span></span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            LOG.exception(<span class="string">'Could not unlock the acquired lock "%s/%s"'</span> % (self.pool, self.name))</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.volume.close()</span><br><span class="line">            <span class="keyword">finally</span>:</span><br><span class="line">                self.disconnect_from_rados()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">trylock</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.volume.lock_acquire(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">tryunlock</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.volume.lock_release()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__exit__</span><span class="params">(self, exc_type, exc_value, exc_tb)</span>:</span></span><br><span class="line">        self.unlock()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">disconnect_from_rados</span><span class="params">(self)</span>:</span></span><br><span class="line">        LOG.info(<span class="string">'disconnect from "%s/%s"'</span> % (self.pool, self.name))</span><br><span class="line">        self.ioctx.close()</span><br><span class="line">        self.client.shutdown()</span><br></pre></td></tr></table></figure></p>
+<h2 id="包导入"><a href="#包导入" class="headerlink" title="包导入"></a>包导入</h2><ul>
+<li><strong>多包导入</strong>：使用（）</li>
+<li><strong>同名包</strong>：取别名</li>
+<li><strong>.引用</strong>：使用变量就可以不用包了</li>
+<li><strong>_引用</strong>：对于不使用的包可以用_取别名</li>
+</ul>
+<h2 id="包的初始化"><a href="#包的初始化" class="headerlink" title="包的初始化"></a>包的初始化</h2><ul>
+<li><strong>init()</strong>:<br>init()会在main函数之前执行，一个包中的init()函数一般有多个，包中的一个文件中都有可能包含多个init()</li>
+<li><strong>初始化顺序</strong>:<br>1 导入包的init函数先执行<br>2 先初始化全局变量，然后执行init函数，然后执行main</li>
+</ul>
 
       
 
-      
-        <div class="page-reward">
-          <a href="javascript:;" class="page-reward-btn tooltip-top">
-            <div class="tooltip tooltip-east">
-            <span class="tooltip-item">
-              赏
-            </span>
-            <span class="tooltip-content">
-              <span class="tooltip-text">
-                <span class="tooltip-inner">
-                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
-                  <div class="reward-box">
-                    
-                    
-                  </div>
-                </span>
-              </span>
-            </span>
-          </div>
-          </a>
-        </div>
       
     </div>
     <div class="article-info article-info-index">
@@ -219,7 +197,7 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova ceph</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
         		</li>
       		
 		</ul>
@@ -228,84 +206,16 @@
       
 
       
-
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/09/20/每天5分钟go-1/">展开全文 >></a>
+        </p>
       
-        
-<div class="share-btn share-icons tooltip-left">
-  <div class="tooltip tooltip-east">
-    <span class="tooltip-item">
-      <a href="javascript:;" class="share-sns share-outer">
-        <i class="icon icon-share"></i>
-      </a>
-    </span>
-    <span class="tooltip-content">
-      <div class="share-wrap">
-        <div class="share-icons">
-          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
-            <i class="icon icon-weibo"></i>
-          </a>
-          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
-            <i class="icon icon-weixin"></i>
-          </a>
-          <a class="qq share-sns" href="javascript:;" data-type="qq">
-            <i class="icon icon-qq"></i>
-          </a>
-          <a class="douban share-sns" href="javascript:;" data-type="douban">
-            <i class="icon icon-douban"></i>
-          </a>
-          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
-            <i class="icon icon-qzone"></i>
-          </a>
-          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
-            <i class="icon icon-facebook"></i>
-          </a>
-          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
-            <i class="icon icon-twitter"></i>
-          </a>
-          <a class="google share-sns" href="javascript:;" data-type="google">
-            <i class="icon icon-google"></i>
-          </a>
-        </div>
-      </div>
-    </span>
-  </div>
-</div>
 
-<div class="page-modal wx-share js-wx-box">
-    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
-    <p>扫一扫，分享到微信</p>
-    <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2019/01/12/rbd-lock/" alt="微信分享二维码">
-    </div>
-</div>
-
-<div class="mask js-mask"></div>
       
       <div class="clearfix"></div>
     </div>
   </div>
 </article>
-
-  
-<nav id="article-nav">
-  
-    <a href="/2019/01/24/neutron-ipam/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          neutron的ipam还可以这么玩
-        
-      </div>
-    </a>
-  
-  
-    <a href="/2019/01/05/cpu-context-switch/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">linux性能优化系列（2）cpu上下文切换</div>
-      <i class="icon-circle-right"></i>
-    </a>
-  
-</nav>
-
 
 <aside class="wrap-side-operation">
     <div class="mod-side-operation">
@@ -325,34 +235,12 @@
 
 
 
-  
-  <div class="duoshuo">
-	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="rbd-lock" data-title="使用rbd来实现分布式锁" data-url="http://yoursite.com/2019/01/12/rbd-lock/"></div>
-	<!-- 多说评论框 end -->
-	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
-	<script type="text/javascript">
-	var duoshuoQuery = {short_name:"true"};
-	(function() {
-		var ds = document.createElement('script');
-		ds.type = 'text/javascript';ds.async = true;
-		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-		ds.charset = 'UTF-8';
-		(document.getElementsByTagName('head')[0] 
-		 || document.getElementsByTagName('body')[0]).appendChild(ds);
-	})();
-	</script>
-	<!-- 多说公共JS代码 end -->
-</div>
 
   
   
-  
-
-  
-
-  
-
+    <nav id="page-nav">
+      <a class="extend prev" rel="prev" href="/page/5/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="page-number current">6</span>
+    </nav>
   
 
 
@@ -375,8 +263,8 @@
     <script>
 	var yiliaConfig = {
 		mathjax: false,
-		isHome: false,
-		isPost: true,
+		isHome: true,
+		isPost: false,
 		isArchive: false,
 		isTag: false,
 		isCategory: false,
