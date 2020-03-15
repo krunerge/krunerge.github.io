@@ -150,6 +150,307 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-cpu-100" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/15/cpu-100/">cpu 100%</a>
+    </h1>
+  
+
+        
+        <a href="/2019/04/15/cpu-100/" class="archive-article-date">
+  	<time datetime="2019-04-15T01:18:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-proc-stat和-proc-pid-stat的使用"><a href="#1-proc-stat和-proc-pid-stat的使用" class="headerlink" title="1. /proc/stat和/proc/{pid}/stat的使用"></a>1. /proc/stat和/proc/{pid}/stat的使用</h1><h1 id="2-top默认每3s刷新一次"><a href="#2-top默认每3s刷新一次" class="headerlink" title="2. top默认每3s刷新一次"></a>2. top默认每3s刷新一次</h1><h1 id="3-top中显示的cpu时间包括用户态cpu和内核态cpu时间"><a href="#3-top中显示的cpu时间包括用户态cpu和内核态cpu时间" class="headerlink" title="3. top中显示的cpu时间包括用户态cpu和内核态cpu时间"></a>3. top中显示的cpu时间包括用户态cpu和内核态cpu时间</h1><h1 id="4-显示每个进程cpu时间可以使用pidstat"><a href="#4-显示每个进程cpu时间可以使用pidstat" class="headerlink" title="4. 显示每个进程cpu时间可以使用pidstat"></a>4. 显示每个进程cpu时间可以使用pidstat</h1><h1 id="5-早期性能分析使用perf，后期分析可以使用gdb"><a href="#5-早期性能分析使用perf，后期分析可以使用gdb" class="headerlink" title="5. 早期性能分析使用perf，后期分析可以使用gdb"></a>5. 早期性能分析使用perf，后期分析可以使用gdb</h1><h1 id="6-使用perf-top找出热点函数"><a href="#6-使用perf-top找出热点函数" class="headerlink" title="6. 使用perf top找出热点函数"></a>6. 使用perf top找出热点函数</h1><h1 id="7-使用execsnoop观测短时进程"><a href="#7-使用execsnoop观测短时进程" class="headerlink" title="7. 使用execsnoop观测短时进程"></a>7. 使用execsnoop观测短时进程</h1><h1 id="8-dstat使用"><a href="#8-dstat使用" class="headerlink" title="8. dstat使用"></a>8. dstat使用</h1><h1 id="9-straces使用"><a href="#9-straces使用" class="headerlink" title="9. straces使用"></a>9. straces使用</h1><h1 id="10-进程的状态"><a href="#10-进程的状态" class="headerlink" title="10.进程的状态"></a>10.进程的状态</h1><h1 id="11-sar"><a href="#11-sar" class="headerlink" title="11. sar"></a>11. sar</h1><h1 id="12-hping3"><a href="#12-hping3" class="headerlink" title="12. hping3"></a>12. hping3</h1><h1 id="13-tcpdump"><a href="#13-tcpdump" class="headerlink" title="13. tcpdump"></a>13. tcpdump</h1>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">Linux 性能优化实践（5）</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/04/15/cpu-100/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-ceph-rwl-analysis" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/13/ceph-rwl-analysis/">Intel Ceph rwl分析</a>
+    </h1>
+  
+
+        
+        <a href="/2019/04/13/ceph-rwl-analysis/" class="archive-article-date">
+  	<time datetime="2019-04-13T07:17:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-13</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-Intel-Ceph-rwl"><a href="#1-Intel-Ceph-rwl" class="headerlink" title="1. Intel Ceph rwl"></a>1. Intel Ceph rwl</h1><p>Intel的rwl是对ceph的rbd进行优化，使用可持久化高速介质来缓存rbd的数据，比如SSD。rwl就是这个代码的实现，其简称就是ReplicatedWriteLog。</p>
+<h1 id="2-librbd使用"><a href="#2-librbd使用" class="headerlink" title="2. librbd使用"></a>2. librbd使用</h1><p>一般使用rbd都是通过调用librbd库实现，比如qemu。目前L版的代码里面有两个层次的缓存，一个是image层级的缓存，一个是object层级的缓存。Intel的rwl就是实现的image层级的缓存。</p>
+<h1 id="3"><a href="#3" class="headerlink" title="3."></a>3.</h1>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Ceph rwl</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/04/13/ceph-rwl-analysis/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-osdc-code-analysis" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/13/osdc-code-analysis/">小甲师兄陪你一起看Ceph(osdc篇)</a>
+    </h1>
+  
+
+        
+        <a href="/2019/04/13/osdc-code-analysis/" class="archive-article-date">
+  	<time datetime="2019-04-13T03:19:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-13</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-深圳天气：小雨到阵雨到大雨"><a href="#1-深圳天气：小雨到阵雨到大雨" class="headerlink" title="1. 深圳天气：小雨到阵雨到大雨"></a>1. 深圳天气：小雨到阵雨到大雨</h1><p>  小甲师兄有个喜好：喜欢下雨。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc<br>代码分享一下，这些都是小甲个人的理解，如果不对还望指正。</p>
+<h1 id="2-osdc"><a href="#2-osdc" class="headerlink" title="2.osdc"></a>2.osdc</h1><p>osdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：</p>
+<ul>
+<li>（1）：地址空间的转换：从rbd或者cephfs文件的一维地址空间转换到对象的三维地址空间，也简称为对象化</li>
+<li>（2）：objectcacher：一个object级别的缓存</li>
+<li>（3）：Crush算法定位osd：在转化为三维地址空间之后，就使用Crush算法进行对象的数据定位</li>
+</ul>
+<p>本文主要是介绍前两点，小甲师兄14年刚开始接触ceph使用的是0.80.5版本（firefly），本文的分析是基于10.2.2（jewel），现在使用的是12.2.10（luminous），虽然版本跨度比较大，但是这部分代码还是比较稳定的，基本大的框架没有变化。这里以cephfs的文件读流程进行分析。</p>
+<h1 id="3-介绍一个文件的读"><a href="#3-介绍一个文件的读" class="headerlink" title="3.介绍一个文件的读"></a>3.介绍一个文件的读</h1><p>这里使用fuse进行挂载cephfs，因为用户态的客户端才会调用osdc，如果使用内核态的客户端的话，是不会经过osdc代码的，会走内核的一个osd client代码，估计功能跟osdc类似，不过内核的osd client的缓存是使用的内核中的一些缓存机制。</p>
+<h2 id="3-1-用户态文件请求"><a href="#3-1-用户态文件请求" class="headerlink" title="3.1 用户态文件请求"></a>3.1 用户态文件请求</h2><p>用户态文件请求的流程大致如下：</p>
+<ul>
+<li>（1）posix标准：open、read、write</li>
+<li>（2）系统调用</li>
+<li>（3）vfs虚拟机文件系统</li>
+<li>（4）fuse内核模块</li>
+<li>（5）fuse的用户态库</li>
+<li>（6）cephfs的用户态客户端代码</li>
+<li>（7）最终到达client::read（）或者client::write（）处理函数</li>
+</ul>
+<h2 id="3-2-client-read"><a href="#3-2-client-read" class="headerlink" title="3.2 client::read()"></a>3.2 client::read()</h2><p>从client::read()起的流程图如下：<br><img src="a1.png" alt="a1"></p>
+<p>其中file_to_extents函数就是完成osdc的第一个功能：地址空间的转换</p>
+<h2 id="3-3-地址空间的转换"><a href="#3-3-地址空间的转换" class="headerlink" title="3.3 地址空间的转换"></a>3.3 地址空间的转换</h2><p>先贴一个对象条带分片图，也就是地址空间转换图，如下图所示：<br><img src="a2.png" alt="a2"><br>这个对象分片图，是不是有点像raid0，对，就是将raid0中的磁盘换成了对象，并对对象进行了条带分片。</p>
+<ul>
+<li>按上图介绍几个概念<br>（1）蓝色柱状代表一个个rados底层对象，默认为4M<br>（2）绿色的su代表条带单元<br>（3）红色的stripe代表一个个条带<br>（4）objectset代表对象组，一般一个对象组属于同一个文件（cephfs）</li>
+</ul>
+<p>这里要说明一点，Ceph系统默认没有开启对象条带分片</p>
+<ul>
+<li><p>再介绍几个变量<br>（1）object_size：对象的大小，就是rados底层对象的大小，一般默认是4M<br>（2）su：对象分片大小，以上面的图为例就是4/3M<br>（3）stripe_count：条带宽度，也就是一个strip跨多少个对象，也就是一个objectset中对象的个数，以上面的图为例，值为3<br>（4）stripes_per_object：一个对象包含的对象分片数，以上图为例值为3</p>
+</li>
+<li><p>file_to_extent<br>file_to_extent函数就是以raid0的思想来分片，一个个条带连起来可以看成是逻辑上面连续的，相当于线性的一维地址空间。现在要通过file_to_extent函数把一维坐标转化成三维坐标(objectset，stripeno，stripepos)，这三维坐标分别表示哪一个objectset，哪一个条带，条带中的哪一个对象分片。小甲以一个读操作来分析，示例分析如下：<br><img src="a3.png" alt="a3"><br>这里假设一个对象大小是3M，一个对象分片大小是1M，假设我们要读的文件占用两个objectset，占用6个rados的对象，18个对象分片，小甲这里要读取这个文件的对象分片的序号是从第1到第6，也就是文件的2M~7M的范围，相应的变量如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">offset = 1M 表示读偏移量</span><br><span class="line">len = 6M 表示要读取的大小</span><br><span class="line">su = 1M</span><br><span class="line">object_size = 3M</span><br><span class="line">stripe_count = 3</span><br><span class="line">stripes_per_object = 3</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看到上面的地址空间已经从一维转化成了三维：比如读取su1<br>一维地址空间：(offset, len) ==&gt;（1M，1M）<br>三维地址空间：(objectset，stripeno，stripepos) ==&gt; （objectset0，stripe0，object1）</p>
+<ul>
+<li>对象名的组成<br>这里的对象指的是rados底层的对象，也就是使用filestore时，xfs上面一个个4M的小文件，那这个文件的名字是怎么组成的呢，小甲顺便也分析了一下。<br>这里先说明一个类ObjectExtent，这个是用来保存一个对象内的分片的信息，注意这个类不保存内容，只是保存分片的位置信息：偏移和长度。分片的结果会保存在一个map中<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">map&lt;object_t,vector&lt;ObjectExtent&gt; &gt;  object_extent</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>map的key是一个对象的名字，这个名字就是存在磁盘上面每一个对象对应文件的文件名的前缀，比如，磁盘上面一个对象的文件名为:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10000000000.00000000__head_F0B56F30__1</span><br></pre></td></tr></table></figure></p>
+<p>其中10000000000.00000000这个由点号隔成了两部分，点号前面的10000000000是一个文件的元数据inode号，后面00000000是文件内容分配所在的对象号，这个对象号有点特殊代码中叫做objectno，我们来具体讨论一下。<br>首先每一个文件都是可以分片成对象，按照分片算法，这里分片所对应的对象应该都是从0开始标号的，那这样对象的名字不就重复了吗，不急，我们每一个文件的inode号是一个唯一的这个inode号是由mds中的inodetable维护的，保证唯一，那就可以使用文件的元数据inode号和刚刚可以重复利用的objectno就组成了上面我们看到的由点号分开的对象名前缀，其实这个感觉就像我们的网络，在openstack中我们可以给每一个租户分配一个网络，网络里面可以自己划分子网，不同租户的子网的网段是可以重复的，因为他们就相当于一个局域网，可以重复利用，这里面的objectno就相当于局域网段，可以重复利用，但是和inode号合在一起就是一个全局唯一的，就是存储在磁盘上面的前缀。</p>
+<h2 id="3-4-对象分片与ObjectExtent"><a href="#3-4-对象分片与ObjectExtent" class="headerlink" title="3.4 对象分片与ObjectExtent"></a>3.4 对象分片与ObjectExtent</h2><p>对象分片跟objectextent的对应关系有点复杂, 听小甲慢慢分析。</p>
+<ul>
+<li><p>1.因为要使用osdc就要用用户态的客户端，就是使用fuse，但是内核态的fuse的模块对读写数据大小是进行了限制，一次写最多是4K，而读是128K，也就是说我们如果像我们列子中要读取文件中1M到6M之内的内容不是一次传过来的，而是在fuse内核模块那边就已经分成了一个个128K的读，估计fuse用户态的库那边有一个线程池，所以每一次的128K都是并发由不同的线程进行处理。</p>
+</li>
+<li><p>2.因为上面fuse内核已经给我们的请求进行了分片，传过来的是一个个128K的读长度请求，对于我们例子中的情况，一个对象分片su是1M的情形，我们来细细的分析一下：<br>2.1.首先传来第一个128K的文件长度的读，那就是从偏移量为1M的开始读取长度为128K的文件数据，我们该怎么映射分片呢?</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">offset = 1M</span><br><span class="line">len = 128K</span><br></pre></td></tr></table></figure>
+<p>步骤如下：</p>
+<ul>
+<li>第一步计算出偏移量的位置信息，这个位置信息我们要把它从一维的转化为三维的坐标，计算过程如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">blockno = offset/su =1M/1M =1         块号，也就是分片号就是su1</span><br><span class="line">stripeno = blockno /stripe_count = 1/3 =0    条带号，表示一个条带stripe0</span><br><span class="line">stripepos  = blockno%stripe_count = 1%3 = 1  条带内偏移，就是在条带内的第二个对象上面</span><br><span class="line">objectsetno = stripeno / stripes_per_object=0/3 =0   对象set号，表示objectset0</span><br><span class="line">objectno = objectsetno*stripe_count + stripepos= 0*3+1对象号，就是分片所在的哪个对象</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这样我们就把以为的坐标转化为三维的坐标: （su1） –&gt; (objectset0, stripe0, stripepos=1)<br><img src="a4.png" alt="a4"></p>
+<ul>
+<li>第二步修改分配内的偏移量<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">block_start = (stripeno % stripes_per_object) * su = (0%3)*1M =0 , 这个表示的是文件操作偏移量在所对应的对象中的偏移</span><br><span class="line">block_off = offset % su = 1M %1M =0,这个表示的是文件操作偏移量在所对应的对象su中的偏移</span><br><span class="line">x_offset = block_start + block_off = 0 + 0,这个表示对象分片的偏移实际地址</span><br><span class="line">max = su - block_off=1M -0 = 1M,这个分片还剩的最大容量</span><br><span class="line">x_len = min（len，max),分片内的偏移量的最小值</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+<p>上面公式太复杂，我们下面以几个列子来寻求普遍情况:<br>例子1：是上面的128K，从su1边界开始<br><img src="a5.png" alt="a5"><br>可以看出我们的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x_offset = 0</span><br><span class="line">x_len=128k</span><br><span class="line">然后生成一个objectextent，里面的offset=x_offset = 0，length=x_len=128k</span><br></pre></td></tr></table></figure></p>
+<p>例子二：如下情景<br><img src="a6.png" alt="a6"><br>可以看出我们的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x_offset = 64k</span><br><span class="line">x_len=128k</span><br><span class="line">然后生成一个objectextent，里面的offset=x_offset = 64k，length=x_len=128k</span><br></pre></td></tr></table></figure></p>
+<p>例子三：如下情景<br><img src="a7.png" alt="a7"><br>虽然我们知道在我们假设的su为1M，fuse一次读分片是128K的情况下是不会出现这种情况的，当时我们可以调整su的大小，调整对象的大小，这样的情况就可以达到了。<br>这里我们假设去掉fuse读分片128k的限制，我们假设读了1M的数据，并且我们su为1M，现在我们要读上面所有绿色的部分。对于前面三个分片，我们可以知道，第一个分片在object1的第一个su中，不是一个整的分片，第二个分片是在object2中的第一个su中，完整的一个分片，第三个分片是在object0中的第二个su，是一个完整的分片，最后一个分片是在object1的第二个su中，我们可以知道，对于前三个分片在，分片结果集map&lt;object_t,vector<objectextent> &gt; object_extent会存放三个对象，假设我们还没有映射最后一个分片我们只是映射了三个分片，此时，object_extent下的状态是如下：<br><img src="a8.png" alt="a8"><br>那对于第四个分片呢，会在object1下面在生成一个objectextent，这个里面的分片是不全的，现在有一个问题来了是不是一个su对应一个objectextent？<br>答案是的，一个su对应一个objectextent，可能这个objectextent没有su那么大的范围，即len(objectextent)&lt;=len(su)，而且在objectextent结构中有一个vector&lt;pair&lt;uint64_t,uint64_t&gt; &gt;buffer_extents，这个是用来记录此分片相对于我们要读的偏移位置的偏移量，我们画个图解释一下。<br><img src="a9.png" alt="a9"><br>buffer_extents里面的key是指的蓝色小格相对于offset的偏移，不过小甲在撸完代码之后，感觉基本上一个objectextent里面的buffer_extents只会存在一个pair，不会存在多个pair，一般要么就是一个su或者就是小于su。</objectextent></p>
+<h2 id="3-5-对象分片之后跟objectcacher中的缓存关联"><a href="#3-5-对象分片之后跟objectcacher中的缓存关联" class="headerlink" title="3.5 对象分片之后跟objectcacher中的缓存关联"></a>3.5 对象分片之后跟objectcacher中的缓存关联</h2><p>从上面的file_to_extent中得到映射后的结果集object_extent，这个是一个map，首先遍历取出所有的objectextent放在一个vector中。然后下面的在readx函数中去读每一个映射后分片objectextent上面的内容，因为objectextent结构中包含了要读对象的名字和要读内容在这个对象中的迁移位置，所以就可以对每一个objectextent进行并发读取。但是在读的时候由于使用objectcacher缓存，我们可以现从缓存中查找看看我们要找的objectextent范围的内容是不是在缓存中，缓存命中在直接取出，不命中就需要去rados读。</p>
+<h3 id="映射关系"><a href="#映射关系" class="headerlink" title="映射关系"></a>映射关系</h3><p>这里就有一个问题，就是objectextent如何跟bufferhead映射起来？接下来我们分析一下。<br> 这主要是一个函数map_read，这个函数就是做对一个objectextent进行映射，这里面的映射也很有趣，我们来看一下，首先说明一下bufferhead是一个对象内部的片段，毫无规律的。<br> object和bufferhead之间的关系如下，这里的object严格说不是rados的object，是osdc缓存中的对象，其实可以说是内存中与磁盘对应的数据结构。<br> <img src="a10.png" alt="a10"><br>上图中一个object中有三个bufferhead<br>下面分析几种情景来说明object、bufferhead和objectextent之间的关系</p>
+<ul>
+<li><p>（1）objectextent的范围在现有的bufferhead之后<br><img src="a11.png" alt="a11"><br>这种情况下，会生成一个bufferhead，包含objectextent的范围，加入一个bufferhead之后变成这样:<br><img src="a12.png" alt="a12"></p>
+</li>
+<li><p>(2) objectextent的范围在某一个bufferhead之内<br><img src="a13.png" alt="a13"><br>像上面这种情况，表示一部分已有映射，其实上面这种情况还有一部分在外面，最后变成这样<br><img src="a14.png" alt="a14"></p>
+</li>
+<li><p>(3) objectextent的范围在间隔段之间<br><img src="a15.png" alt="a15"><br>像上面这种情况，objectextent中间某一部分已经映射到对象的某部分，最后映射的结果如下<br><img src="a16.png" alt="a16"><br>一般一个objectextent会对应到多个bufferhead上面</p>
+<h3 id="缓存状态"><a href="#缓存状态" class="headerlink" title="缓存状态"></a>缓存状态</h3><p>这里我们只是做了映射关系，那如何看这些bufferhead中是不是都缓存了对象的数据呢，这个就是根据bufferhead的状态来进行，bufferhead有很多状态，我们来看一下<br><img src="a17.png" alt="a17"><br>bufferhead有这几种状态，根据代码中的意识是当状态为clean，dirty，tx和zero时，可以认为缓存中是有对象数据的</p>
+<h2 id="3-6-读操作引起的发送到rados上面的操作序列"><a href="#3-6-读操作引起的发送到rados上面的操作序列" class="headerlink" title="3.6 读操作引起的发送到rados上面的操作序列"></a>3.6 读操作引起的发送到rados上面的操作序列</h2><p>读操作请求一般会经过这几个过程<br>（1）首先去mds上面找到文件所对应的元数据，如果mds没有缓存inode，就要到osd上面去取元数据，此操作其实就时打开文件open<br>（2）去到元数据之后，inode里面包含了文件数据在osd上面的一些位置信息file_layout_t，这个里面主要是包含文件分片的一些参数，还有文件所在的池信息<br>（3）向osd发起了一个stat op的操作请求，返回文件的属性<br>（4）然后会发送一个create op的操作请求<br>（5）后面才会从fuse内核接受一个个128k的读请求</p>
+</li>
+</ul>
+<h2 id="3-7-我们拿一个128K的请求来看"><a href="#3-7-我们拿一个128K的请求来看" class="headerlink" title="3.7 我们拿一个128K的请求来看"></a>3.7 我们拿一个128K的请求来看</h2><p>假设我们缓存中刚开始是空的，好那我们在经过map_read之后我们我们流程图如下</p>
+<ul>
+<li>（1）第一次读缓存未命中到osd上去取<br><img src="a18.png" alt="a18"><br>因为缓存未命中，所以在bh_read中发起一个到osd去对象数据的op操作</li>
+<li>(2) 客户端接收到osd读请求发送回来的响应<br><img src="a19.png" alt="a19"><br>这里又开始进行第二次读，这次读就能在缓存中命中</li>
+<li>(3) 第二次读流程，命中缓存<br><img src="a20.png" alt="a20"></li>
+</ul>
+<h1 id="4-结尾"><a href="#4-结尾" class="headerlink" title="4. 结尾"></a>4. 结尾</h1><p>小甲这一期讲的东西有点多，这里面还是很复杂的，读者需要静下心来结合代码好好分析。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Ceph Cephfs osdc</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/04/13/osdc-code-analysis/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-docker-registry-s3" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -853,293 +1154,6 @@
 
 
   
-    <article id="post-cephfs-use" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/01/05/cephfs-use/">cephfs部署，创建和删除</a>
-    </h1>
-  
-
-        
-        <a href="/2019/01/05/cephfs-use/" class="archive-article-date">
-  	<time datetime="2019-01-05T05:34:58.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="cephfs部署"><a href="#cephfs部署" class="headerlink" title="cephfs部署"></a>cephfs部署</h1><p>——————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.ceph-deploy安装</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install ceph-deploy</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.ceph mds服务安装<br>进入到/etc/ceph目录</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ceph-deploy gatherkeys &#123;hostname&#125;</span><br><span class="line">ceph-deploy mds create &#123;hostmane&#125;:&#123;服务名字&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>注意可以在一个节点上面启动多个mds服务，一般推荐一个机器上面跑一个mds服务</p>
-<h1 id="cephfs创建"><a href="#cephfs创建" class="headerlink" title="cephfs创建"></a>cephfs创建</h1><p>—————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li>1.创建cephfs需要使用的池<br>创建数据池<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph osd pool create gkk_data 20 20</span><br><span class="line">pool &apos;gkk_data&apos; created</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>创建元数据池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph osd pool create gkk_metadata 20 20</span><br><span class="line">pool &apos;gkk_metadata&apos; created</span><br></pre></td></tr></table></figure></p>
-<p>创建cephfs文件系统<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph fs new gkk gkk_metadata gkk_data</span><br><span class="line">new fs with metadata pool 7 and data pool 8</span><br></pre></td></tr></table></figure></p>
-<ul>
-<li>2.开启多文件系统模式<br>默认情况ceph集群只允许创建一套cephfs文件系统，但是可以打开一个flag就可以开始多文件系统模式<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph fs flag set enable_multiple true --yes-i-really-mean-it</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>打开flag之后创建多个cephfs文件系统如下所示<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph -s</span><br><span class="line">    cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line">     health HEALTH_OK</span><br><span class="line">     monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">            election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">      fsmap e68: ceph-1/1/1 up gkk-1/1/1 up &#123;[ceph:0]=con03=up:active,[gkk:0]=con01=up:active&#125;, 1 up:standby</span><br><span class="line">     osdmap e255: 3 osds: 3 up, 3 in</span><br><span class="line">            flags sortbitwise,require_jewel_osds</span><br><span class="line">      pgmap v1934353: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">            182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">                4240 active+clean</span><br><span class="line">  client io 0 B/s rd, 5623 B/s wr, 0 op/s rd, 0 op/s wr</span><br></pre></td></tr></table></figure></p>
-<p>可以看到笔者的集群中有三个mds，有两个cephfs文件系统，名字分别叫ceph和gkk，其中他们分别占用一台mds用来管理元数据服务，分别为con03和con01</p>
-<ul>
-<li>3.配置一个文件系统使用多个mds服务，实现使用集群来管理文件系统的元数据<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ceph fs set ceph allow_multimds true --yes-i-really-mean-it</span><br><span class="line">ceph fs set ceph max_mds 3</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>此时集群如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line"> health HEALTH_OK</span><br><span class="line"> monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">        election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">  fsmap e74: ceph-2/2/2 up gkk-1/1/1 up &#123;[ceph:0]=con03=up:active,[ceph:1]=con02=up:active,[gkk:0]=con01=up:active&#125;</span><br><span class="line"> osdmap e255: 3 osds: 3 up, 3 in</span><br><span class="line">        flags sortbitwise,require_jewel_osds</span><br><span class="line">  pgmap v1934434: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">        182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">            4240 active+clean</span><br><span class="line">client io 10459 B/s rd, 2324 B/s wr, 12 op/s rd, 0 op/s wr</span><br></pre></td></tr></table></figure></p>
-<p>可以看到集群没有standby的元数据服务了</p>
-<h1 id="cephfs删除"><a href="#cephfs删除" class="headerlink" title="cephfs删除"></a>cephfs删除</h1><p>—————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.stop 所有的mds服务</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop ceph-mds@&#123;hostname&#125;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.删除文件系统</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ceph fs rm ceph --yes-i-really-mean-it</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>此时看一下集群状态<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph -s</span><br><span class="line">    cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line">     health HEALTH_OK</span><br><span class="line">     monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">            election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">     osdmap e264: 3 osds: 3 up, 3 in</span><br><span class="line">            flags sortbitwise,require_jewel_osds</span><br><span class="line">      pgmap v1934517: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">            182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">                4240 active+clean</span><br><span class="line">  client io 0 B/s rd, 9829 B/s wr, 0 op/s rd, 1 op/s wr</span><br></pre></td></tr></table></figure></p>
-<p>之前fsmap已经没有了</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">cephfs</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/01/05/cephfs-use/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-dashboard-add-download-image-function" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/20/dashboard-add-download-image-function/">dashboard下载镜像</a>
-    </h1>
-  
-
-        
-        <a href="/2018/12/20/dashboard-add-download-image-function/" class="archive-article-date">
-  	<time datetime="2018-12-20T13:51:05.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-20</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>最近有一个功能，需要在dashboard增加下载镜像的功能，我们都知道，可以通过dashboard上传镜像，可以通过命令下载镜像，但是不能通过dashboard上传镜像</p>
-<h1 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h1><p>社区是有一个bp，传输门如下：<br><a href="https://review.openstack.org/#/c/74799/" target="_blank" rel="noopener">https://review.openstack.org/#/c/74799/</a><br>但是这个bp是基于很老的版本，笔者的openstack是pike版，所以需要做一些修改<br>修改如下：</p>
-<ul>
-<li><p>1./usr/share/openstack-dashboard/openstack_dashboard/settings.py文件330行修改</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&apos;images_panel&apos;: False,</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2./usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/images/images/views.py最后的download_image函数修改如下:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">def download_image(request, **kwargs):</span><br><span class="line">    try:</span><br><span class="line">        image_data = api.glance.image_data(request, kwargs[&apos;image_id&apos;])</span><br><span class="line">        image = api.glance.image_get(request, kwargs[&apos;image_id&apos;])</span><br><span class="line">        image_format = getattr(image, &apos;disk_format&apos;, &apos;data&apos;)</span><br><span class="line">        response = http.StreamingHttpResponse(</span><br><span class="line">            image_data,</span><br><span class="line">            content_type=&apos;application/octet-stream&apos;)</span><br><span class="line">        response[&apos;Content-Disposition&apos;] = (&apos;attachment; filename=&quot;%s.%s&quot;&apos; %</span><br><span class="line">                                           (kwargs[&apos;image_id&apos;], image_format))</span><br><span class="line">        response[&apos;Content-Length&apos;] = image.size</span><br><span class="line">        return response</span><br><span class="line">    except Exception:</span><br><span class="line">        msg = _(&apos;An error occured during download of image.&apos;)</span><br><span class="line">        url = reverse(&apos;horizon:project:images:index&apos;)</span><br><span class="line">        exceptions.handle(request, msg, redirect=url)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>3./usr/share/openstack-dashboard/openstack_dashboard/api/glance.py247行修改如下</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@profiler.trace</span><br><span class="line">def image_data(request, image_id):</span><br><span class="line">    &quot;&quot;&quot;Returns an Image object populated with metadata for a given image.&quot;&quot;&quot;</span><br><span class="line">    return glanceclient(request).images.data(image_id)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>4./usr/share/openstack-dashboard/openstack_dashboard/locale/zh_CN/LC_MESSAGES下面的mo对应的文件需要增加</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">msgid &quot;Edit Image&quot;</span><br><span class="line">msgstr &quot;编辑镜像&quot;</span><br><span class="line"></span><br><span class="line">msgid &quot;Download Image&quot;</span><br><span class="line">msgstr &quot;下载镜像&quot;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>ok,重启一下httpd或者apache2服务</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">openstack dashboard horizon</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/12/20/dashboard-add-download-image-function/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-k8s-configmap" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/16/k8s-configmap/">k8s:configmap</a>
-    </h1>
-  
-
-        
-        <a href="/2018/12/16/k8s-configmap/" class="archive-article-date">
-  	<time datetime="2018-12-16T15:21:00.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-16</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-configmap创建方式"><a href="#1-configmap创建方式" class="headerlink" title="1.configmap创建方式"></a>1.configmap创建方式</h1><ul>
-<li>从字符串创建</li>
-<li>从env文件创建</li>
-<li>从目录创建</li>
-<li>从json/yaml文件创建</li>
-</ul>
-<h1 id="2-configmap使用"><a href="#2-configmap使用" class="headerlink" title="2.configmap使用"></a>2.configmap使用</h1><ul>
-<li>用作pod的环境变量</li>
-<li>通过环境变量作为pod命令参数</li>
-<li>使用volume将configmap作为文件或者目录直接挂载</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">k8s configmap</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/12/16/k8s-configmap/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
@@ -1241,15 +1255,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1269,11 +1283,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1281,15 +1295,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1297,7 +1319,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1309,10 +1331,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
@@ -1321,7 +1339,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1333,7 +1363,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1341,11 +1371,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">

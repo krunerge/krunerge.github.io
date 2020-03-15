@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="#安装包  下载包https://pan.baidu.com/s/1piNymp6oWLNHvXKaxBszLg#list/path=%2FCeph-ISCSI 安装ceph-iscsi配置文件 安装rbd-target-api所在的ceph-iscsi-cli包3.1安装依赖python-configshell，网上3.2安装包里的python-rtslib（先卸载老版本）3.3安装包里的cep">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2020-02-26T07:20:57.236Z">
+<meta property="og:updated_time" content="2020-03-11T08:16:45.233Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ceph iscsi安装">
 <meta name="twitter:description" content="#安装包  下载包https://pan.baidu.com/s/1piNymp6oWLNHvXKaxBszLg#list/path=%2FCeph-ISCSI 安装ceph-iscsi配置文件 安装rbd-target-api所在的ceph-iscsi-cli包3.1安装依赖python-configshell，网上3.2安装包里的python-rtslib（先卸载老版本）3.3安装包里的cep">
@@ -187,6 +187,8 @@
 <li>创建target的时候必须要主机名和ip</li>
 <li>创建好cinder配置后端所需要的池，比如iscsi池</li>
 <li>启动rbd-target-api</li>
+<li>target在iscsi-gateway配置文件可以通过ceph_pool，配置gateway.conf文件所在的池</li>
+<li>target在iscsi-gateway配置文件可以通过api_ip，配置rbd-target-api所监听的ip</li>
 </ol>
 <p>注意</p>
 <ol>
@@ -202,6 +204,17 @@
 <ol start="6">
 <li>gateway ha配置<br>6.1 首先在每个节点安装包，然后配置/etc/ceph/iscsi-gateway.cfg,把ip都加上<br>6.2 在某一个节点使用gwcli创建gateway<br>6.3 创建gateway之后会自动同步<br>6.4 在为创建gwcli之前，这个节点的gwcli命令是不可用的</li>
 </ol>
+<h1 id="cinder的参考配置如下"><a href="#cinder的参考配置如下" class="headerlink" title="cinder的参考配置如下"></a>cinder的参考配置如下</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[ceph_iscsi2]</span><br><span class="line">volume_driver = cinder.volume.drivers.rbd_iscsi.rbd_iscsi.RbdISCSIDriver</span><br><span class="line">volume_backend_name = ceph_iscsi2</span><br><span class="line">ceph_rbd_iscsi_target_ips = 10.85.46.92:3260</span><br><span class="line">ceph_rbd_iscsi_target_iqns = iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2</span><br><span class="line">ceph_rbd_iscsi_auth = chap/tstack12/tstack1234567</span><br><span class="line">ceph_pool = iscsi</span><br><span class="line">ceph_api_protocol = http</span><br><span class="line">rbd_iscsi_controller_ips = 10.85.46.92:5001</span><br><span class="line">username = admin</span><br><span class="line">password = admin</span><br></pre></td></tr></table></figure>
+<p>multipath配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[ceph_iscsi2]</span><br><span class="line">volume_driver = cinder.volume.drivers.rbd_iscsi.rbd_iscsi.RbdISCSIDriver</span><br><span class="line">volume_backend_name = ceph_iscsi2</span><br><span class="line">#ceph_rbd_iscsi_target_ips = 10.85.46.92:3260</span><br><span class="line">ceph_rbd_iscsi_target_ips = 10.85.46.94:3260,10.85.46.96:3260</span><br><span class="line">ceph_rbd_iscsi_target_iqns = iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2</span><br><span class="line">ceph_rbd_iscsi_auth = chap/tstack12/tstack1234567</span><br><span class="line">ceph_pool = iscsi</span><br><span class="line">ceph_api_protocol = http</span><br><span class="line">rbd_iscsi_controller_ips = 10.85.46.92:5001</span><br><span class="line">username = admin</span><br><span class="line">password = admin</span><br></pre></td></tr></table></figure></p>
+<h1 id="多路径配置"><a href="#多路径配置" class="headerlink" title="多路径配置"></a>多路径配置</h1><ul>
+<li><p>nova的compute配置文件要在libvirt section下面增加</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">volume_use_multipath = True</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装multipathd</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">yum install device-mapper-multipath</span><br><span class="line">mpathconf --enable</span><br><span class="line">systemctl restart multipathd.service</span><br><span class="line">systemctl enable multipathd.service</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">配置如下：</span><br><span class="line">devices &#123;</span><br><span class="line">        device &#123;</span><br><span class="line">                vendor                  &quot;Tencent&quot;</span><br><span class="line">                product                 &quot;Tsan&quot;</span><br><span class="line">                hardware_handler        &quot;1 alua&quot;</span><br><span class="line">                path_grouping_policy    group_by_prio</span><br><span class="line">                #path_selector           &quot;queue-length 0&quot;</span><br><span class="line">                path_selector           &quot;round-robin 0&quot;</span><br><span class="line">                failback                immediate</span><br><span class="line">                path_checker            tur</span><br><span class="line">                prio                    alua</span><br><span class="line">                prio_args               exclusive_pref_bit</span><br><span class="line">                dev_loss_tmo            30</span><br><span class="line">                fast_io_fail_tmo        5</span><br><span class="line">                no_path_retry           queue</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
       
 
@@ -467,15 +480,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -495,11 +508,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -507,15 +520,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -523,7 +544,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -535,10 +556,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
@@ -547,7 +564,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -559,7 +588,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -567,11 +596,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
