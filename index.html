@@ -210,7 +210,7 @@
 </ol>
 </li>
 </ul>
-<p>内容类似如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;oid&quot;: &#123;</span><br><span class="line">        &quot;oid&quot;: &quot;rbd_header.301027238e1f29&quot;,</span><br><span class="line">        &quot;key&quot;: &quot;&quot;,</span><br><span class="line">        &quot;snapid&quot;: -2,</span><br><span class="line">        &quot;hash&quot;: 2780642542,</span><br><span class="line">        &quot;max&quot;: 0,</span><br><span class="line">        &quot;pool&quot;: 0,</span><br><span class="line">        &quot;namespace&quot;: &quot;&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    &quot;watchers&quot;: &#123;</span><br><span class="line">        &quot;client.8079633&quot;: &#123;</span><br><span class="line">            &quot;cookie&quot;: 139996606507840,</span><br><span class="line">            &quot;timeout_seconds&quot;: 30,</span><br><span class="line">            &quot;addr&quot;: &#123;</span><br><span class="line">                &quot;nonce&quot;: 3613298630,</span><br><span class="line">                &quot;addr&quot;: &quot;10.125.232.77:0&quot;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>内容类似如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;oid&quot;: &#123;</span><br><span class="line">        &quot;oid&quot;: &quot;rbd_header.301027238e1f29&quot;,</span><br><span class="line">        &quot;key&quot;: &quot;&quot;,</span><br><span class="line">        &quot;snapid&quot;: -2,</span><br><span class="line">        &quot;hash&quot;: 2780642542,</span><br><span class="line">        &quot;max&quot;: 0,</span><br><span class="line">        &quot;pool&quot;: 0,</span><br><span class="line">        &quot;namespace&quot;: &quot;&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    &quot;watchers&quot;: &#123;</span><br><span class="line">        &quot;client.8079633&quot;: &#123;</span><br><span class="line">            &quot;cookie&quot;: 139996606507840,</span><br><span class="line">            &quot;timeout_seconds&quot;: 30,</span><br><span class="line">            &quot;addr&quot;: &#123;</span><br><span class="line">                &quot;nonce&quot;: 3613298630,</span><br><span class="line">                &quot;addr&quot;: &quot;127.0.0.1:0&quot;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>我们看到watchers是一个字典，当前只是示例，可以看到在watcher中有一个timeout_seconds字段，默认是30s，那这个字段是干嘛的呢，看名字就是超过30s删除，那是怎么删除</p>
 <ul>
 <li>6.watcher的timeout<br>watcher就是客户端，其实客户端为了保活，会通过心跳ping来更新超时，如何做的呢，首先心跳在objecter的tick函数中每个5s调用<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">void Objecter::tick()&#123;</span><br><span class="line">  ...</span><br><span class="line">  for (map&lt;uint64_t,LingerOp*&gt;::iterator p = s-&gt;linger_ops.begin();</span><br><span class="line">	p != s-&gt;linger_ops.end();</span><br><span class="line">	++p) &#123;</span><br><span class="line">      LingerOp *op = p-&gt;second;</span><br><span class="line">      LingerOp::unique_lock wl(op-&gt;watch_lock);</span><br><span class="line">      assert(op-&gt;session);</span><br><span class="line">      ldout(cct, 10) &lt;&lt; &quot; pinging osd that serves lingering tid &quot; &lt;&lt; p-&gt;first</span><br><span class="line">		     &lt;&lt; &quot; (osd.&quot; &lt;&lt; op-&gt;session-&gt;osd &lt;&lt; &quot;)&quot; &lt;&lt; dendl;</span><br><span class="line">      found = true;</span><br><span class="line">      if (op-&gt;is_watch &amp;&amp; op-&gt;registered &amp;&amp; !op-&gt;last_error)</span><br><span class="line">	_send_linger_ping(op);</span><br><span class="line">    &#125;</span><br><span class="line">  ...    </span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -1269,19 +1269,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1293,15 +1293,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1317,10 +1321,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
               </li>
              
@@ -1329,27 +1329,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1357,15 +1341,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1373,7 +1353,27 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1389,6 +1389,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
@@ -1398,10 +1402,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
             
             <div class="clearfix"></div>
