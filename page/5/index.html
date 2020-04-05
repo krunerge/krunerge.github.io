@@ -150,6 +150,177 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-virsh-domain" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/09/virsh-domain/">virsh-domain.c文件下命令分析</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/09/virsh-domain/" class="archive-article-date">
+  	<time datetime="2018-10-09T13:34:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-09</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="libvirt"><a href="#libvirt" class="headerlink" title="libvirt"></a>libvirt</h1><p>由于最近要做虚拟机在线快照，熟悉一下libvirt源码以及使用</p>
+<h2 id="virsh-attach-device-通过xml给虚拟机添加设备"><a href="#virsh-attach-device-通过xml给虚拟机添加设备" class="headerlink" title="virsh attach-device,通过xml给虚拟机添加设备"></a>virsh attach-device,通过xml给虚拟机添加设备</h2><h2 id="virsh-attach-disk，增加盘"><a href="#virsh-attach-disk，增加盘" class="headerlink" title="virsh attach-disk，增加盘"></a>virsh attach-disk，增加盘</h2><h2 id="virsh-attach-interface，增加网卡"><a href="#virsh-attach-interface，增加网卡" class="headerlink" title="virsh attach-interface，增加网卡"></a>virsh attach-interface，增加网卡</h2><h2 id="virsh-autostart，设置自动启动，当libvirtd重启的时候虚拟机重启"><a href="#virsh-autostart，设置自动启动，当libvirtd重启的时候虚拟机重启" class="headerlink" title="virsh autostart，设置自动启动，当libvirtd重启的时候虚拟机重启"></a>virsh autostart，设置自动启动，当libvirtd重启的时候虚拟机重启</h2><h2 id="virsh-blkdeviotune，设置磁盘I-O节流"><a href="#virsh-blkdeviotune，设置磁盘I-O节流" class="headerlink" title="virsh blkdeviotune，设置磁盘I/O节流"></a>virsh blkdeviotune，设置磁盘I/O节流</h2><h2 id="virsh-blkiotune-设置磁盘I-O节流"><a href="#virsh-blkiotune-设置磁盘I-O节流" class="headerlink" title="virsh blkiotune,设置磁盘I/O节流"></a>virsh blkiotune,设置磁盘I/O节流</h2>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">libvirt</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/09/virsh-domain/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-k8s-learn-8" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/08/k8s-learn-8/">k8s learn(8)重新认识Docker容器</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/08/k8s-learn-8/" class="archive-article-date">
+  	<time datetime="2018-10-08T14:21:46.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-08</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="镜像上传到Docker-hub"><a href="#镜像上传到Docker-hub" class="headerlink" title="镜像上传到Docker hub"></a>镜像上传到Docker hub</h1><ul>
+<li>1.docker login登陆</li>
+<li>2.docker tag  hellword krunerge/hellword:v1<br>其中krunerge是你的仓库名，也是你docker hub的用户名</li>
+<li>3.docker push krunerge/hellword:v1</li>
+</ul>
+<h1 id="docker-exec原理"><a href="#docker-exec原理" class="headerlink" title="docker exec原理"></a>docker exec原理</h1><ul>
+<li><p>1.找到容器的进程id</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># docker inspect --format &apos;&#123;&#123;.State.Pid&#125;&#125;&apos; e4065bd03082</span><br><span class="line">48987</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2.找到进程的相关的namespace</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># ll /proc/48987/ns</span><br><span class="line">总用量 0</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 cgroup -&gt; cgroup:[4026531835]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 ipc -&gt; ipc:[4026533013]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 mnt -&gt; mnt:[4026533009]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 net -&gt; net:[4026533016]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid_for_children -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 user -&gt; user:[4026531837]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 uts -&gt; uts:[4026533012]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>3.docker exec的原理就是创建一个新进程，加入到之前容器进程的namespace中，就是通过上面找到的namespace<br>使用setns()系统调用实现，模拟实现如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">#define _GNU_SOURCE</span><br><span class="line">#include &lt;fcntl.h&gt;</span><br><span class="line">#include &lt;sched.h&gt;</span><br><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">#define errExit(msg) do&#123; perror(msg); exit(EXIT_FAILURE);&#125; while(0)</span><br><span class="line"></span><br><span class="line">int main(int argc, char *argv[])&#123;</span><br><span class="line">  int fd;</span><br><span class="line"></span><br><span class="line">  fd = open(argv[1], O_RDONLY);</span><br><span class="line">  if (setns(fd, 0) == -1)&#123;</span><br><span class="line">      errExit(&quot;setns&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  execvp(argv[2], &amp;argv[2]);</span><br><span class="line">  errExit(&quot;execvp&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="docker的数据卷"><a href="#docker的数据卷" class="headerlink" title="docker的数据卷"></a>docker的数据卷</h1><ul>
+<li><p>docker支持两种数据卷声明方式</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. docker run -v /test ...</span><br><span class="line">这个会创建一个临时目录/var/lib/docker/volumes/[VOLUME_ID]/_data</span><br><span class="line">2. docker run -v /home:/test ...</span><br><span class="line">使用宿主机的/home目录挂载</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>数据挂载时机<br>1.首先使用镜像生成rootfs<br>2.然后挂载数据卷到容器目录（使用的绑定挂载bind mount）<br>3.在执行chroot操作</p>
+</li>
+<li>数据卷是挂载容器的可读写层<br>docker commit的时候不会提交，因为docker commit是在宿主机执行，看不到，但是commit之后会有一个空挂载点目录生成</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/08/k8s-learn-8/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-go-learn-3" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -991,178 +1162,6 @@
 
 
   
-    <article id="post-k8s learn(16)" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/28/k8s learn(16)/">张磊k8s学习(16)</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/28/k8s learn(16)/" class="archive-article-date">
-  	<time datetime="2018-09-28T05:18:39.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/28/k8s learn(16)/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-k8s use cephfs as StorageClass" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/28/k8s use cephfs as StorageClass/">k8s use cephfs as StorageClass</a>
-    </h1>
-  
-
-        
-        <a href="/2018/09/28/k8s use cephfs as StorageClass/" class="archive-article-date">
-  	<time datetime="2018-09-28T05:16:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-28</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
-<li>同事给了一个任务，habor想使用cephfs做后端存储，同时想使用storageclass动态分配pv</li>
-</ul>
-<h1 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h1><ul>
-<li>下载external-storage<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># go get github.com/kubernetes-incubator/external-storage</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="创建cephfs命名空间"><a href="#创建cephfs命名空间" class="headerlink" title="创建cephfs命名空间"></a>创建cephfs命名空间</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># cat namespace.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Namespace</span><br><span class="line">metadata:</span><br><span class="line">   name: cephfs</span><br><span class="line">   labels:</span><br><span class="line">     name: cephfs</span><br><span class="line"></span><br><span class="line"># kubectl create –f namespace.yaml</span><br></pre></td></tr></table></figure>
-<h2 id="部署external-storage"><a href="#部署external-storage" class="headerlink" title="部署external-storage"></a>部署external-storage</h2><ul>
-<li><p>链接: <a href="https://github.com/kubernetes-incubator/external-storage/blob/master/ceph/cephfs/deploy/README.md" target="_blank" rel="noopener">https://github.com/kubernetes-incubator/external-storage/blob/master/ceph/cephfs/deploy/README.md</a></p>
-</li>
-<li><p>使用rbac role的 provider</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># cd $GOPATH/src/github.com/kubernetes-incubator/external-storage/ceph/cephfs/deploy</span><br><span class="line"># NAMESPACE=cephfs</span><br><span class="line"># sed -r -i &quot;s/namespace: [^ ]+/namespace: $NAMESPACE/g&quot; ./rbac/*.yaml</span><br><span class="line"># kubectl -n $NAMESPACE apply -f ./rbac –n cephfs</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>注：使用没有rbac部署的external-storage创建的pvc失败，后面再研究一下<br>这个会在cephfs命名空间下面创建一个pod，这个pod不会去调用cephfs创建pv</p>
-</li>
-</ul>
-<h2 id="创建cephfs的secret"><a href="#创建cephfs的secret" class="headerlink" title="创建cephfs的secret"></a>创建cephfs的secret</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># cat ceph-secret.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-secret</span><br><span class="line">data:</span><br><span class="line">  key: QVFCZDJIeGIyWmF6TlJBQTV4MnhvNDFuYU91VkhtUmJaTkEvOGc9PQ==</span><br><span class="line"></span><br><span class="line"># kubectl create –f ceph-secret.yaml –n cephfs</span><br></pre></td></tr></table></figure>
-<h2 id="创建StorageClass"><a href="#创建StorageClass" class="headerlink" title="创建StorageClass"></a>创建StorageClass</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># cat sc.yaml</span><br><span class="line"></span><br><span class="line">kind: StorageClass</span><br><span class="line">apiVersion: storage.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: cephfs</span><br><span class="line">provisioner: ceph.com/cephfs</span><br><span class="line">parameters:</span><br><span class="line">    monitors: 10.125.224.26:6789</span><br><span class="line">    adminId: admin</span><br><span class="line">    adminSecretName: ceph-secret</span><br><span class="line">adminSecretNamespace: &quot;cephfs&quot;</span><br><span class="line"></span><br><span class="line"># kubectl create –f sc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
-<h2 id="创建pvc"><a href="#创建pvc" class="headerlink" title="创建pvc"></a>创建pvc</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># cat pvc_with_sc.yaml</span><br><span class="line"></span><br><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: pvc-3</span><br><span class="line">  annotations:</span><br><span class="line">    volume.beta.kubernetes.io/storage-class: &quot;cephfs&quot;</span><br><span class="line">spec:</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 1Gi</span><br><span class="line"></span><br><span class="line"># kubectl create –f pvc_with_sc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
-<ul>
-<li>创建完pvc的时候会有pv创建，并且在cephfs中会有相应的目录创建<br><img src="1.png" alt="aa"><br>在cephfs根目录下的volumes/kubernetes/kubernetes这个文件夹下</li>
-</ul>
-<h2 id="使用pvc创建pod"><a href="#使用pvc创建pod" class="headerlink" title="使用pvc创建pod"></a>使用pvc创建pod</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"># cat pod_with_cephfs_pvc.yaml</span><br><span class="line"></span><br><span class="line">kind: Pod</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: test-pod1</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: test-pod1</span><br><span class="line">    image: docker.io/nginx</span><br><span class="line">    imagePullPolicy: IfNotPresent</span><br><span class="line">    volumeMounts:</span><br><span class="line">      - name: pvc-3</span><br><span class="line">        mountPath: &quot;/mnt&quot;</span><br><span class="line">  restartPolicy: &quot;Never&quot;</span><br><span class="line">  volumes:</span><br><span class="line">    - name: pvc-3</span><br><span class="line">      persistentVolumeClaim:</span><br><span class="line">        claimName: pvc-3</span><br><span class="line"></span><br><span class="line"># kubectl create –f pod_with_cephfs_pvc.yaml –n cephfs</span><br></pre></td></tr></table></figure>
-<p><img src="2.png" alt="bb"><br>mount可以看到这个挂载关系</p>
-<h2 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h2><p>之前pod一直创建不起来，打开了mds的日志看了一下，说client少FILE_LAYOUT_V2这个特性<br>解决办法传送门：<br><a href="https://stackoverflow.com/questions/48026677/ceph-luminous-rbd-map-hangs-forever?rq=1" target="_blank" rel="noopener">https://stackoverflow.com/questions/48026677/ceph-luminous-rbd-map-hangs-forever?rq=1</a><br>用内核挂载文件系统内核有版本要求，我目前是3.10，我升到了最新的4.18，然后就ok了。</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">k8s cephfs</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/09/28/k8s use cephfs as StorageClass/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/4/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/6/">Next &raquo;</a>
@@ -1264,19 +1263,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1284,7 +1275,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1292,15 +1287,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1312,19 +1315,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1348,19 +1347,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1368,11 +1359,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1384,11 +1387,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">

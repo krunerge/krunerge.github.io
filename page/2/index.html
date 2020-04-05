@@ -150,6 +150,220 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-how-to-operate-configfs" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/02/26/how-to-operate-configfs/">教你操作configfs</a>
+    </h1>
+  
+
+        
+        <a href="/2020/02/26/how-to-operate-configfs/" class="archive-article-date">
+  	<time datetime="2020-02-26T07:01:15.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-26</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>我在开发ceph rbd iscsi的时候会使用configfs创建内核的相关对象，比如target，tpg等，但是创建的时候删除不了，如下所示<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-con02 /sys/kernel/config/target/iscsi/iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2]# rm -rf tpgt_1</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/OFMarkInt&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/IFMarkInt&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/OFMarker&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/IFMarker&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/ErrorRecoveryLevel&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DataSequenceInOrder&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DataPDUInOrder&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxOutstandingR2T&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DefaultTime2Retain&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DefaultTime2Wait&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/FirstBurstLength&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxBurstLength&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxXmitDataSegmentLength&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxRecvDataSegmentLength&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/ImmediateData&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/InitialR2T&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/TargetAlias&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxConnections&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DataDigest&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/HeaderDigest&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/AuthMethod&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/password_mutual&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/userid_mutual&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/authenticate_target&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/password&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/userid&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/tpg_enabled_sendtargets&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/fabric_prot_type&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/t10_pi&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/default_erl&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/demo_mode_discovery&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/prod_mode_write_protect&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/demo_mode_write_protect&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/cache_dynamic_acls&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/default_cmdsn_depth&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/generate_node_acls&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/netif_timeout&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/login_timeout&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/authentication&apos;: Operation not permitted</span><br></pre></td></tr></table></figure></p>
+<p>一堆没有权限，我们知道configfs是内存文件系统，那么重启一下肯定是可以解决的，除此之外还有其他方法吗？<br>这里研究了一下可以通过python进行相关的操作<br>tpg，tpg相关多gateway，就是一个target可能有多个gateway，一个tpg对应一个gateway，里面包含了一些ip等</p>
+<h1 id="tpg的删除"><a href="#tpg的删除" class="headerlink" title="tpg的删除"></a>tpg的删除</h1><ul>
+<li>代码如下<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">from rtslib_fb.target import TPG</span><br><span class="line">from rtslib_fb import root</span><br><span class="line">lio_root = root.RTSRoot()</span><br><span class="line">target = [tgt for tgt in lio_root.targets if tgt.wwn == &apos;iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2&apos;][0]</span><br><span class="line">tpg = TPG(target, 3)</span><br><span class="line">tpg.delete()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这样就可以删除了，有一下两个注意点</p>
+<ul>
+<li><ol>
+<li>iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2 是target的名字，也是内核对象的名字，也是configfs的一个目录名<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/sys/kernel/config/target/iscsi/iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>TPG构造函数中的3表示是tpg的id，学名叫tag<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">drwxr-xr-x 8 root root 0 Feb 26 14:29 tpgt_1</span><br><span class="line">drwxr-xr-x 8 root root 0 Feb 26 14:39 tpgt_2</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+</ul>
+<p>就是上面的1和2</p>
+<h1 id="target的删除"><a href="#target的删除" class="headerlink" title="target的删除"></a>target的删除</h1><ul>
+<li>代码如下<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">from rtslib_fb.target import Target</span><br><span class="line">from rtslib_fb.fabric import ISCSIFabricModule</span><br><span class="line">iscsi_fabric = ISCSIFabricModule()</span><br><span class="line">target = Target(iscsi_fabric, wwn=&apos;iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2&apos;)</span><br><span class="line">target.delete()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>如果target下面还有tpg的话，也会自动被删除</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">python iscsi kernel</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/02/26/how-to-operate-configfs/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-setup-ceph-iscsi" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/02/24/setup-ceph-iscsi/">ceph iscsi安装</a>
+    </h1>
+  
+
+        
+        <a href="/2020/02/24/setup-ceph-iscsi/" class="archive-article-date">
+  	<time datetime="2020-02-24T02:15:40.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-24</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>#安装包</p>
+<ol>
+<li>下载包<br><a href="https://pan.baidu.com/s/1piNymp6oWLNHvXKaxBszLg#list/path=%2FCeph-ISCSI" target="_blank" rel="noopener">https://pan.baidu.com/s/1piNymp6oWLNHvXKaxBszLg#list/path=%2FCeph-ISCSI</a></li>
+<li>安装ceph-iscsi配置文件</li>
+<li>安装rbd-target-api所在的ceph-iscsi-cli包<br>3.1安装依赖python-configshell，网上<br>3.2安装包里的python-rtslib（先卸载老版本）<br>3.3安装包里的ceph-iscsi-config</li>
+<li>安装ceph-iscsi-tools<br>4.1安装依赖python-pcp，网上<br>4.2安装依赖pcp-pmda-lio，网上<br>5.安装libtcmu<br>6.安装targetcli<br>6.1安装python-ethtool，网上<br>7.安装tcmu-runner<br>8.配置/etc/ceph/iscsi-gateway.cfg</li>
+</ol>
+<p>#配置</p>
+<ol>
+<li>iscsi-gateway的api端口可能要改，默认是5000</li>
+<li>gatway数目也可以iscsi-gateway配置文件中修改minimum_gateways，默认为2</li>
+<li>创建target的时候必须要主机名和ip</li>
+<li>创建好cinder配置后端所需要的池，比如iscsi池</li>
+<li>启动rbd-target-api</li>
+<li>target在iscsi-gateway配置文件可以通过ceph_pool，配置gateway.conf文件所在的池</li>
+<li>target在iscsi-gateway配置文件可以通过api_ip，配置rbd-target-api所监听的ip</li>
+</ol>
+<p>注意</p>
+<ol>
+<li>不同的driver的target名字不能一样</li>
+<li>configfs的内容重启可以删除<br>3.计算节点要安装iscsid，并配置用户名和密码</li>
+<li>替换自己修改的/usr/bin/rbd-target-api文件</li>
+<li>可以配置ceph_config_dir设置ceph配置路径<br>需要修改1 settings文件<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self.cephconf = &apos;&#123;&#125;/&#123;&#125;.conf&apos;.format(self.ceph_config_dir, self.cluster_name)</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>需要修改2 /usr/lib/python2.7/site-packages/gwcli/ceph.py<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">UIGroup.__init__(self, &apos;clusters&apos;, parent)</span><br><span class="line">        self.ceph_config_dir = settings.config.ceph_config_dir</span><br><span class="line">        self.default_ceph_conf = &apos;&#123;&#125;/&#123;&#125;.conf&apos;.format(self.ceph_config_dir, settings.config.cluster_name)</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">把get_cluster函数的</span><br><span class="line">CephGroup.ceph_config_dir改成self.ceph_config_dir</span><br></pre></td></tr></table></figure>
+<p>上面的修改涉及到ceph-iscsi-cli和ceph-iscsi-config</p>
+<ol start="6">
+<li>gateway ha配置<br>6.1 首先在每个节点安装包，然后配置/etc/ceph/iscsi-gateway.cfg,把ip都加上<br>6.2 在某一个节点使用gwcli创建gateway<br>6.3 创建gateway之后会自动同步<br>6.4 在为创建gwcli之前，这个节点的gwcli命令是不可用的</li>
+</ol>
+<h1 id="cinder的参考配置如下"><a href="#cinder的参考配置如下" class="headerlink" title="cinder的参考配置如下"></a>cinder的参考配置如下</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[ceph_iscsi2]</span><br><span class="line">volume_driver = cinder.volume.drivers.rbd_iscsi.rbd_iscsi.RbdISCSIDriver</span><br><span class="line">volume_backend_name = ceph_iscsi2</span><br><span class="line">ceph_rbd_iscsi_target_ips = 10.85.46.92:3260</span><br><span class="line">ceph_rbd_iscsi_target_iqns = iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2</span><br><span class="line">ceph_rbd_iscsi_auth = chap/tstack12/tstack1234567</span><br><span class="line">ceph_pool = iscsi</span><br><span class="line">ceph_api_protocol = http</span><br><span class="line">rbd_iscsi_controller_ips = 10.85.46.92:5001</span><br><span class="line">username = admin</span><br><span class="line">password = admin</span><br></pre></td></tr></table></figure>
+<p>multipath配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[ceph_iscsi2]</span><br><span class="line">volume_driver = cinder.volume.drivers.rbd_iscsi.rbd_iscsi.RbdISCSIDriver</span><br><span class="line">volume_backend_name = ceph_iscsi2</span><br><span class="line">#ceph_rbd_iscsi_target_ips = 10.85.46.92:3260</span><br><span class="line">ceph_rbd_iscsi_target_ips = 10.85.46.94:3260,10.85.46.96:3260</span><br><span class="line">ceph_rbd_iscsi_target_iqns = iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2</span><br><span class="line">ceph_rbd_iscsi_auth = chap/tstack12/tstack1234567</span><br><span class="line">ceph_pool = iscsi</span><br><span class="line">ceph_api_protocol = http</span><br><span class="line">rbd_iscsi_controller_ips = 10.85.46.92:5001</span><br><span class="line">username = admin</span><br><span class="line">password = admin</span><br></pre></td></tr></table></figure></p>
+<h1 id="多路径配置"><a href="#多路径配置" class="headerlink" title="多路径配置"></a>多路径配置</h1><ul>
+<li><p>nova的compute配置文件要在libvirt section下面增加</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">volume_use_multipath = True</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装multipathd</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">yum install device-mapper-multipath</span><br><span class="line">mpathconf --enable</span><br><span class="line">systemctl restart multipathd.service</span><br><span class="line">systemctl enable multipathd.service</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">配置如下：</span><br><span class="line">devices &#123;</span><br><span class="line">        device &#123;</span><br><span class="line">                vendor                  &quot;Tencent&quot;</span><br><span class="line">                product                 &quot;Tsan&quot;</span><br><span class="line">                hardware_handler        &quot;1 alua&quot;</span><br><span class="line">                path_grouping_policy    group_by_prio</span><br><span class="line">                #path_selector           &quot;queue-length 0&quot;</span><br><span class="line">                path_selector           &quot;round-robin 0&quot;</span><br><span class="line">                failback                immediate</span><br><span class="line">                path_checker            tur</span><br><span class="line">                prio                    alua</span><br><span class="line">                prio_args               exclusive_pref_bit</span><br><span class="line">                dev_loss_tmo            30</span><br><span class="line">                fast_io_fail_tmo        5</span><br><span class="line">                no_path_retry           queue</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="内核模块支持"><a href="#内核模块支持" class="headerlink" title="内核模块支持"></a>内核模块支持</h1><p>tcmu-runner需要加载内核模块target_core_user，这文件路径在<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/lib/modules/`uname -r`/kernel/drivers/target/</span><br></pre></td></tr></table></figure></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph iscsi rbd</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/02/24/setup-ceph-iscsi/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-ceph系列-一-rbd的生命周期" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -912,215 +1126,6 @@
 
 
   
-    <article id="post-ceph-rgw-talk-2" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/02/21/ceph-rgw-talk-2/">ceph rgw talk(2)</a>
-    </h1>
-  
-
-        
-        <a href="/2019/02/21/ceph-rgw-talk-2/" class="archive-article-date">
-  	<time datetime="2019-02-21T12:03:18.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-02-21</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>#小记</p>
-<ul>
-<li>1.一个用户存一个对象，里面是对象的内容，包括名字，ak，sk和别名，在uid池中，email，keys和swift是3个索引池，里面也是一个对象索引一个用户，用户id是对象的数据</li>
-<li>2.</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph rgw</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/02/21/ceph-rgw-talk-2/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-ceph-talk-1" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/02/15/ceph-talk-1/">ceph talk(1)</a>
-    </h1>
-  
-
-        
-        <a href="/2019/02/15/ceph-talk-1/" class="archive-article-date">
-  	<time datetime="2019-02-15T09:21:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-02-15</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="以下是ceph的知识随笔"><a href="#以下是ceph的知识随笔" class="headerlink" title="以下是ceph的知识随笔"></a>以下是ceph的知识随笔</h1><ul>
-<li><ol>
-<li>M版将增加pg的合并功能</li>
-</ol>
-</li>
-<li><ol start="2">
-<li>osd之间传播osdmap只是增量传播</li>
-</ol>
-</li>
-<li><ol start="3">
-<li>增加了两个工具用来部署osd，ceph-disk和ceph-volume</li>
-</ol>
-</li>
-<li><ol start="4">
-<li>L版osd增加了标签，如HDD或者SSD</li>
-</ol>
-</li>
-<li><ol start="5">
-<li>L版pool也增加了标签，如rbd或者rgw</li>
-</ol>
-</li>
-<li><ol start="6">
-<li>一个请求如果32s没有解决就会成为慢请求</li>
-</ol>
-</li>
-<li><ol start="7">
-<li>L版增加了Mgr，分离了一部分mon的能力</li>
-</ol>
-</li>
-<li><ol start="8">
-<li>osd中monclient的作用用来封装跟mon交互的细节</li>
-</ol>
-</li>
-<li><ol start="9">
-<li>ceph分public网和集群网，主要是因为public网是client操作的请求，优先级比较高，集群网是ceph内部的请求，流量比较大，分开之后可以快速响应client的请求</li>
-</ol>
-</li>
-<li><ol start="10">
-<li>M版osd的线程池减少了，只留了两个，一个用来处理用户命令，一个用来处理其他</li>
-</ol>
-</li>
-<li><ol start="11">
-<li>osd的down状态表示临时故障，out表示永久性故障</li>
-</ol>
-</li>
-<li><ol start="12">
-<li>每个host上面的osd编号最好不要连续，因为心跳检测的时候有用</li>
-</ol>
-</li>
-<li>13.读是同步，写一般是异步</li>
-<li>14.数据的可靠性引入了日志储存系统</li>
-<li>15.数据的一致性引入事务</li>
-<li>16.bluestore没有开启数据压缩，《rados设计与实现》92页</li>
-<li>17.磁盘空间管理有位图和段式管理</li>
-<li>18.bluestore采用位图性能不好，在L版之后切到了段式管理</li>
-<li>19.L版之后snapdir废弃</li>
-<li>20.副本时，读是同步操作，写是异步操作</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/02/15/ceph-talk-1/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
@@ -1222,19 +1227,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1242,7 +1239,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1250,15 +1251,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1270,19 +1279,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1306,19 +1311,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1326,11 +1323,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1342,11 +1351,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
