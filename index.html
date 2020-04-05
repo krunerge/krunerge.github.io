@@ -330,6 +330,7 @@
 <p>代码是这个函数打印的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">void PGPool::update(OSDMapRef map)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  if ((map-&gt;get_epoch() != cached_epoch + 1) ||</span><br><span class="line">      (pi-&gt;get_snap_epoch() == map-&gt;get_epoch())) &#123;</span><br><span class="line">    updated = true;</span><br><span class="line">    pi-&gt;build_removed_snaps(newly_removed_snaps);</span><br><span class="line">    interval_set&lt;snapid_t&gt; intersection;</span><br><span class="line">    intersection.intersection_of(newly_removed_snaps, cached_removed_snaps);</span><br><span class="line">    if (intersection == cached_removed_snaps) &#123;</span><br><span class="line">        newly_removed_snaps.subtract(cached_removed_snaps);</span><br><span class="line">        cached_removed_snaps.union_of(newly_removed_snaps);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        lgeneric_subdout(g_ceph_context, osd, 0) &lt;&lt; __func__</span><br><span class="line">          &lt;&lt; &quot; cached_removed_snaps shrank from &quot; &lt;&lt; cached_removed_snaps</span><br><span class="line">          &lt;&lt; &quot; to &quot; &lt;&lt; newly_removed_snaps &lt;&lt; dendl;</span><br><span class="line">        cached_removed_snaps = newly_removed_snaps;</span><br><span class="line">        newly_removed_snaps.clear();</span><br><span class="line">    &#125;</span><br><span class="line">    snapc = pi-&gt;get_snap_context();</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    ...</span><br><span class="line">    newly_removed_snaps.clear();</span><br><span class="line">  &#125;</span><br><span class="line">  cached_epoch = map-&gt;get_epoch();</span><br><span class="line">  lgeneric_subdout(g_ceph_context, osd, 20)</span><br><span class="line">    &lt;&lt; &quot;PGPool::update cached_removed_snaps &quot;</span><br><span class="line">    &lt;&lt; cached_removed_snaps</span><br><span class="line">    &lt;&lt; &quot; newly_removed_snaps &quot;</span><br><span class="line">    &lt;&lt; newly_removed_snaps</span><br><span class="line">    &lt;&lt; &quot; snapc &quot; &lt;&lt; snapc</span><br><span class="line">    &lt;&lt; (updated ? &quot; (updated)&quot;:&quot; (no change)&quot;)</span><br><span class="line">    &lt;&lt; dendl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>上面是ceph 10.2.7版本的代码，这个函数是通过osdmap更新pool信息，在最后打印输出的上面，可以看到对removed_snaps这个间断结合做合并等操作，也就是对集合进行类似交集的操作，我之前也说启动慢的环境，removed_snaps输出的集合两页屏幕都没打印完，这是由于频繁打快照删除快照导致removed_snaps集合很大，这样集合做操作耗时会比较慢，这还只是单个osdmap操作。<br>我们之前启动慢的环境由于其他原因导致osd集群不断的在up和down，而我们知道这都是要修改osdmap的，这样导致我们的osdmap版本很大，这样就导致我们osd启动慢，两个原因<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">原因1：osdmap版本很大，要加载的osdmap很多</span><br><span class="line">原因2：removed_snaps集合很大，加载一次osdmap时间很长</span><br></pre></td></tr></table></figure></p>
 <h1 id="四-有没有什么改进方法"><a href="#四-有没有什么改进方法" class="headerlink" title="四.有没有什么改进方法"></a>四.有没有什么改进方法</h1><p>其实通过上面的实验发现，我们看到在创建快照的时候，其实osdmap只是修改了snap_seq,removed_snaps没有变化，只有在删除的时候removed_snaps才会改变，是不是可以去掉removed_snaps没变时osdmap的加载，嗯，好像很有道理，其实社区已经做了修改,看一下代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">void PGPool::update(OSDMapRef map)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  if ((map-&gt;get_epoch() != cached_epoch + 1) ||</span><br><span class="line">      (pi-&gt;get_snap_epoch() == map-&gt;get_epoch())) &#123;</span><br><span class="line">    updated = true;</span><br><span class="line">    if (pi-&gt;maybe_updated_removed_snaps(cached_removed_snaps)) &#123;  // 加了判断removed_snaps集合是否变化，没变化不做集合操作</span><br><span class="line">      pi-&gt;build_removed_snaps(newly_removed_snaps);</span><br><span class="line">      interval_set&lt;snapid_t&gt; intersection;</span><br><span class="line">      intersection.intersection_of(newly_removed_snaps, cached_removed_snaps);</span><br><span class="line">      if (intersection == cached_removed_snaps) &#123;</span><br><span class="line">          cached_removed_snaps.swap(newly_removed_snaps);</span><br><span class="line">          newly_removed_snaps = cached_removed_snaps;</span><br><span class="line">          newly_removed_snaps.subtract(intersection);</span><br><span class="line">      &#125; else &#123;</span><br><span class="line">          lgeneric_subdout(cct, osd, 0) &lt;&lt; __func__</span><br><span class="line">            &lt;&lt; &quot; cached_removed_snaps shrank from &quot; &lt;&lt; cached_removed_snaps</span><br><span class="line">            &lt;&lt; &quot; to &quot; &lt;&lt; newly_removed_snaps &lt;&lt; dendl;</span><br><span class="line">          cached_removed_snaps.swap(newly_removed_snaps);</span><br><span class="line">          newly_removed_snaps.clear();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; else</span><br><span class="line">      newly_removed_snaps.clear();</span><br><span class="line">    snapc = pi-&gt;get_snap_context();</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    ....</span><br><span class="line">    newly_removed_snaps.clear();</span><br><span class="line">  &#125;</span><br><span class="line">  cached_epoch = map-&gt;get_epoch();</span><br><span class="line">  lgeneric_subdout(cct, osd, 20)</span><br><span class="line">    &lt;&lt; &quot;PGPool::update cached_removed_snaps &quot;</span><br><span class="line">    &lt;&lt; cached_removed_snaps</span><br><span class="line">    &lt;&lt; &quot; newly_removed_snaps &quot;</span><br><span class="line">    &lt;&lt; newly_removed_snaps</span><br><span class="line">    &lt;&lt; &quot; snapc &quot; &lt;&lt; snapc</span><br><span class="line">    &lt;&lt; (updated ? &quot; (updated)&quot;:&quot; (no change)&quot;)</span><br><span class="line">    &lt;&lt; dendl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>maybe_updated_removed_snaps这个判断removed_snaps集合是否变化<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">bool pg_pool_t::maybe_updated_removed_snaps(const interval_set&lt;snapid_t&gt;&amp; cached) const</span><br><span class="line">&#123;</span><br><span class="line">  if (is_unmanaged_snaps_mode()) &#123; // remove_unmanaged_snap increments range_end</span><br><span class="line">    if (removed_snaps.empty() || cached.empty()) // range_end is undefined</span><br><span class="line">      return removed_snaps.empty() != cached.empty();</span><br><span class="line">    return removed_snaps.range_end() != cached.range_end();</span><br><span class="line">  &#125;</span><br><span class="line">  return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>上面是ceph 12.2.10版本加了判断removed_snaps集合是否变化，没变化不做集合操作</p>
 
       
@@ -1282,11 +1283,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1302,11 +1307,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1314,11 +1319,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1346,11 +1351,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1386,7 +1391,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1394,11 +1399,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1418,11 +1419,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
