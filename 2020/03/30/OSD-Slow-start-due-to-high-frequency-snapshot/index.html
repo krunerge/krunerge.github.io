@@ -6,16 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>OSD Slow start due to high frequency snapshot | 小甲师兄</title>
+  <title>频繁的创建删除快照导致OSD启动很慢 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="article">
-<meta property="og:title" content="OSD Slow start due to high frequency snapshot">
+  <meta name="description" content="问题最近有一个环境出现OSD启动很慢，要40多分钟，很奇怪，看一下osd的日志发现一直在刷类似下面的日志12020-04-05 19:52:59.925 7fa86b863700 20 PGPool::update cached_removed_snaps [1~f5,f7~1,f9~7,101~1,103~12d,233~ea,31e~1,320~64,385~1e,3a4~16b,510~7e">
+<meta name="keywords" content="Ceph osd">
+<meta property="og:type" content="article">
+<meta property="og:title" content="频繁的创建删除快照导致OSD启动很慢">
 <meta property="og:url" content="http://yoursite.com/2020/03/30/OSD-Slow-start-due-to-high-frequency-snapshot/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="问题最近有一个环境出现OSD启动很慢，要40多分钟，很奇怪，看一下osd的日志发现一直在刷类似下面的日志12020-04-05 19:52:59.925 7fa86b863700 20 PGPool::update cached_removed_snaps [1~f5,f7~1,f9~7,101~1,103~12d,233~ea,31e~1,320~64,385~1e,3a4~16b,510~7e">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2020-03-30T02:00:29.661Z">
+<meta property="og:updated_time" content="2020-04-05T13:28:31.082Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="OSD Slow start due to high frequency snapshot">
+<meta name="twitter:title" content="频繁的创建删除快照导致OSD启动很慢">
+<meta name="twitter:description" content="问题最近有一个环境出现OSD启动很慢，要40多分钟，很奇怪，看一下osd的日志发现一直在刷类似下面的日志12020-04-05 19:52:59.925 7fa86b863700 20 PGPool::update cached_removed_snaps [1~f5,f7~1,f9~7,101~1,103~12d,233~ea,31e~1,320~64,385~1e,3a4~16b,510~7e">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -156,7 +160,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      OSD Slow start due to high frequency snapshot
+      频繁的创建删除快照导致OSD启动很慢
     </h1>
   
 
@@ -169,7 +173,74 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>最近有一个环境出现OSD启动很慢，要40多分钟，很奇怪，看一下osd的日志发现一直在刷类似下面的日志<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2020-04-05 19:52:59.925 7fa86b863700 20 PGPool::update cached_removed_snaps [1~f5,f7~1,f9~7,101~1,103~12d,233~ea,31e~1,320~64,385~1e,3a4~16b,510~7e,58f~4e,5de~49,629~8,632~28,65b~31,68e~a,699~c,6a6~6,6ae~38,6e8~27,711~2a,73c~1d,75a~34,790~4,795~17,7ad~22,7d1~10,7e2~41,824~28,84d~23,871~53,8c5~17,8de~18,8fa~42,93d~a,949~10,95a~a,965~32,999~1e,9b8~6,9bf~32,9f3~e,a02~40,a46~d,a54~9,a62~279,cdc~12b,e09~26,e30~2,e33~d,e42~e,e51~a,e5d~8,e67~4,e6c~1e,e8d~1b,ea9~1,eab~3,eaf~24,ed4~aa,f7f~35,fb6~4,fbc~c,fc9~c1,108b~5c,10e8~8,10f4~59,114f~4,1154~27,117c~1,117e~2,1181~2a,11ac~26,11d4~4,11d9~22,11fd~4,1202~58,125c~8,1265~2,1268~16,127f~40] newly_removed_snaps [] snapc 12be=[] (no change)</span><br></pre></td></tr></table></figure></p>
+<p>这个只是一个小环境上面的，真实环境上面上面的一条日志记录占了显示屏的两页，这是什么？我是谁，我在哪里，我要干什么？好吧，出现了关键字snap，感觉跟快照有点关系。下面分析一下</p>
+<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><p>分析这个问题，首先我们要知道上面的一坨类似1-f5的是什么，我们先来做个试验，在我的一个开发环境模拟一下创建快照和删除快照到底发生了什么，Let go</p>
+<ul>
+<li><p>1.创建一个池test</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ceph osd pool create test 16 16</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2.创建两个卷test1和test2</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 ~]# rbd create test/test1 --size 1G</span><br><span class="line">[root@openstack-ceph01 ~]# rbd create test/test2 --size 1G</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>3.创建快照前观察一下OSDMap版本</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 ~]# ceph osd dump</span><br><span class="line">epoch 23303</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>osdmap的版本是23303,下面我们给test1创建一个快照snap4,至于为什么叫snap4，等话就知道</p>
+<ul>
+<li>4.test1创建快照snap4<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 ~]# rbd snap create test/test1@snap4</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>查看一下快照信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 ~]# rbd snap ls test/test1</span><br><span class="line">SNAPID NAME  SIZE  PROTECTED TIMESTAMP                </span><br><span class="line">     4 snap4 1 GiB           Sun Apr  5 20:29:12 2020</span><br></pre></td></tr></table></figure></p>
+<p>快照id是4，不是从1或者0开始，这就是为什么我们创建快照的时候取名叫snap4，再看一下osdmap版本<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-con01 ceph(keystone_admin)]# ceph osd dump</span><br><span class="line">epoch 23304</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<p>版本变成了23304，也就是说创建快照osdmap版本会变化，为什么创建快照osdmap版本会变化呢，我等话解释，既然osdmap变化了，那我们看看osdmap到底变化了什么，对，你跟我想的一眼，查看一下osdmap的增量变化以及全量变化，我们知道osdmap变化之后会mon通知给osd，那我们去osd的数据目录下面meta目录看一下osdmap<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# find . -name *osdmap.23304*</span><br><span class="line">./DIR_9/DIR_A/osdmap.23304__0_4EBB24A9__none</span><br><span class="line">./DIR_E/DIR_0/inc\uosdmap.23304__0_46AAFD0E__none</span><br></pre></td></tr></table></figure></p>
+<p>由于分目录保存，所以使用上面查找，找到之后使用ceph-dencoder反序列化一下，因为这个里面存储的OSDMap或者OSDMap::Incremental类实例的序列化结果,让我们先看一下osdmap增量</p>
+<ul>
+<li>4.1 osdmap增量<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# ceph-dencoder type OSDMap::Incremental import ./DIR_E/DIR_0/inc\\uosdmap.23304__0_46AAFD0E__none decode dump_json</span><br><span class="line">&#123;</span><br><span class="line">    &quot;epoch&quot;: 23304,</span><br><span class="line">    ...</span><br><span class="line">    &quot;new_pools&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            ....</span><br><span class="line">            &quot;pool&quot;: 30,</span><br><span class="line">            &quot;snap_mode&quot;: &quot;selfmanaged&quot;,</span><br><span class="line">            &quot;snap_seq&quot;: 4,</span><br><span class="line">            &quot;snap_epoch&quot;: 23304,</span><br><span class="line">            &quot;pool_snaps&quot;: [],</span><br><span class="line">            &quot;removed_snaps&quot;: &quot;[1~3]&quot;,</span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>我们只关注快照相关的信息，可以看到，主要有上面的5个字段，快照seq是4，快照模式是selfmanaged，removed_snaps</p>
+<ul>
+<li><p>4.2 快照模式<br>我们知道ceph的快照有两种模式，一种是对池对快照，一种就是这里的selfmanaged，也就是我们常用的对rbd卷的快照，ceph为了代码兼容处理这两种快照,把快照属性放在了pool池上面，快照作为池的一个特性，而pool的变化是要记录在osdmap里面的，因为客户端端在通过crush进行osd计算的时候需要通过找到池的相应信息，所以这里就解释了为什么创建快照osdmap版本会变化，因为pool变化了，上面是osdmap的增量数据，我们再看一下osdmap的全量数据，</p>
+</li>
+<li><p>4.3 osdmap全量</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# ceph-dencoder type OSDMap import ./DIR_9/DIR_A/osdmap.23304__0_4EBB24A9__none decode dump_json</span><br><span class="line">&#123;</span><br><span class="line">    &quot;epoch&quot;: 23304,</span><br><span class="line">    ...</span><br><span class="line">    &quot;pools&quot;: [</span><br><span class="line">        ...</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;pool&quot;: 30,</span><br><span class="line">            ...</span><br><span class="line">            &quot;snap_mode&quot;: &quot;selfmanaged&quot;,</span><br><span class="line">            &quot;snap_seq&quot;: 4,</span><br><span class="line">            &quot;snap_epoch&quot;: 23304,</span><br><span class="line">            &quot;pool_snaps&quot;: [],</span><br><span class="line">            &quot;removed_snaps&quot;: &quot;[1~3]&quot;,</span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看到快照部分增量和全量是一样的</p>
+<ul>
+<li>4.4 快照id在pool内部全局唯一<br>我们继续给test2创建快照snap5，在给test1创建快照snap6，看这名字聪明的你就知道我要做什么了，看一下操作结果<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# rbd snap create  test/test2@snap5</span><br><span class="line">[root@openstack-ceph01 meta]# rbd snap ls test/test2</span><br><span class="line">SNAPID NAME  SIZE  PROTECTED TIMESTAMP                </span><br><span class="line">     5 snap5 1 GiB           Sun Apr  5 20:50:44 2020</span><br><span class="line">[root@openstack-ceph01 meta]# rbd snap create  test/test1@snap6</span><br><span class="line">[root@openstack-ceph01 meta]# rbd snap ls test/test1</span><br><span class="line">SNAPID NAME  SIZE  PROTECTED TIMESTAMP                </span><br><span class="line">     4 snap4 1 GiB           Sun Apr  5 20:29:12 2020</span><br><span class="line">     6 snap6 1 GiB           Sun Apr  5 20:51:16 2020</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以从结果看到，看这id是从4开始，1、2、3快照id好像被预留了，而且一个池内所有卷的快照的id是单调递增的。这是我们再看一下osdmap<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# ceph osd dump</span><br><span class="line">epoch 23306</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<p>osdmap已经是23306，版本增加了2，因为创建了两次快照，再看一下osdmap增量信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# ceph-dencoder type OSDMap::Incremental import ./DIR_E/DIR_6/inc\\uosdmap.23306__0_46AAF26E__none decode dump_json</span><br><span class="line">&#123;</span><br><span class="line">    &quot;epoch&quot;: 23306,</span><br><span class="line">    ...</span><br><span class="line">    &quot;new_pools&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;pool&quot;: 30,</span><br><span class="line">            ...</span><br><span class="line">            &quot;snap_mode&quot;: &quot;selfmanaged&quot;,</span><br><span class="line">            &quot;snap_seq&quot;: 6,</span><br><span class="line">            &quot;snap_epoch&quot;: 23306,</span><br><span class="line">            &quot;pool_snaps&quot;: [],</span><br><span class="line">            &quot;removed_snaps&quot;: &quot;[1~3]&quot;,</span><br><span class="line">            ...</span><br><span class="line">       &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>从上面看出好像就只修改了snap_seq，和snap_epoch，其他都没变，尤其是removed_snaps，这个到底是什么呢?</p>
+<ul>
+<li>4.5 removed_snaps是个啥<br>我们前面已经知道一个池的快照id是从4开始的，1、2、3快照id是保留，或者已经删除（从这个字段的名字可以看出），那为什么要这个呢，小甲大胆猜测一下，是为了知道我现在还存在的快照的id，你看我们通过snap_seq知道最新的快照id为6，而我们通过removed_snaps知道已经删除了1-3快照id的快照，那就是说我们还有4、5、6id的快照，也就是通过排除已经删除的快照，得到还存在的快照，这个逻辑我想开发者是这么认为快照会经常打，但是删除比较少，所以通过记录删除的id反推存在的快照，这样记录的数据成本比较少，通过查看代码我发现removed_snap是一个间断集合<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct PGPool &#123;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">  interval_set&lt;snapid_t&gt; cached_removed_snaps;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>学过数据集合的你看到这个会有什么反应，既然叫间断集合，那removed_snaps字段的1~3表示的应该是（start，len）也就是从id为1开始，后面连续三个id已经被删除，也就是1、2、3快照id被删除。这里还要提一下，这里的start和len是16进制显示的，比如108b~5c。</p>
+<p>那是不是真的是这样呢，我们在给test1创建几个快照然后删除一个快照试试</p>
+<ul>
+<li><ol start="5">
+<li>test1删除快照</li>
+</ol>
+</li>
+<li>5.1 test1有创建了快照snap7，snap8，snap9三个快照<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# rbd snap create test/test1@snap7</span><br><span class="line">[root@openstack-ceph01 meta]# rbd snap create test/test1@snap8</span><br><span class="line">[root@openstack-ceph01 meta]# rbd snap create test/test1@snap9</span><br><span class="line">[root@openstack-ceph01 meta]# rbd snap ls test/test1</span><br><span class="line">SNAPID NAME  SIZE  PROTECTED TIMESTAMP                </span><br><span class="line">     4 snap4 1 GiB           Sun Apr  5 20:29:12 2020</span><br><span class="line">     6 snap6 1 GiB           Sun Apr  5 20:51:16 2020</span><br><span class="line">     7 snap7 1 GiB           Sun Apr  5 21:14:22 2020</span><br><span class="line">     8 snap8 1 GiB           Sun Apr  5 21:14:25 2020</span><br><span class="line">     9 snap9 1 GiB           Sun Apr  5 21:14:36 2020</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看到最新的快照id是9，看一下osdmap增量信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# ceph-dencoder type OSDMap::Incremental import ./DIR_E/DIR_9/inc\\uosdmap.23309__0_46AAF19E__none decode dump_json</span><br><span class="line">&#123;</span><br><span class="line">    &quot;epoch&quot;: 23309,</span><br><span class="line">    ...</span><br><span class="line">    &quot;new_pools&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;pool&quot;: 30,</span><br><span class="line">            ...</span><br><span class="line">            &quot;snap_mode&quot;: &quot;selfmanaged&quot;,</span><br><span class="line">            &quot;snap_seq&quot;: 9,</span><br><span class="line">            &quot;snap_epoch&quot;: 23309,</span><br><span class="line">            &quot;pool_snaps&quot;: [],</span><br><span class="line">            &quot;removed_snaps&quot;: &quot;[1~3]&quot;,</span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看到removed_snaps没有变化</p>
+<ul>
+<li>5.2 删除test1的快照snap8<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# rbd snap rm test/test1@snap8</span><br><span class="line">Removing snap: 100% complete...done.</span><br><span class="line">[root@openstack-ceph01 meta]# rbd snap ls test/test1</span><br><span class="line">SNAPID NAME  SIZE  PROTECTED TIMESTAMP                </span><br><span class="line">     4 snap4 1 GiB           Sun Apr  5 20:29:12 2020</span><br><span class="line">     6 snap6 1 GiB           Sun Apr  5 20:51:16 2020</span><br><span class="line">     7 snap7 1 GiB           Sun Apr  5 21:14:22 2020</span><br><span class="line">     9 snap9 1 GiB           Sun Apr  5 21:14:36 2020</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>test1的snap8快照已经删除，也就是id为8的快照删除了，在我们看osdmap增量之前，我们大胆的猜测一下removed_snaps会变成什么，我赌10块钱会变成[1~3, 8~1], 好，我们看一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# ceph-dencoder type OSDMap::Incremental import ./DIR_E/DIR_F/inc\\uosdmap.23310__0_46AAF6FE__none decode dump_json</span><br><span class="line">&#123;</span><br><span class="line">    &quot;epoch&quot;: 23310,</span><br><span class="line">    ...</span><br><span class="line">    &quot;new_pools&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;pool&quot;: 30,</span><br><span class="line">            ...</span><br><span class="line">            &quot;snap_mode&quot;: &quot;selfmanaged&quot;,</span><br><span class="line">            &quot;snap_seq&quot;: 10,</span><br><span class="line">            &quot;snap_epoch&quot;: 23310,</span><br><span class="line">            &quot;pool_snaps&quot;: [],</span><br><span class="line">            &quot;removed_snaps&quot;: &quot;[1~3,8~1,a~1]&quot;,</span><br><span class="line">            ...</span><br><span class="line">       &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>removed_snaps既然变成了[1~3,8~1,a~1]，其中8~1是情理之中，而a~1这个意料之外是个啥，我们知道这个是16进制，变成10进制就是10~1，也就是删除了快照id 10，快照10哪里来的，我们只创建到了快照9，咦，snap_seq竟然变成了10，嗯。。。待我冷静一下，删除快照，快照的seq变成10，增加了1，为什么？我们在品一品这个字段的名字snap_seq，seq序号，他不是id，小甲大胆猜一下，这个应该是快照的版本，创建快照和删除快照都会修改版本，而快照id只是通过版本值演变而来，这样一来就说的通了，也就是删除快照，快照版本增加，但是在removed_snaps中会把这个版本去掉，因为确实是没有这个id的快照的，既然这么说，你猜猜下面再创建一个快照，快照的id会是多少，我觉得会是11，试一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-ceph01 meta]# rbd snap create test/test1@snap11</span><br><span class="line">[root@openstack-ceph01 meta]# rbd snap ls test/test1</span><br><span class="line">SNAPID NAME   SIZE  PROTECTED TIMESTAMP                </span><br><span class="line">     4 snap4  1 GiB           Sun Apr  5 20:29:12 2020</span><br><span class="line">     6 snap6  1 GiB           Sun Apr  5 20:51:16 2020</span><br><span class="line">     7 snap7  1 GiB           Sun Apr  5 21:14:22 2020</span><br><span class="line">     9 snap9  1 GiB           Sun Apr  5 21:14:36 2020</span><br><span class="line">    11 snap11 1 GiB           Sun Apr  5 21:30:38 2020</span><br></pre></td></tr></table></figure></p>
+<p>果然如此。</p>
+<p>通过上面的实验分析我们知道了快照的一些基本知识，也知道osd启动慢时，一直刷的那一坨是个啥，那为什么为一直刷导致osd启动慢呢？</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1>
       
 
       
@@ -198,6 +269,17 @@
     <div class="article-info article-info-index">
       
       
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Ceph osd</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
       
 
       
@@ -301,7 +383,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="OSD-Slow-start-due-to-high-frequency-snapshot" data-title="OSD Slow start due to high frequency snapshot" data-url="http://yoursite.com/2020/03/30/OSD-Slow-start-due-to-high-frequency-snapshot/"></div>
+	<div class="ds-thread" data-thread-key="OSD-Slow-start-due-to-high-frequency-snapshot" data-title="频繁的创建删除快照导致OSD启动很慢" data-url="http://yoursite.com/2020/03/30/OSD-Slow-start-due-to-high-frequency-snapshot/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
@@ -431,6 +513,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
               </li>
              
@@ -439,7 +525,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -447,15 +533,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -471,11 +561,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -483,19 +569,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -519,10 +601,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
@@ -531,11 +609,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -547,19 +633,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
