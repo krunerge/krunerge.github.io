@@ -150,6 +150,171 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-recover-mysql-cluster" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/05/recover-mysql-cluster/">recover mysql cluster</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/05/recover-mysql-cluster/" class="archive-article-date">
+  	<time datetime="2020-03-05T12:22:16.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-05</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="mysql-galera集群恢复"><a href="#mysql-galera集群恢复" class="headerlink" title="mysql galera集群恢复"></a>mysql galera集群恢复</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"># 正常重启流程</span><br><span class="line"></span><br><span class="line">1、先关闭所有集群的mysqld</span><br><span class="line"></span><br><span class="line">systemctl stop mysqld</span><br><span class="line">systemctl stop mariadb</span><br><span class="line"></span><br><span class="line">2、在master上使用</span><br><span class="line"></span><br><span class="line">sudo -u mysql /usr/libexec/mysqld --wsrep-cluster-address=&apos;gcomm://&apos; &amp;</span><br><span class="line">show status like &quot;wsrep%&quot;;</span><br><span class="line"></span><br><span class="line">3、成功后在slave上正常启动mysql</span><br><span class="line"></span><br><span class="line">systemctl restart mariadb</span><br><span class="line">4、所有slave启动成功之后在master上操作：</span><br><span class="line"></span><br><span class="line">ps -ef|grep mysqld</span><br><span class="line">kill -9 pid</span><br><span class="line">systemctl restart mariadb</span><br></pre></td></tr></table></figure>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">mysql</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/05/recover-mysql-cluster/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-rbd-iscsi-pit-mining" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/02/26/rbd-iscsi-pit-mining/">rbd iscsi 采坑</a>
+    </h1>
+  
+
+        
+        <a href="/2020/02/26/rbd-iscsi-pit-mining/" class="archive-article-date">
+  	<time datetime="2020-02-26T08:16:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-26</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="坑"><a href="#坑" class="headerlink" title="坑"></a>坑</h1><ul>
+<li><ol>
+<li>target的创建时create命令，删除是clearconfig</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>tpg有创建，没有删除接口</li>
+</ol>
+</li>
+<li><ol start="3">
+<li>创建新gateway没有进行同步</li>
+</ol>
+</li>
+<li><ol start="4">
+<li>lun在后端ceph的创建者，只有lun的owner节点</li>
+</ol>
+</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">rbd iscsi python</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/02/26/rbd-iscsi-pit-mining/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-how-to-operate-configfs" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -845,287 +1010,6 @@
 
 
   
-    <article id="post-osdc-code-analysis" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/04/13/osdc-code-analysis/">小甲师兄陪你一起看Ceph(osdc篇)</a>
-    </h1>
-  
-
-        
-        <a href="/2019/04/13/osdc-code-analysis/" class="archive-article-date">
-  	<time datetime="2019-04-13T03:19:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-13</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-深圳天气：小雨到阵雨到大雨"><a href="#1-深圳天气：小雨到阵雨到大雨" class="headerlink" title="1. 深圳天气：小雨到阵雨到大雨"></a>1. 深圳天气：小雨到阵雨到大雨</h1><p>  小甲师兄有个喜好：喜欢下雨。每逢下雨天，不是诗兴大发，就是代码撸的飞起。再加上最近在优化rbd，小甲把之前分析的osdc<br>代码分享一下，这些都是小甲个人的理解，如果不对还望指正。</p>
-<h1 id="2-osdc"><a href="#2-osdc" class="headerlink" title="2.osdc"></a>2.osdc</h1><p>osdc其实是一个osd client模块的简称，在rbd和cephfs两个应用中都用到了，这个模块主要用来跟rados交互，这个模块里面完成了几个主要的功能：</p>
-<ul>
-<li>（1）：地址空间的转换：从rbd或者cephfs文件的一维地址空间转换到对象的三维地址空间，也简称为对象化</li>
-<li>（2）：objectcacher：一个object级别的缓存</li>
-<li>（3）：Crush算法定位osd：在转化为三维地址空间之后，就使用Crush算法进行对象的数据定位</li>
-</ul>
-<p>本文主要是介绍前两点，小甲师兄14年刚开始接触ceph使用的是0.80.5版本（firefly），本文的分析是基于10.2.2（jewel），现在使用的是12.2.10（luminous），虽然版本跨度比较大，但是这部分代码还是比较稳定的，基本大的框架没有变化。这里以cephfs的文件读流程进行分析。</p>
-<h1 id="3-介绍一个文件的读"><a href="#3-介绍一个文件的读" class="headerlink" title="3.介绍一个文件的读"></a>3.介绍一个文件的读</h1><p>这里使用fuse进行挂载cephfs，因为用户态的客户端才会调用osdc，如果使用内核态的客户端的话，是不会经过osdc代码的，会走内核的一个osd client代码，估计功能跟osdc类似，不过内核的osd client的缓存是使用的内核中的一些缓存机制。</p>
-<h2 id="3-1-用户态文件请求"><a href="#3-1-用户态文件请求" class="headerlink" title="3.1 用户态文件请求"></a>3.1 用户态文件请求</h2><p>用户态文件请求的流程大致如下：</p>
-<ul>
-<li>（1）posix标准：open、read、write</li>
-<li>（2）系统调用</li>
-<li>（3）vfs虚拟机文件系统</li>
-<li>（4）fuse内核模块</li>
-<li>（5）fuse的用户态库</li>
-<li>（6）cephfs的用户态客户端代码</li>
-<li>（7）最终到达client::read（）或者client::write（）处理函数</li>
-</ul>
-<h2 id="3-2-client-read"><a href="#3-2-client-read" class="headerlink" title="3.2 client::read()"></a>3.2 client::read()</h2><p>从client::read()起的流程图如下：<br><img src="a1.png" alt="a1"></p>
-<p>其中file_to_extents函数就是完成osdc的第一个功能：地址空间的转换</p>
-<h2 id="3-3-地址空间的转换"><a href="#3-3-地址空间的转换" class="headerlink" title="3.3 地址空间的转换"></a>3.3 地址空间的转换</h2><p>先贴一个对象条带分片图，也就是地址空间转换图，如下图所示：<br><img src="a2.png" alt="a2"><br>这个对象分片图，是不是有点像raid0，对，就是将raid0中的磁盘换成了对象，并对对象进行了条带分片。</p>
-<ul>
-<li>按上图介绍几个概念<br>（1）蓝色柱状代表一个个rados底层对象，默认为4M<br>（2）绿色的su代表条带单元<br>（3）红色的stripe代表一个个条带<br>（4）objectset代表对象组，一般一个对象组属于同一个文件（cephfs）</li>
-</ul>
-<p>这里要说明一点，Ceph系统默认没有开启对象条带分片</p>
-<ul>
-<li><p>再介绍几个变量<br>（1）object_size：对象的大小，就是rados底层对象的大小，一般默认是4M<br>（2）su：对象分片大小，以上面的图为例就是4/3M<br>（3）stripe_count：条带宽度，也就是一个strip跨多少个对象，也就是一个objectset中对象的个数，以上面的图为例，值为3<br>（4）stripes_per_object：一个对象包含的对象分片数，以上图为例值为3</p>
-</li>
-<li><p>file_to_extent<br>file_to_extent函数就是以raid0的思想来分片，一个个条带连起来可以看成是逻辑上面连续的，相当于线性的一维地址空间。现在要通过file_to_extent函数把一维坐标转化成三维坐标(objectset，stripeno，stripepos)，这三维坐标分别表示哪一个objectset，哪一个条带，条带中的哪一个对象分片。小甲以一个读操作来分析，示例分析如下：<br><img src="a3.png" alt="a3"><br>这里假设一个对象大小是3M，一个对象分片大小是1M，假设我们要读的文件占用两个objectset，占用6个rados的对象，18个对象分片，小甲这里要读取这个文件的对象分片的序号是从第1到第6，也就是文件的2M~7M的范围，相应的变量如下所示：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">offset = 1M 表示读偏移量</span><br><span class="line">len = 6M 表示要读取的大小</span><br><span class="line">su = 1M</span><br><span class="line">object_size = 3M</span><br><span class="line">stripe_count = 3</span><br><span class="line">stripes_per_object = 3</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>可以看到上面的地址空间已经从一维转化成了三维：比如读取su1<br>一维地址空间：(offset, len) ==&gt;（1M，1M）<br>三维地址空间：(objectset，stripeno，stripepos) ==&gt; （objectset0，stripe0，object1）</p>
-<ul>
-<li>对象名的组成<br>这里的对象指的是rados底层的对象，也就是使用filestore时，xfs上面一个个4M的小文件，那这个文件的名字是怎么组成的呢，小甲顺便也分析了一下。<br>这里先说明一个类ObjectExtent，这个是用来保存一个对象内的分片的信息，注意这个类不保存内容，只是保存分片的位置信息：偏移和长度。分片的结果会保存在一个map中<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">map&lt;object_t,vector&lt;ObjectExtent&gt; &gt;  object_extent</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>map的key是一个对象的名字，这个名字就是存在磁盘上面每一个对象对应文件的文件名的前缀，比如，磁盘上面一个对象的文件名为:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10000000000.00000000__head_F0B56F30__1</span><br></pre></td></tr></table></figure></p>
-<p>其中10000000000.00000000这个由点号隔成了两部分，点号前面的10000000000是一个文件的元数据inode号，后面00000000是文件内容分配所在的对象号，这个对象号有点特殊代码中叫做objectno，我们来具体讨论一下。<br>首先每一个文件都是可以分片成对象，按照分片算法，这里分片所对应的对象应该都是从0开始标号的，那这样对象的名字不就重复了吗，不急，我们每一个文件的inode号是一个唯一的这个inode号是由mds中的inodetable维护的，保证唯一，那就可以使用文件的元数据inode号和刚刚可以重复利用的objectno就组成了上面我们看到的由点号分开的对象名前缀，其实这个感觉就像我们的网络，在openstack中我们可以给每一个租户分配一个网络，网络里面可以自己划分子网，不同租户的子网的网段是可以重复的，因为他们就相当于一个局域网，可以重复利用，这里面的objectno就相当于局域网段，可以重复利用，但是和inode号合在一起就是一个全局唯一的，就是存储在磁盘上面的前缀。</p>
-<h2 id="3-4-对象分片与ObjectExtent"><a href="#3-4-对象分片与ObjectExtent" class="headerlink" title="3.4 对象分片与ObjectExtent"></a>3.4 对象分片与ObjectExtent</h2><p>对象分片跟objectextent的对应关系有点复杂, 听小甲慢慢分析。</p>
-<ul>
-<li><p>1.因为要使用osdc就要用用户态的客户端，就是使用fuse，但是内核态的fuse的模块对读写数据大小是进行了限制，一次写最多是4K，而读是128K，也就是说我们如果像我们列子中要读取文件中1M到6M之内的内容不是一次传过来的，而是在fuse内核模块那边就已经分成了一个个128K的读，估计fuse用户态的库那边有一个线程池，所以每一次的128K都是并发由不同的线程进行处理。</p>
-</li>
-<li><p>2.因为上面fuse内核已经给我们的请求进行了分片，传过来的是一个个128K的读长度请求，对于我们例子中的情况，一个对象分片su是1M的情形，我们来细细的分析一下：<br>2.1.首先传来第一个128K的文件长度的读，那就是从偏移量为1M的开始读取长度为128K的文件数据，我们该怎么映射分片呢?</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">offset = 1M</span><br><span class="line">len = 128K</span><br></pre></td></tr></table></figure>
-<p>步骤如下：</p>
-<ul>
-<li>第一步计算出偏移量的位置信息，这个位置信息我们要把它从一维的转化为三维的坐标，计算过程如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">blockno = offset/su =1M/1M =1         块号，也就是分片号就是su1</span><br><span class="line">stripeno = blockno /stripe_count = 1/3 =0    条带号，表示一个条带stripe0</span><br><span class="line">stripepos  = blockno%stripe_count = 1%3 = 1  条带内偏移，就是在条带内的第二个对象上面</span><br><span class="line">objectsetno = stripeno / stripes_per_object=0/3 =0   对象set号，表示objectset0</span><br><span class="line">objectno = objectsetno*stripe_count + stripepos= 0*3+1对象号，就是分片所在的哪个对象</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>这样我们就把以为的坐标转化为三维的坐标: （su1） –&gt; (objectset0, stripe0, stripepos=1)<br><img src="a4.png" alt="a4"></p>
-<ul>
-<li>第二步修改分配内的偏移量<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">block_start = (stripeno % stripes_per_object) * su = (0%3)*1M =0 , 这个表示的是文件操作偏移量在所对应的对象中的偏移</span><br><span class="line">block_off = offset % su = 1M %1M =0,这个表示的是文件操作偏移量在所对应的对象su中的偏移</span><br><span class="line">x_offset = block_start + block_off = 0 + 0,这个表示对象分片的偏移实际地址</span><br><span class="line">max = su - block_off=1M -0 = 1M,这个分片还剩的最大容量</span><br><span class="line">x_len = min（len，max),分片内的偏移量的最小值</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-</li>
-</ul>
-<p>上面公式太复杂，我们下面以几个列子来寻求普遍情况:<br>例子1：是上面的128K，从su1边界开始<br><img src="a5.png" alt="a5"><br>可以看出我们的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x_offset = 0</span><br><span class="line">x_len=128k</span><br><span class="line">然后生成一个objectextent，里面的offset=x_offset = 0，length=x_len=128k</span><br></pre></td></tr></table></figure></p>
-<p>例子二：如下情景<br><img src="a6.png" alt="a6"><br>可以看出我们的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x_offset = 64k</span><br><span class="line">x_len=128k</span><br><span class="line">然后生成一个objectextent，里面的offset=x_offset = 64k，length=x_len=128k</span><br></pre></td></tr></table></figure></p>
-<p>例子三：如下情景<br><img src="a7.png" alt="a7"><br>虽然我们知道在我们假设的su为1M，fuse一次读分片是128K的情况下是不会出现这种情况的，当时我们可以调整su的大小，调整对象的大小，这样的情况就可以达到了。<br>这里我们假设去掉fuse读分片128k的限制，我们假设读了1M的数据，并且我们su为1M，现在我们要读上面所有绿色的部分。对于前面三个分片，我们可以知道，第一个分片在object1的第一个su中，不是一个整的分片，第二个分片是在object2中的第一个su中，完整的一个分片，第三个分片是在object0中的第二个su，是一个完整的分片，最后一个分片是在object1的第二个su中，我们可以知道，对于前三个分片在，分片结果集map&lt;object_t,vector<objectextent> &gt; object_extent会存放三个对象，假设我们还没有映射最后一个分片我们只是映射了三个分片，此时，object_extent下的状态是如下：<br><img src="a8.png" alt="a8"><br>那对于第四个分片呢，会在object1下面在生成一个objectextent，这个里面的分片是不全的，现在有一个问题来了是不是一个su对应一个objectextent？<br>答案是的，一个su对应一个objectextent，可能这个objectextent没有su那么大的范围，即len(objectextent)&lt;=len(su)，而且在objectextent结构中有一个vector&lt;pair&lt;uint64_t,uint64_t&gt; &gt;buffer_extents，这个是用来记录此分片相对于我们要读的偏移位置的偏移量，我们画个图解释一下。<br><img src="a9.png" alt="a9"><br>buffer_extents里面的key是指的蓝色小格相对于offset的偏移，不过小甲在撸完代码之后，感觉基本上一个objectextent里面的buffer_extents只会存在一个pair，不会存在多个pair，一般要么就是一个su或者就是小于su。</objectextent></p>
-<h2 id="3-5-对象分片之后跟objectcacher中的缓存关联"><a href="#3-5-对象分片之后跟objectcacher中的缓存关联" class="headerlink" title="3.5 对象分片之后跟objectcacher中的缓存关联"></a>3.5 对象分片之后跟objectcacher中的缓存关联</h2><p>从上面的file_to_extent中得到映射后的结果集object_extent，这个是一个map，首先遍历取出所有的objectextent放在一个vector中。然后下面的在readx函数中去读每一个映射后分片objectextent上面的内容，因为objectextent结构中包含了要读对象的名字和要读内容在这个对象中的迁移位置，所以就可以对每一个objectextent进行并发读取。但是在读的时候由于使用objectcacher缓存，我们可以现从缓存中查找看看我们要找的objectextent范围的内容是不是在缓存中，缓存命中在直接取出，不命中就需要去rados读。</p>
-<h3 id="映射关系"><a href="#映射关系" class="headerlink" title="映射关系"></a>映射关系</h3><p>这里就有一个问题，就是objectextent如何跟bufferhead映射起来？接下来我们分析一下。<br> 这主要是一个函数map_read，这个函数就是做对一个objectextent进行映射，这里面的映射也很有趣，我们来看一下，首先说明一下bufferhead是一个对象内部的片段，毫无规律的。<br> object和bufferhead之间的关系如下，这里的object严格说不是rados的object，是osdc缓存中的对象，其实可以说是内存中与磁盘对应的数据结构。<br> <img src="a10.png" alt="a10"><br>上图中一个object中有三个bufferhead<br>下面分析几种情景来说明object、bufferhead和objectextent之间的关系</p>
-<ul>
-<li><p>（1）objectextent的范围在现有的bufferhead之后<br><img src="a11.png" alt="a11"><br>这种情况下，会生成一个bufferhead，包含objectextent的范围，加入一个bufferhead之后变成这样:<br><img src="a12.png" alt="a12"></p>
-</li>
-<li><p>(2) objectextent的范围在某一个bufferhead之内<br><img src="a13.png" alt="a13"><br>像上面这种情况，表示一部分已有映射，其实上面这种情况还有一部分在外面，最后变成这样<br><img src="a14.png" alt="a14"></p>
-</li>
-<li><p>(3) objectextent的范围在间隔段之间<br><img src="a15.png" alt="a15"><br>像上面这种情况，objectextent中间某一部分已经映射到对象的某部分，最后映射的结果如下<br><img src="a16.png" alt="a16"><br>一般一个objectextent会对应到多个bufferhead上面</p>
-<h3 id="缓存状态"><a href="#缓存状态" class="headerlink" title="缓存状态"></a>缓存状态</h3><p>这里我们只是做了映射关系，那如何看这些bufferhead中是不是都缓存了对象的数据呢，这个就是根据bufferhead的状态来进行，bufferhead有很多状态，我们来看一下<br><img src="a17.png" alt="a17"><br>bufferhead有这几种状态，根据代码中的意识是当状态为clean，dirty，tx和zero时，可以认为缓存中是有对象数据的</p>
-<h2 id="3-6-读操作引起的发送到rados上面的操作序列"><a href="#3-6-读操作引起的发送到rados上面的操作序列" class="headerlink" title="3.6 读操作引起的发送到rados上面的操作序列"></a>3.6 读操作引起的发送到rados上面的操作序列</h2><p>读操作请求一般会经过这几个过程<br>（1）首先去mds上面找到文件所对应的元数据，如果mds没有缓存inode，就要到osd上面去取元数据，此操作其实就时打开文件open<br>（2）去到元数据之后，inode里面包含了文件数据在osd上面的一些位置信息file_layout_t，这个里面主要是包含文件分片的一些参数，还有文件所在的池信息<br>（3）向osd发起了一个stat op的操作请求，返回文件的属性<br>（4）然后会发送一个create op的操作请求<br>（5）后面才会从fuse内核接受一个个128k的读请求</p>
-</li>
-</ul>
-<h2 id="3-7-我们拿一个128K的请求来看"><a href="#3-7-我们拿一个128K的请求来看" class="headerlink" title="3.7 我们拿一个128K的请求来看"></a>3.7 我们拿一个128K的请求来看</h2><p>假设我们缓存中刚开始是空的，好那我们在经过map_read之后我们我们流程图如下</p>
-<ul>
-<li>（1）第一次读缓存未命中到osd上去取<br><img src="a18.png" alt="a18"><br>因为缓存未命中，所以在bh_read中发起一个到osd去对象数据的op操作</li>
-<li>(2) 客户端接收到osd读请求发送回来的响应<br><img src="a19.png" alt="a19"><br>这里又开始进行第二次读，这次读就能在缓存中命中</li>
-<li>(3) 第二次读流程，命中缓存<br><img src="a20.png" alt="a20"></li>
-</ul>
-<h1 id="4-结尾"><a href="#4-结尾" class="headerlink" title="4. 结尾"></a>4. 结尾</h1><p>小甲这一期讲的东西有点多，这里面还是很复杂的，读者需要静下心来结合代码好好分析。</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Ceph Cephfs osdc</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/04/13/osdc-code-analysis/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-docker-registry-s3" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/03/16/docker-registry-s3/">听说你的harbor不能使用s3</a>
-    </h1>
-  
-
-        
-        <a href="/2019/03/16/docker-registry-s3/" class="archive-article-date">
-  	<time datetime="2019-03-16T11:06:53.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-03-16</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="harbor"><a href="#harbor" class="headerlink" title="harbor"></a>harbor</h1><p>harbor主要是用来存储容器镜像的开源项目，也就是所谓的容器镜像仓库，跟OpenStack的glance功能类似，不同的是后者存放的是虚拟机镜像。<br>harbor除了可以存储容器镜像，还可以存储chart，chart是容器环境下的应用打包格式，类似于centos下的rpm包，ubuntu下的debian包。<br>下图是harbor的架构图<br><img src="a.png" alt="a"><br>这两种资源都需要放在存储介质上，镜像和chart可以分开用不同的存储，也可以使用相同的存储后端，这里主要讨论一下镜像的存储。<br>从上图可以看到harbor对镜像的实际存储使用的是docker原生的registry，那研究harbor的镜像存储，就是研究docker registry的镜像存储。一般都存放在本地文件系统上，</p>
-<p>即后端存储driver使用filesystem，由于harbor是跑在容器里的，此driver根据具体实现又可分为以下三种情况：</p>
-<ul>
-<li>(1)服务器本地存储：这种方式就是把服务器本地文件目录挂载到容器中做为harbor存储镜像的位置</li>
-<li>(2)ceph rbd pv:这种方式首先通过k8s的pvc申请一个ceph rbd卷，然后把rbd卷mount到服务器，最后再把这个目录挂载到容器中</li>
-<li>(3)ceph cephfs pv:这种方式直接使用cephfs功能，通过pvc申请一个cephfs中的一个目录，然后mount到服务器，最后在把这个目录挂载到容器中</li>
-</ul>
-<p>简单说明一下这三种：第一种不是共享存储，是harbor高可用的拦路虎；第二种ceph rbd卷出于数据一致性的考虑，不能同时挂载在对各宿主机上，也是harbor高可用的拦路虎；第三种cephfs是共享存储，通过文件系统是可以进行多挂载，同时读写，但是由于cephfs storageclass driver不是官方指定的，可能driver质量还不够高，同时cephfs本身也质疑比较多（不过社区一致在对cephfs投入很大）<br>好像没有一种比较十全十美的，那还有其他的driver吗？</p>
-<h1 id="ceph-rgw可用否"><a href="#ceph-rgw可用否" class="headerlink" title="ceph rgw可用否"></a>ceph rgw可用否</h1><p>ceph一共就三种应用，块、文件、对象，前两种都试过了，那ceph的rgw对象存储可以使用不，看了一下docker registry中的driver是用s3，ceph的rgw是支持s3的，那应该可以？！不过网上搜了一下好多人说，都有问题，一直卡主retry，比如一下连接：<a href="https://github.com/docker/distribution/issues/2189，" target="_blank" rel="noopener">https://github.com/docker/distribution/issues/2189，</a><br><img src="b.png" alt="b"><br>小甲以为这个问题应该解决了，毕竟这是2017的issue，先实验试一下</p>
-<h1 id="docker-registry接ceph-rgw-s3实验"><a href="#docker-registry接ceph-rgw-s3实验" class="headerlink" title="docker registry接ceph rgw s3实验"></a>docker registry接ceph rgw s3实验</h1><ul>
-<li>版本：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">harbor</span><br><span class="line">docker registry(distribution)  2.6.2</span><br><span class="line">aws-sdk-go</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>docker registry后来v2版改名叫distribution，上面表是实验使用的代码版本</p>
-<ul>
-<li>配置：<br>distribution配置<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">s3:</span><br><span class="line">  region: us-east-1</span><br><span class="line">  bucket: gkkbucket1</span><br><span class="line">  accesskey: tstackqwer666</span><br><span class="line">  secretkey: tstackqwer666</span><br><span class="line">  regionendpoint: http://10.85.46.87:8080</span><br><span class="line">  secure: false</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>10.85.46.87:8080是ceph rgw的地址<br>docker的/etc/docker/daemon.json配置如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;insecure-registries&quot;: [&quot;192.168.127.1:5000&quot;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>192.168.127.1:5000是distribution服务的地址，也就是让docker使用私有镜像仓库</p>
-<p>docker tag scratch:latest 192.168.127.1:5000/scratch:1.11</p>
-<h1 id="实验结果：registry接s3有问题"><a href="#实验结果：registry接s3有问题" class="headerlink" title="实验结果：registry接s3有问题"></a>实验结果：registry接s3有问题</h1><p>运行distribution，然后docker push私有镜像，实验表明确实还存在问题，一致在retry<br>假装有图。<br>网上没有解决办法，那就手撸一下。</p>
-<h1 id="调试及分析"><a href="#调试及分析" class="headerlink" title="调试及分析"></a>调试及分析</h1><ul>
-<li><p>1.首先制作一个只有一层的镜像，要不然distribution调试的时候请求会很多，眼花缭乱，不要给自己添麻烦，<br>这里使用如下命令制作一个只有一层的镜像</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar cv --files-from /dev/null | docker import - scratch</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.设置tag</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker tag scratch:latest 192.168.127.1:5000/scratch:1.11</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>通过调试发现docker registry是先上传数据，最后再上传manifest，通过调试发现<br><img src="c.png" alt="c"><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">192.168.127.133 - - [23/Mar/2019:20:30:45 +0800] &quot;PUT /v2/docker.io/alpine/blobs/uploads/4f495fbb-876f-43b7-8aad-166701220985?_state=BbHh5XVtlX93j2I3vYVRWNluZ96_3wIhkMKd-9W3YeB7Ik5hbWUiOiJkb2NrZXIuaW8vYWxwaW5lIiwiVVVJRCI6IjRmNDk1ZmJiLTg3NmYtNDNiNy04YWFkLTE2NjcwMTIyMDk4NSIsIk9mZnNldCI6Mjc1NDcyOCwiU3RhcnRlZEF0IjoiMjAxOS0wMy0yM1QxMjozMDozNVoifQ%3D%3D&amp;digest=sha256%3A6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0 HTTP/1.1&quot; 201 0 &quot;&quot; &quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot;</span><br><span class="line">time=&quot;2019-03-23T20:30:47.8196001+08:00&quot; level=debug msg=&quot;authorizing request&quot; environment=development go.version=go1.11.5 http.request.host=&quot;192.168.127.1:5000&quot; http.request.id=5ab88eed-272e-4c63-ac4e-4395284f1647 http.request.method=HEAD http.request.remoteaddr=&quot;192.168.127.133:34417&quot; http.request.uri=&quot;/v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; http.request.useragent=&quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot; instance.id=ea6a2d2d-5f9e-4a14-8e66-f373a70a9298 service=registry vars.digest=&quot;sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; vars.name=&quot;docker.io/alpine&quot; version=&quot;v2.6.2+unknown&quot;</span><br><span class="line">time=&quot;2019-03-23T20:30:47.8196001+08:00&quot; level=debug msg=GetBlob environment=development go.version=go1.11.5 http.request.host=&quot;192.168.127.1:5000&quot; http.request.id=5ab88eed-272e-4c63-ac4e-4395284f1647 http.request.method=HEAD http.request.remoteaddr=&quot;192.168.127.133:34417&quot; http.request.uri=&quot;/v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; http.request.useragent=&quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot; instance.id=ea6a2d2d-5f9e-4a14-8e66-f373a70a9298 service=registry vars.digest=&quot;sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; vars.name=&quot;docker.io/alpine&quot; version=&quot;v2.6.2+unknown&quot;</span><br><span class="line">time=&quot;2019-03-23T20:30:47.8196001+08:00&quot; level=debug msg=&quot;s3aws.URLFor(\&quot;/docker/registry/v2/blobs/sha256/6c/6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0/data\&quot;)&quot; environment=development go.version=go1.11.5 http.request.host=&quot;192.168.127.1:5000&quot; http.request.id=5ab88eed-272e-4c63-ac4e-4395284f1647 http.request.method=HEAD http.request.remoteaddr=&quot;192.168.127.133:34417&quot; http.request.uri=&quot;/v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; http.request.useragent=&quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot; instance.id=ea6a2d2d-5f9e-4a14-8e66-f373a70a9298 service=registry trace.duration=0s trace.file=&quot;D:/Go/src/github.com/docker/distribution/registry/storage/driver/base/base.go&quot; trace.func=&quot;github.com/docker/distribution/registry/storage/driver/base.(*Base).URLFor&quot; trace.id=83cf9b9e-46a4-43a3-9db2-095ece7dda28 trace.line=189 vars.digest=&quot;sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; vars.name=&quot;docker.io/alpine&quot; version=&quot;v2.6.2+unknown&quot;</span><br><span class="line">time=&quot;2019-03-23T20:30:47.8206001+08:00&quot; level=info msg=&quot;response completed&quot; environment=development go.version=go1.11.5 http.request.host=&quot;192.168.127.1:5000&quot; http.request.id=5ab88eed-272e-4c63-ac4e-4395284f1647 http.request.method=HEAD http.request.remoteaddr=&quot;192.168.127.133:34417&quot; http.request.uri=&quot;/v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0&quot; http.request.useragent=&quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot; http.response.contenttype=&quot;application/octet-stream&quot; http.response.duration=2ms http.response.status=307 http.response.written=0 instance.id=ea6a2d2d-5f9e-4a14-8e66-f373a70a9298 service=registry version=&quot;v2.6.2+unknown&quot;</span><br><span class="line">192.168.127.133 - - [23/Mar/2019:20:30:47 +0800] &quot;HEAD /v2/docker.io/alpine/blobs/sha256:6c40cc604d8e4c121adcb6b0bfe8bb038815c350980090e74aa5a6423f8f82c0 HTTP/1.1&quot; 307 0 &quot;&quot; &quot;docker/1.13.1 go/go1.10.3 kernel/3.10.0-327.el7.x86_64 os/linux arch/amd64 UpstreamClient(Docker-Client/1.13.1 \\(linux\\))&quot;</span><br></pre></td></tr></table></figure></p>
-<p>在这里卡主了，上面有一个url从定向,<br>ceph rgw的日志如下：<br><img src="d.png" alt="d"><br>首先请求包认证错误，怎么会认证错误呢，再查看请求头发现这请求奇怪<br><img src="e.png" alt="e"><br>rgw请求的s3 v4认证怎么在这个QUERY_STRING字段，这个字段一般是url后面的查询条件，小甲思考3秒，可能是url重定向导致，屡一下可能是这样</p>
-<ul>
-<li>1.docker向distribution发送了一个head请求</li>
-<li>2.distribution接收到请求之后，进行了url重定向，把signure认证放在了url查询部分，放在location中返回docker</li>
-<li>3.docker根据返回请求中location中的重定向的url，也就是上面ceph rgw的地址，然后发送请求，可是docker没有调用任何s3的sdk，所以不会进行s3的signure算法，直接head发给了ceph rgw</li>
-<li>4.ceph rgw接收到head请求，还是根据s3的v4认证，所以报错了。</li>
-</ul>
-<p>后面调试代码发现问题确实是这样。</p>
-<h1 id="修改方法"><a href="#修改方法" class="headerlink" title="修改方法"></a>修改方法</h1><p>那如何修改呢，其实修改很简单，只要把url直接抛异常就可以，这个filesystem也是这样处理的。小甲本来的想法是新建一个结构体，继承现有的s3 driver，然后重载URLFor函数就可以，但是发现s3的driver是包外不可见，这就无法继承，最后通过增加一个配置参数，是否是使用的ceph s3还是aws s3，在使用ceph s3的时候直接抛异常退出URLFor函数。</p>
-<p>#等等还没结束<br>docker push和pull现在都可以正常了，但是镜像的删除也有问题，那镜像是怎么删除的呢？</p>
-<ul>
-<li>1.调用api删除</li>
-<li>2.distribution 运行garbage-collect命令<br>发现有问题，ceph接受不到请求，调试了好久发现是distribution中vendor目录下的aws-sdk-go版本比较老，小甲用较高的版本就可以了<br>这下应该结束了吧，no no no</li>
-</ul>
-<h1 id="distribution-master问题"><a href="#distribution-master问题" class="headerlink" title="distribution master问题"></a>distribution master问题</h1><p>小甲又下载了distribution的master分支试了一下，发现前面的修改之后docker push/pull都ok，删除换了高版本的aws-sdk-go还是有问题，什么问题呢？</p>
-<ul>
-<li>1.空指针异常，What？<br><img src="f.png" alt="f"><br>在doWalk函数中出现了空指针，这个函数在distribution 2.6.2中还没有</li>
-<li>2.代码分析从ceph返回来的<br>ListObjectsV2Output这个对象的KeyCount这个成员是一个空指针，而代码中使用这个进行了运算导致了错误，看来distribution确实没有验证ceph</li>
-<li>3.修改也比较简单，通过之前加的一个ceph配置对ceph的请求情况做一下特殊处理就可以了。</li>
-</ul>
-<h1 id="修改代码后重新编译"><a href="#修改代码后重新编译" class="headerlink" title="修改代码后重新编译"></a>修改代码后重新编译</h1><p>  编译修改后的代码成二进制可执行文件</p>
-<h1 id="重新制作harbor-registry镜像"><a href="#重新制作harbor-registry镜像" class="headerlink" title="重新制作harbor-registry镜像"></a>重新制作harbor-registry镜像</h1><p> 使用dockerfile生成新的镜像<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"> FROM  test:v1.7.0</span><br><span class="line"></span><br><span class="line">COPY ./registry /usr/bin</span><br><span class="line">EXPOSE 5000</span><br><span class="line">ENTRYPOINT [&quot;/entrypoint.sh&quot;]</span><br><span class="line">CMD [&quot;/etc/registry/config.yml&quot;]</span><br></pre></td></tr></table></figure></p>
-<h1 id="chart配置修改"><a href="#chart配置修改" class="headerlink" title="chart配置修改"></a>chart配置修改</h1><p>修改harbor/values.yaml文件<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">imageChartStorage:</span><br><span class="line">    # Specify the type of storage: &quot;filesystem&quot;, &quot;azure&quot;, &quot;gcs&quot;, &quot;s3&quot;, &quot;swift&quot;,</span><br><span class="line">    # &quot;oss&quot; and fill the information needed in the corresponding section. The type</span><br><span class="line">    # must be &quot;filesystem&quot; if you want to use persistent volumes for registry</span><br><span class="line">    # and chartmuseum</span><br><span class="line">    type: s3</span><br><span class="line">    filesystem:</span><br><span class="line">      rootdirectory: /var/lib/registry</span><br><span class="line">      #maxthreads: 100</span><br><span class="line">    azure:</span><br><span class="line">      accountname: accountname</span><br><span class="line">      accountkey: base64encodedaccountkey</span><br><span class="line">      container: containername</span><br><span class="line">      #realm: core.windows.net</span><br><span class="line">    gcs:</span><br><span class="line">      bucket: bucketname</span><br><span class="line">      # TODO: support the keyfile of gcs</span><br><span class="line">      #keyfile: /path/to/keyfile</span><br><span class="line">      #rootdirectory: /gcs/object/name/prefix</span><br><span class="line">      #chunksize: &quot;5242880&quot;</span><br><span class="line">    s3:</span><br><span class="line">      region: us-east-1</span><br><span class="line">      bucket: gkkbucket2</span><br><span class="line">      accesskey: tstackqwer666</span><br><span class="line">      secretkey: tstackqwer666</span><br><span class="line">      regionendpoint: http://10.85.46.87:8080</span><br><span class="line">      secure: false</span><br><span class="line">      cephcompatible: true</span><br><span class="line">      #encrypt: false</span><br><span class="line">      #keyid: mykeyid</span><br><span class="line">      #v4auth: true</span><br><span class="line">      #chunksize: &quot;5242880&quot;</span><br><span class="line">      #rootdirectory: /s3/object/name/prefix</span><br><span class="line">      #storageclass: STANDARD</span><br></pre></td></tr></table></figure></p>
-<h1 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h1><p><a href="http://dockone.io/article/93" target="_blank" rel="noopener">http://dockone.io/article/93</a></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">harbor docker ceph s3</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/03/16/docker-registry-s3/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
@@ -1227,10 +1111,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
@@ -1239,7 +1119,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1251,15 +1131,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1267,15 +1143,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1283,7 +1167,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1291,15 +1179,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1307,15 +1187,27 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1327,7 +1219,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1335,19 +1227,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1359,19 +1247,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
             
             <div class="clearfix"></div>
