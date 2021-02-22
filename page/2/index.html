@@ -150,6 +150,409 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-ceph-aduit-log" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/15/ceph-aduit-log/">ceph审计日志知多少</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/15/ceph-aduit-log/" class="archive-article-date">
+  	<time datetime="2020-03-15T07:23:50.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>我们知道一般系统都会有审计日志，这个审计日志是用来记录系统的一些操作，这样可以方便后面排查问题以及观察集群状态。ceph作为一个分布式存储系统毫无例外，也有这个审计日志，我们先来看看ceph的审计日志内容：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">2020-03-12 23:53:11.646925 mon.0 127.0.0.1:6789/0 1565359 : audit [INF] from=&apos;client.? 127.0.0.1:0/3655019494&apos; entity=&apos;client.admin&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/1548601709&quot;, &quot;blacklistop&quot;: &quot;add&quot;&#125;]&apos;: finished</span><br><span class="line">2020-03-13 00:11:20.690720 mon.0 127.0.0.1:6789/0 1566350 : audit [INF] from=&apos;client.? 127.0.0.1:0/2040474367&apos; entity=&apos;client.admin&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/1548601709&quot;, &quot;blacklistop&quot;: &quot;rm&quot;&#125;]&apos;: finished</span><br><span class="line">2020-03-13 00:15:28.399958 mon.0 127.0.0.1:6789/0 1566589 : audit [INF] from=&apos;client.? 127.0.0.1:0/66127387&apos; entity=&apos;client.admin&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/2546996510&quot;, &quot;blacklistop&quot;: &quot;add&quot;&#125;]&apos;: finished</span><br></pre></td></tr></table></figure></p>
+<p>可以看到这是一条把某一客户端加黑名单的命令，下面就来分析一下，这条命令是怎么纪律到ceph的审计日志中的</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>上面的命令我们是使用ceph osd blacklist add命令执行生成的，ceph是一个python脚本，这里不做过多的分析，直接告诉你这个命令是发送到了mon，下面我们来分析一下mon那端的处理</p>
+<ul>
+<li>1.mon接受请求<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">else if (prefix == &quot;osd blacklist&quot;) &#123;</span><br><span class="line">    string addrstr;</span><br><span class="line">    cmd_getval(g_ceph_context, cmdmap, &quot;addr&quot;, addrstr);</span><br><span class="line">    entity_addr_t addr;</span><br><span class="line">    if (!addr.parse(addrstr.c_str(), 0)) &#123;</span><br><span class="line">      ss &lt;&lt; &quot;unable to parse address &quot; &lt;&lt; addrstr;</span><br><span class="line">      err = -EINVAL;</span><br><span class="line">      goto reply;</span><br><span class="line">    &#125;</span><br><span class="line">    else &#123;</span><br><span class="line">      string blacklistop;</span><br><span class="line">      cmd_getval(g_ceph_context, cmdmap, &quot;blacklistop&quot;, blacklistop);</span><br><span class="line">      if (blacklistop == &quot;add&quot;) &#123;</span><br><span class="line">	utime_t expires = ceph_clock_now();</span><br><span class="line">	double d;</span><br><span class="line">	// default one hour</span><br><span class="line">	cmd_getval(g_ceph_context, cmdmap, &quot;expire&quot;, d,</span><br><span class="line">          g_conf-&gt;mon_osd_blacklist_default_expire);</span><br><span class="line">	expires += d;</span><br><span class="line"></span><br><span class="line">	pending_inc.new_blacklist[addr] = expires;</span><br><span class="line"></span><br><span class="line">        &#123;</span><br><span class="line">          // cancel any pending un-blacklisting request too</span><br><span class="line">          auto it = std::find(pending_inc.old_blacklist.begin(),</span><br><span class="line">            pending_inc.old_blacklist.end(), addr);</span><br><span class="line">          if (it != pending_inc.old_blacklist.end()) &#123;</span><br><span class="line">            pending_inc.old_blacklist.erase(it);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">	ss &lt;&lt; &quot;blacklisting &quot; &lt;&lt; addr &lt;&lt; &quot; until &quot; &lt;&lt; expires &lt;&lt; &quot; (&quot; &lt;&lt; d &lt;&lt; &quot; sec)&quot;;</span><br><span class="line">	getline(ss, rs);</span><br><span class="line">	wait_for_finished_proposal(op, new Monitor::C_Command(mon, op, 0, rs,</span><br><span class="line">						  get_last_committed() + 1));</span><br><span class="line">	return true;</span><br><span class="line">      &#125; else if (blacklistop == &quot;rm&quot;) &#123;</span><br><span class="line">	if (osdmap.is_blacklisted(addr) ||</span><br><span class="line">	    pending_inc.new_blacklist.count(addr)) &#123;</span><br><span class="line">	  if (osdmap.is_blacklisted(addr))</span><br><span class="line">	    pending_inc.old_blacklist.push_back(addr);</span><br><span class="line">	  else</span><br><span class="line">	    pending_inc.new_blacklist.erase(addr);</span><br><span class="line">	  ss &lt;&lt; &quot;un-blacklisting &quot; &lt;&lt; addr;</span><br><span class="line">	  getline(ss, rs);</span><br><span class="line">	  wait_for_finished_proposal(op, new Monitor::C_Command(mon, op, 0, rs,</span><br><span class="line">						    get_last_committed() + 1));</span><br><span class="line">	  return true;</span><br><span class="line">	&#125;</span><br><span class="line">	ss &lt;&lt; addr &lt;&lt; &quot; isn&apos;t blacklisted&quot;;</span><br><span class="line">	err = 0;</span><br><span class="line">	goto reply;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在osdmonitor具体处理请求这块，在osdmap中增加黑名单这块没有啥审计日志记录，如果是我我也会觉得审计日志应该在所有请求的总入口，然后对请求进行审计记录。在monitor类的handle_command中找到了大致代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void Monitor::handle_command(MonOpRequestRef op)</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line"> ...</span><br><span class="line">(cmd_is_rw ? audit_clog-&gt;info() : audit_clog-&gt;debug())</span><br><span class="line">    &lt;&lt; &quot;from=&apos;&quot; &lt;&lt; session-&gt;inst &lt;&lt; &quot;&apos; &quot;</span><br><span class="line">    &lt;&lt; &quot;entity=&apos;&quot; &lt;&lt; session-&gt;entity_name &lt;&lt; &quot;&apos; &quot;</span><br><span class="line">    &lt;&lt; &quot;cmd=&quot; &lt;&lt; m-&gt;cmd &lt;&lt; &quot;: dispatch&quot;;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面的audit_clog就是升级日志模块客户端。</p>
+<ul>
+<li>2.audit_clog初始化<br>首先我们看一下audit_clog是什么时候初始化的<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mon = new Monitor(g_ceph_context, g_conf-&gt;name.get_id(), store,</span><br><span class="line">		    msgr, mgr_msgr, &amp;monmap);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在ceph-mon的main函数中，会生成monitor类对象，在这个类的构造函数中会初始化audit_clog<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  clog = log_client.create_channel(CLOG_CHANNEL_CLUSTER);</span><br><span class="line">  audit_clog = log_client.create_channel(CLOG_CHANNEL_AUDIT);</span><br><span class="line"></span><br><span class="line">  update_log_clients();</span><br><span class="line"></span><br><span class="line">  paxos = new Paxos(this, &quot;paxos&quot;);</span><br></pre></td></tr></table></figure></p>
+<p>可以看出这里除了创建audit_clog外还创建了clog，可以看出他们是一样的只是名字不一样，clog是集群日志。通过log_client我们可以猜出来这个这mon是定义了一个日志的客户端，那既然有客户端，也肯定有服务端，那服务端是什么呢？先说一下是monitor中的logmonitor，后面会详细讲解，这里看出来对于系统日志和审计日志使用了C/S模式，主要了为了一个目的日志的统一收集，以及一致性。<br>西面我们继续看audit_clog的初始化，看log_client是创建了一个通道channel，如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">LogChannelRef create_channel(const std::string&amp; name) &#123;</span><br><span class="line">    LogChannelRef c;</span><br><span class="line">    if (channels.count(name))</span><br><span class="line">      c = channels[name];</span><br><span class="line">    else &#123;</span><br><span class="line">      c = std::make_shared&lt;LogChannel&gt;(cct, this, name);</span><br><span class="line">      channels[name] = c;</span><br><span class="line">    &#125;</span><br><span class="line">    return c;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>创建了一个LogChannel对象，并缓存在log_client的channels这个map中。LogChannel对象主要是定了日志各种日志等级的操作，如下所示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">LogClientTemp info() &#123;</span><br><span class="line">    return LogClientTemp(CLOG_INFO, *this);</span><br><span class="line">  &#125;</span><br><span class="line">  void info(std::stringstream &amp;s) &#123;</span><br><span class="line">    do_log(CLOG_INFO, s);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个是输出info基本的日志，也就是我们在审计日志中看到的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[INF]</span><br></pre></td></tr></table></figure></p>
+<p>上面便是初始化，我们也发现审计日志的客户端只在mon有，osd和mds都没有log_client，所以审计日志收集的日志mon那边的请求命令记录</p>
+<ul>
+<li>3.审计日志记录流程</li>
+<li>（1）.日志级别<br>前面讲完了升级日志客户端的初始化，现在下面跟一下审计日志记录流程，首先看命令入口处的日志记录<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(cmd_is_rw ? audit_clog-&gt;info() : audit_clog-&gt;debug())</span><br><span class="line">    &lt;&lt; &quot;from=&apos;&quot; &lt;&lt; session-&gt;inst &lt;&lt; &quot;&apos; &quot;</span><br><span class="line">    &lt;&lt; &quot;entity=&apos;&quot; &lt;&lt; session-&gt;entity_name &lt;&lt; &quot;&apos; &quot;</span><br><span class="line">    &lt;&lt; &quot;cmd=&quot; &lt;&lt; m-&gt;cmd &lt;&lt; &quot;: dispatch&quot;;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里便是一条升级日志的记录，从上面可以看出，对于审计日志的info和debug的日志级别是根据cmd_is_rw这个是否为true进行选择的，从字面上看是这个命令是读写的吗,难道命令含有读写属性？不错是的，我们具体看一个命令<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">COMMAND(&quot;osd blacklist &quot; \</span><br><span class="line">	&quot;name=blacklistop,type=CephChoices,strings=add|rm &quot; \</span><br><span class="line">	&quot;name=addr,type=CephEntityAddr &quot; \</span><br><span class="line">	&quot;name=expire,type=CephFloat,range=0.0,req=false&quot;, \</span><br><span class="line">	&quot;add (optionally until &lt;expire&gt; seconds from now) or remove &lt;addr&gt; from blacklist&quot;, \</span><br><span class="line">	&quot;osd&quot;, &quot;rw&quot;, &quot;cli,rest&quot;)</span><br></pre></td></tr></table></figure></p>
+<p>这是mon那边定义的osd blacklist的命令，可以看到第四个参数”rw”，这边是命令的读写属性，搞明白了日志级别之后，我们这里是rw，所以使用audit_clog-&gt;info（）函数来输出后面的字符串日志记录，看一下info函数</p>
+<ul>
+<li>(2)日志打印<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LogClientTemp info() &#123;</span><br><span class="line">    return LogClientTemp(CLOG_INFO, *this);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>info函数返回LogClientTemp类对象，看看构造函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">LogClientTemp::LogClientTemp(clog_type type_, LogChannel &amp;parent_)</span><br><span class="line">  : type(type_), parent(parent_)</span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>没做啥，只是记录了日志级别，难道就这样完了？日志怎么写入的呢，这里使用了一个技巧，利用了作用域加析构函数，我们看到info函数结束return会触发LogClientTemp调用自己的析构函数，我们看看他的析构函数做了啥<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LogClientTemp::~LogClientTemp()</span><br><span class="line">&#123;</span><br><span class="line">  if (ss.peek() != EOF)</span><br><span class="line">    parent.do_log(type, ss);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>调用了parent的do_log,这个parent就是audit这个channel，看一下他的do_log函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">void LogChannel::do_log(clog_type prio, std::stringstream&amp; ss)</span><br><span class="line">&#123;</span><br><span class="line">  while (!ss.eof()) &#123;</span><br><span class="line">    string s;</span><br><span class="line">    getline(ss, s);</span><br><span class="line">    if (!s.empty())</span><br><span class="line">      do_log(prio, s);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void LogChannel::do_log(clog_type prio, const std::string&amp; s)</span><br><span class="line">&#123;</span><br><span class="line">  Mutex::Locker l(channel_lock);</span><br><span class="line">  int lvl = (prio == CLOG_ERROR ? -1 : 0);</span><br><span class="line">  ldout(cct,lvl) &lt;&lt; &quot;log &quot; &lt;&lt; prio &lt;&lt; &quot; : &quot; &lt;&lt; s &lt;&lt; dendl;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  // log to monitor?</span><br><span class="line">  if (log_to_monitors) &#123;</span><br><span class="line">    e.seq = parent-&gt;queue(e);</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    e.seq = parent-&gt;get_next_seq();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>第一个do_log函数调用了第二个do_log重载函数，为什么是第一个调用二个，因为LogChannel重载了&lt;&lt;运算符，如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">std::ostream&amp; operator&lt;&lt;(const T&amp; rhs)</span><br><span class="line">  &#123;</span><br><span class="line">    return ss &lt;&lt; rhs;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">stringstream ss;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>（3）do_log<br>继续看一下do_log<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">void LogChannel::do_log(clog_type prio, const std::string&amp; s)</span><br><span class="line">&#123;</span><br><span class="line">  Mutex::Locker l(channel_lock);</span><br><span class="line">  int lvl = (prio == CLOG_ERROR ? -1 : 0);</span><br><span class="line">  ldout(cct,lvl) &lt;&lt; &quot;log &quot; &lt;&lt; prio &lt;&lt; &quot; : &quot; &lt;&lt; s &lt;&lt; dendl;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  // log to monitor?</span><br><span class="line">  if (log_to_monitors) &#123;</span><br><span class="line">    e.seq = parent-&gt;queue(e);</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    e.seq = parent-&gt;get_next_seq();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里有两个关注点第一个mon本地的日志的打印<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ldout(cct,lvl) &lt;&lt; &quot;log &quot; &lt;&lt; prio &lt;&lt; &quot; : &quot; &lt;&lt; s &lt;&lt; dendl;</span><br></pre></td></tr></table></figure></p>
+<p>这个日志是记录到mon的本地日志中,也就是我们的mon.{host-name}.log<br>第二个是<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// log to monitor?</span><br><span class="line">if (log_to_monitors) &#123;</span><br><span class="line">  e.seq = parent-&gt;queue(e);</span><br><span class="line">&#125; else &#123;</span><br><span class="line">  e.seq = parent-&gt;get_next_seq();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>默认log_to_monitors是true，所以会发送到mon也就是我们上面的说的服务端logmonitor,看一下审计日志是如何发送的</p>
+<ul>
+<li>（4）审计日志发送到mon<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">version_t LogClient::queue(LogEntry &amp;entry)</span><br><span class="line">&#123;</span><br><span class="line">  Mutex::Locker l(log_lock);</span><br><span class="line">  entry.seq = ++last_log;</span><br><span class="line">  log_queue.push_back(entry);</span><br><span class="line"></span><br><span class="line">  if (is_mon) &#123;</span><br><span class="line">    _send_to_mon();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  return entry.seq;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>首先进去queue，然后判断是不是is_mon，因为审计日志是在mon上初始化的所以这个是true，然后使用_send_to_mon发送给mon<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void LogClient::_send_to_mon()</span><br><span class="line">&#123;</span><br><span class="line">  assert(log_lock.is_locked());</span><br><span class="line">  assert(is_mon);</span><br><span class="line">  assert(messenger-&gt;get_myname().is_mon());</span><br><span class="line">  ldout(cct,10) &lt;&lt; __func__ &lt;&lt; &quot;log to self&quot; &lt;&lt; dendl;</span><br><span class="line">  Message *log = _get_mon_log_message();</span><br><span class="line">  messenger-&gt;get_loopback_connection()-&gt;send_message(log);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看到生成了一个日志消息，这个消息的类型是MSG_LOG，我们直接略过消息的发送和接受，直接通过消息类型定位mon的处理函数</p>
+<ul>
+<li>（5）logmonitor处理<br>logmonitor处理经历LogMonitor::preprocess_query和LogMonitor::prepare_update，前面一个没做啥处理，看一下prepare_update<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">bool LogMonitor::prepare_update(MonOpRequestRef op)</span><br><span class="line">&#123;</span><br><span class="line">  op-&gt;mark_logmon_event(&quot;prepare_update&quot;);</span><br><span class="line">  PaxosServiceMessage *m = static_cast&lt;PaxosServiceMessage*&gt;(op-&gt;get_req());</span><br><span class="line">  dout(10) &lt;&lt; &quot;prepare_update &quot; &lt;&lt; *m &lt;&lt; &quot; from &quot; &lt;&lt; m-&gt;get_orig_source_inst() &lt;&lt; dendl;</span><br><span class="line">  switch (m-&gt;get_type()) &#123;</span><br><span class="line">  case MSG_MON_COMMAND:</span><br><span class="line">    return prepare_command(op);</span><br><span class="line">  case MSG_LOG:</span><br><span class="line">    return prepare_log(op);</span><br><span class="line">  default:</span><br><span class="line">    ceph_abort();</span><br><span class="line">    return false;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>通过消息类型又调用prepare_log<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">bool LogMonitor::prepare_log(MonOpRequestRef op)</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  for (deque&lt;LogEntry&gt;::iterator p = m-&gt;entries.begin();</span><br><span class="line">       p != m-&gt;entries.end();</span><br><span class="line">       ++p) &#123;</span><br><span class="line">    dout(10) &lt;&lt; &quot; logging &quot; &lt;&lt; *p &lt;&lt; dendl;</span><br><span class="line">    if (!pending_summary.contains(p-&gt;key())) &#123;</span><br><span class="line">      pending_summary.add(*p);</span><br><span class="line">      pending_log.insert(pair&lt;utime_t,LogEntry&gt;(p-&gt;stamp, *p));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  pending_summary.prune(g_conf-&gt;mon_log_max_summary);</span><br><span class="line">  wait_for_finished_proposal(op, new C_Log(this, op));</span><br><span class="line">  return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里加入到了pending_summary，和pending_log，logmonitor继承了paxos，经过决策来最终确定审计日志数据的一致性，这类不过多解释paxos，我们直接看写入部分</p>
+<ul>
+<li>（6）审计日志写入审计日志文件<br>根据paxos框架最终会调用update_from_paxos<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">void LogMonitor::update_from_paxos(bool *need_bootstrap)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  map&lt;string,bufferlist&gt; channel_blog;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  for(map&lt;string,bufferlist&gt;::iterator p = channel_blog.begin();</span><br><span class="line">      p != channel_blog.end(); ++p) &#123;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  int fd = ::open(log_file.c_str(), O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC, 0600);</span><br><span class="line">  ...</span><br><span class="line">  int err = p-&gt;second.write_fd(fd);</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>channel_blog收集要写入的日志，open打开审计日志文件名，然后write_fd写入。<br>对于审计日志的文件名默认是ceph.audit.log，对于集群日志clog也是类似的分析</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph log</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/15/ceph-aduit-log/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-rbd-exclusive-lock" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/15/rbd-exclusive-lock/">rbd请求是互斥的？</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/15/rbd-exclusive-lock/" class="archive-article-date">
+  	<time datetime="2020-03-15T06:48:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>最近在分析rbd快照的时候，发现需要申请exclusive_lock，不止快照，基本上很多rbd操作都要求获取这个锁，那这个锁是怎么运行的呢，是不是只能有一个客户端可以获取到这个锁，然后进行rbd卷的操作？如果是这样那qemu虚拟机在写数据的时候的，nova-compute就根本不能操作这个卷了，因为qemu和nova-compute在rbd看来就是他的两个客户端，他们都要求申请互斥锁，这显然和我们的实验不同</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>以分析快照创建代码为例看rbd请求<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void Operations&lt;I&gt;::snap_create(const cls::rbd::SnapshotNamespace &amp;snap_namespace,</span><br><span class="line">				const std::string&amp; snap_name,</span><br><span class="line">				Context *on_finish) &#123;</span><br><span class="line">  CephContext *cct = m_image_ctx.cct;</span><br><span class="line">  ldout(cct, 5) &lt;&lt; this &lt;&lt; &quot; &quot; &lt;&lt; __func__ &lt;&lt; &quot;: snap_name=&quot; &lt;&lt; snap_name</span><br><span class="line">                &lt;&lt; dendl;</span><br><span class="line"></span><br><span class="line">  if (m_image_ctx.read_only) &#123;</span><br><span class="line">    on_finish-&gt;complete(-EROFS);</span><br><span class="line">    return;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  m_image_ctx.snap_lock.get_read();</span><br><span class="line">  if (m_image_ctx.get_snap_id(snap_namespace, snap_name) != CEPH_NOSNAP) &#123;</span><br><span class="line">    m_image_ctx.snap_lock.put_read();</span><br><span class="line">    on_finish-&gt;complete(-EEXIST);</span><br><span class="line">    return;</span><br><span class="line">  &#125;</span><br><span class="line">  m_image_ctx.snap_lock.put_read();</span><br><span class="line"></span><br><span class="line">  C_InvokeAsyncRequest&lt;I&gt; *req = new C_InvokeAsyncRequest&lt;I&gt;(</span><br><span class="line">    m_image_ctx, &quot;snap_create&quot;, true,</span><br><span class="line">    boost::bind(&amp;Operations&lt;I&gt;::execute_snap_create, this, snap_namespace, snap_name,</span><br><span class="line">		_1, 0, false),</span><br><span class="line">    boost::bind(&amp;ImageWatcher&lt;I&gt;::notify_snap_create, m_image_ctx.image_watcher,</span><br><span class="line">                snap_namespace, snap_name, _1),</span><br><span class="line">    &#123;-EEXIST&#125;, on_finish);</span><br><span class="line">  req-&gt;send();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>跟着librbd的接口我们会一路走到这里，在上面的函数中我们看到C_InvokeAsyncRequest请求中传了两个处理函数，execute_snap_create和notify_snap_create，为什么会传两个函数，难道。。。。，没错就是你想的那样，首先，这里要说一下，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1.rbd的exclusive_lock既然是互斥锁，那它的拥有者也就只有一个“人”，我们称他为owner</span><br><span class="line">2.另一方面，虽然这是个互斥锁，但是很多客户端可以同时“拥有”这个互斥锁进行rbd请求，（ps.我会告诉你我在拥有上面加了引号），这个我们平台在操作rbd的时候也知道这现象</span><br></pre></td></tr></table></figure></p>
+<p>再说说这两个请求：</p>
+<ul>
+<li>1.如果当前的客户端是exclusive_lock的拥有者，（这里我没有加引号，是真正唯一的拥有者），就执行execute_snap_create,也就是当前客户端区创建快照，创建快照主要是创建一些元数据，这些元数据主要用于管理使用</li>
+<li>2.如果当前的客户端不是exclusive_lock的拥有者，就执行notify_snap_create，看函数的名字notify，你猜notify谁，是的是notify exclusive_lock拥有者，让拥有这个互斥锁的客户端去运行创建快照操作，这样委托可以吗？可以反正创建快照，只是创建一些管理元数据，谁创建不是创建，nice</li>
+</ul>
+<p>那是不是这样呢，课代表来了<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">struct C_InvokeAsyncRequest : public Context &#123;</span><br><span class="line">  /**</span><br><span class="line">   * @verbatim</span><br><span class="line">   *</span><br><span class="line">   *               &lt;start&gt;</span><br><span class="line">   *                  |</span><br><span class="line">   *    . . . . . .   |   . . . . . . . . . . . . . . . . . .</span><br><span class="line">   *    .         .   |   .                                 .</span><br><span class="line">   *    .         v   v   v                                 .</span><br><span class="line">   *    .       REFRESH_IMAGE (skip if not needed)          .</span><br><span class="line">   *    .             |                                     .</span><br><span class="line">   *    .             v                                     .</span><br><span class="line">   *    .       ACQUIRE_LOCK (skip if exclusive lock        .</span><br><span class="line">   *    .             |       disabled or has lock)         .</span><br><span class="line">   *    .             |                                     .</span><br><span class="line">   *    .   /--------/ \--------\   . . . . . . . . . . . . .</span><br><span class="line">   *    .   |                   |   .</span><br><span class="line">   *    .   v                   v   .</span><br><span class="line">   *  LOCAL_REQUEST       REMOTE_REQUEST</span><br><span class="line">   *        |                   |</span><br><span class="line">   *        |                   |</span><br><span class="line">   *        \--------\ /--------/</span><br><span class="line">   *                  |</span><br><span class="line">   *                  v</span><br><span class="line">   *              &lt;finish&gt;</span><br><span class="line">   *</span><br><span class="line">   * @endverbatim</span><br><span class="line">   */</span><br></pre></td></tr></table></figure></p>
+<p>在C_InvokeAsyncRequest请求中有这样的注释，local_request 和 remote_request更加生动形象，至于具体流程的跟踪，可以使用两个python交互式客户端操作一个rbd，然后观察两个客户端的日志，这里就不多说了。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">rbd</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/15/rbd-exclusive-lock/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-rbd-watchers-how-store-in-rados" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/15/rbd-watchers-how-store-in-rados/">rbd的watcher数据持久化在哪里</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/15/rbd-watchers-how-store-in-rados/" class="archive-article-date">
+  	<time datetime="2020-03-15T05:50:32.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>最近在看一个问题，需要查看rbd watcher相关信息，于是便想看一下watcher存在了哪里</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><ul>
+<li><p>通过rados listwatchers命令我们知道watcher是存在osd服务那边的object_info_t结构体中，那要查watcher存在哪里，就是要查object_info_t存在哪里</p>
+</li>
+<li><p>在filestore的存储引擎下，object_info_t存在rbd_header文件对象的xattr扩展属性中</p>
+</li>
+<li><p>步骤如下：</p>
+</li>
+<li><ol>
+<li>获取rbd的header对象<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 tmp(keystone_admin)]# rbd info rbd/gkk1</span><br><span class="line">rbd image &apos;gkk1&apos;:</span><br><span class="line">	size 1024 MB in 256 objects</span><br><span class="line">	order 22 (4096 kB objects)</span><br><span class="line">	block_name_prefix: rbd_data.301027238e1f29</span><br><span class="line">	format: 2</span><br><span class="line">	features: layering, exclusive-lock, object-map, fast-diff, deep-flatten</span><br><span class="line">	flags:</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+</ul>
+<p>header就是rbd_header.301027238e1f29</p>
+<ul>
+<li><ol start="2">
+<li>查找header对象存在哪些osd上面<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 3.ee_head(keystone_admin)]# ceph osd map rbd rbd_header.301027238e1f29</span><br><span class="line">osdmap e22962 pool &apos;rbd&apos; (0) object &apos;rbd_header.301027238e1f29&apos; -&gt; pg 0.a5bd3cee (0.ee) -&gt; up ([3,6,10], p3) acting ([3,6,10], p3</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+</ul>
+<p>三个osd都会有，我们找主OSD–3</p>
+<ul>
+<li><ol start="3">
+<li>在filestore下找到rbd_header对象<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 0.ee_head]# ll</span><br><span class="line">total 4096</span><br><span class="line">-rw-r--r-- 1 ceph ceph       0 Jan 16  2019 __head_000000EE__0</span><br><span class="line">-rw-r--r-- 1 ceph ceph 4194304 Mar 14 15:01 rbd\udata.301027238e1f29.0000000000000063__head_B1E6FFEE__0</span><br><span class="line">-rw-r--r-- 1 ceph ceph       0 Jan 17  2019 rbd\uheader.301027238e1f29__head_A5BD3CEE__0</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+<li><ol start="4">
+<li>列举扩展属性<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 0.ee_head]# getfattr rbd\\uheader.301027238e1f29__head_A5BD3CEE__0</span><br><span class="line"># file: rbd\134uheader.301027238e1f29__head_A5BD3CEE__0</span><br><span class="line">user.ceph._</span><br><span class="line">user.ceph._@1</span><br><span class="line">user.ceph._lock.rbd_lock</span><br><span class="line">user.ceph.snapset</span><br><span class="line">user.cephos.spill_out</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+<li><ol start="5">
+<li>object_info_t就存在以user.ceph._开头的扩展属性里面，如下获取<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 0.ee_head]# attr -q -g &quot;ceph._&quot; rbd\\uheader.301027238e1f29__head_A5BD3CEE__0   &gt; /root/object_info_t.txt</span><br><span class="line">[root@con02 0.ee_head]# attr -q -g &quot;ceph._@1&quot; rbd\\uheader.301027238e1f29__head_A5BD3CEE__0   &gt;&gt; /root/object_info_t.txt</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+</ul>
+<p>其中@1可以看出object_info_t会由于大小分成好几个扩展属性进行存取</p>
+<ul>
+<li><ol start="6">
+<li>通过ceph-dencode进行解析<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 0.ee_head]# ceph-dencoder type object_info_t import /root/object_info_t.txt decode dump_json</span><br><span class="line">&#123;</span><br><span class="line">    &quot;oid&quot;: &#123;</span><br><span class="line">        &quot;oid&quot;: &quot;rbd_header.301027238e1f29&quot;,</span><br><span class="line">        &quot;key&quot;: &quot;&quot;,</span><br><span class="line">        &quot;snapid&quot;: -2,</span><br><span class="line">        &quot;hash&quot;: 2780642542,</span><br><span class="line">        &quot;max&quot;: 0,</span><br><span class="line">        &quot;pool&quot;: 0,</span><br><span class="line">        &quot;namespace&quot;: &quot;&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;version&quot;: &quot;22962&apos;4735&quot;,</span><br><span class="line">    &quot;prior_version&quot;: &quot;22962&apos;4734&quot;,</span><br><span class="line">    &quot;last_reqid&quot;: &quot;client.8079633.0:10&quot;,</span><br><span class="line">    &quot;user_version&quot;: 4735,</span><br><span class="line">    &quot;size&quot;: 0,</span><br><span class="line">    &quot;mtime&quot;: &quot;2020-03-15 14:38:36.329259&quot;,</span><br><span class="line">    &quot;local_mtime&quot;: &quot;2020-03-15 14:38:36.321500&quot;,</span><br><span class="line">    &quot;lost&quot;: 0,</span><br><span class="line">    &quot;flags&quot;: 60,</span><br><span class="line">    &quot;snaps&quot;: [],</span><br><span class="line">    &quot;truncate_seq&quot;: 0,</span><br><span class="line">    &quot;truncate_size&quot;: 0,</span><br><span class="line">    &quot;data_digest&quot;: 4294967295,</span><br><span class="line">    &quot;omap_digest&quot;: 3148395953,</span><br><span class="line">    &quot;watchers&quot;: &#123;</span><br><span class="line">        &quot;client.8079633&quot;: &#123;</span><br><span class="line">            &quot;cookie&quot;: 139996606507840,</span><br><span class="line">            &quot;timeout_seconds&quot;: 30,</span><br><span class="line">            &quot;addr&quot;: &#123;</span><br><span class="line">                &quot;nonce&quot;: 3613298630,</span><br><span class="line">                &quot;addr&quot;: &quot;10.125.232.77:0&quot;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+</ul>
+<p>从上面我们就看到了watcher的内容</p>
+<h1 id="这里有一个区别要提一下"><a href="#这里有一个区别要提一下" class="headerlink" title="这里有一个区别要提一下"></a>这里有一个区别要提一下</h1><p>我们通过对rbd_header文件对象获取扩展属性可以看到<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 0.ee_head]# getfattr rbd\\uheader.301027238e1f29__head_A5BD3CEE__0</span><br><span class="line"># file: rbd\134uheader.301027238e1f29__head_A5BD3CEE__0</span><br><span class="line">user.ceph._</span><br><span class="line">user.ceph._@1</span><br><span class="line">user.ceph._lock.rbd_lock</span><br><span class="line">user.ceph.snapset</span><br><span class="line">user.cephos.spill_out</span><br></pre></td></tr></table></figure></p>
+<p>我们通过rados listxattr可以看到如属性<br><figure class="highlight plain"><figcaption><span>0.ee_head]# rados listxattr -p rbd rbd_header.301027238e1f29</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lock.rbd_lock</span><br></pre></td></tr></table></figure></p>
+<p>可以看到只有一个rbd_lock是相同的，刚开始我也以为是在这个里面能找到watcher，其实rbd_lock是属于rbd的属性，而其他属于rados层公共属性</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">rbd</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/15/rbd-watchers-how-store-in-rados/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-how-to-add-big-file-to-vm" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/07/how-to-add-big-file-to-vm/">快速上传大文到虚拟机</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/07/how-to-add-big-file-to-vm/" class="archive-article-date">
+  	<time datetime="2020-03-07T03:23:18.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-07</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>openstack里面使用硬件sdn，没有namespace登录到虚拟机，怎么快速从宿主机到虚拟机传送文件数据,一同事想出了方法，加以记录</p>
+<h1 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">没有命名空间传大文件方法，最好不要用业务虚拟机测试，新建同网段的虚拟机挂载。</span><br><span class="line">1. 将大文件制作成iso, 比如mkisofs -o xxx.iso xxx/</span><br><span class="line">2. 上传iso到虚拟机所在的计算节点，比如/root下</span><br><span class="line">3. 找到虚拟机的instance name, nova show &lt;server uuid&gt; | grep instance_name, 假设为instance-00000108</span><br><span class="line">4. 登陆虚拟机，lsblk查看下目前最后一个盘名，假设vdb，那么将iso挂载成下一个设备。</span><br><span class="line">5. 计算节点执行， virsh attach-disk instance-00000108 /root/xxx.iso  vdc</span><br><span class="line">6. 执行lsblk， 可以看到新挂载的设备，mount即可。</span><br></pre></td></tr></table></figure>
+<h1 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h1><p>如果出现权限问题，需要把iso文件放到tmp目录下</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/07/how-to-add-big-file-to-vm/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-recover-mysql-cluster" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -705,314 +1108,9 @@
 
 
   
-    <article id="post-how-to-debug-osd" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/09/26/how-to-debug-osd/">how-to-debug-osd</a>
-    </h1>
-  
-
-        
-        <a href="/2019/09/26/how-to-debug-osd/" class="archive-article-date">
-  	<time datetime="2019-09-26T14:53:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="OSD是驻留进程怎么调试"><a href="#OSD是驻留进程怎么调试" class="headerlink" title="OSD是驻留进程怎么调试"></a>OSD是驻留进程怎么调试</h1><p>OSD使用的驻留进程，在启动会断开进程连接<br>在global section下面增加这个配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">daemonize = false</span><br></pre></td></tr></table></figure></p>
-<p>可以取消驻留进程调试</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph osd</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/09/26/how-to-debug-osd/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-glance-backend-with-cinder" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/09/26/glance-backend-with-cinder/">glance backend with cinder</a>
-    </h1>
-  
-
-        
-        <a href="/2019/09/26/glance-backend-with-cinder/" class="archive-article-date">
-  	<time datetime="2019-09-26T11:37:16.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="glance对接cinder"><a href="#glance对接cinder" class="headerlink" title="glance对接cinder"></a>glance对接cinder</h1><p>————————————————————————————————————————————————————————————————————————————<br>glance-api.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">default_store = cinder</span><br><span class="line">stores = cinder</span><br></pre></td></tr></table></figure></p>
-<p>cinder.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">glance_api_version = 2</span><br><span class="line">allowed_direct_url_schemes = cinder</span><br><span class="line">image_upload_use_cinder_backend = True</span><br><span class="line">image_upload_use_internal_tenant = True</span><br></pre></td></tr></table></figure></p>
-<h1 id="对接结果"><a href="#对接结果" class="headerlink" title="对接结果"></a>对接结果</h1><p>————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>glance 数据库<br><img src="1.png" alt="1"></p>
-</li>
-<li><p>ceph中的显示<br><img src="2.png" alt="2"></p>
-</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack cinder glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/09/26/glance-backend-with-cinder/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-cpu-100" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/04/15/cpu-100/">cpu 100%</a>
-    </h1>
-  
-
-        
-        <a href="/2019/04/15/cpu-100/" class="archive-article-date">
-  	<time datetime="2019-04-15T01:18:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-15</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-proc-stat和-proc-pid-stat的使用"><a href="#1-proc-stat和-proc-pid-stat的使用" class="headerlink" title="1. /proc/stat和/proc/{pid}/stat的使用"></a>1. /proc/stat和/proc/{pid}/stat的使用</h1><h1 id="2-top默认每3s刷新一次"><a href="#2-top默认每3s刷新一次" class="headerlink" title="2. top默认每3s刷新一次"></a>2. top默认每3s刷新一次</h1><h1 id="3-top中显示的cpu时间包括用户态cpu和内核态cpu时间"><a href="#3-top中显示的cpu时间包括用户态cpu和内核态cpu时间" class="headerlink" title="3. top中显示的cpu时间包括用户态cpu和内核态cpu时间"></a>3. top中显示的cpu时间包括用户态cpu和内核态cpu时间</h1><h1 id="4-显示每个进程cpu时间可以使用pidstat"><a href="#4-显示每个进程cpu时间可以使用pidstat" class="headerlink" title="4. 显示每个进程cpu时间可以使用pidstat"></a>4. 显示每个进程cpu时间可以使用pidstat</h1><h1 id="5-早期性能分析使用perf，后期分析可以使用gdb"><a href="#5-早期性能分析使用perf，后期分析可以使用gdb" class="headerlink" title="5. 早期性能分析使用perf，后期分析可以使用gdb"></a>5. 早期性能分析使用perf，后期分析可以使用gdb</h1><h1 id="6-使用perf-top找出热点函数"><a href="#6-使用perf-top找出热点函数" class="headerlink" title="6. 使用perf top找出热点函数"></a>6. 使用perf top找出热点函数</h1><h1 id="7-使用execsnoop观测短时进程"><a href="#7-使用execsnoop观测短时进程" class="headerlink" title="7. 使用execsnoop观测短时进程"></a>7. 使用execsnoop观测短时进程</h1><h1 id="8-dstat使用"><a href="#8-dstat使用" class="headerlink" title="8. dstat使用"></a>8. dstat使用</h1><h1 id="9-straces使用"><a href="#9-straces使用" class="headerlink" title="9. straces使用"></a>9. straces使用</h1><h1 id="10-进程的状态"><a href="#10-进程的状态" class="headerlink" title="10.进程的状态"></a>10.进程的状态</h1><h1 id="11-sar"><a href="#11-sar" class="headerlink" title="11. sar"></a>11. sar</h1><h1 id="12-hping3"><a href="#12-hping3" class="headerlink" title="12. hping3"></a>12. hping3</h1><h1 id="13-tcpdump"><a href="#13-tcpdump" class="headerlink" title="13. tcpdump"></a>13. tcpdump</h1>
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">Linux 性能优化实践（5）</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/04/15/cpu-100/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-ceph-rwl-analysis" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/04/13/ceph-rwl-analysis/">Intel Ceph rwl分析</a>
-    </h1>
-  
-
-        
-        <a href="/2019/04/13/ceph-rwl-analysis/" class="archive-article-date">
-  	<time datetime="2019-04-13T07:17:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-13</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-Intel-Ceph-rwl"><a href="#1-Intel-Ceph-rwl" class="headerlink" title="1. Intel Ceph rwl"></a>1. Intel Ceph rwl</h1><p>Intel的rwl是对ceph的rbd进行优化，使用可持久化高速介质来缓存rbd的数据，比如SSD。rwl就是这个代码的实现，其简称就是ReplicatedWriteLog。</p>
-<h1 id="2-librbd使用"><a href="#2-librbd使用" class="headerlink" title="2. librbd使用"></a>2. librbd使用</h1><p>一般使用rbd都是通过调用librbd库实现，比如qemu。目前L版的代码里面有两个层次的缓存，一个是image层级的缓存，一个是object层级的缓存。Intel的rwl就是实现的image层级的缓存。</p>
-<h1 id="3"><a href="#3" class="headerlink" title="3."></a>3.</h1>
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Ceph rwl</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/04/13/ceph-rwl-analysis/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
+      <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
     </nav>
   
 
@@ -1024,7 +1122,7 @@
   <div class="outer">
     <div id="footer-info">
     	<div class="footer-left">
-    		&copy; 2020 小甲师兄
+    		&copy; 2021 小甲师兄
     	</div>
       	<div class="footer-right">
       		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
@@ -1115,7 +1213,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1127,27 +1225,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1155,7 +1233,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1163,7 +1253,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1175,15 +1269,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1191,39 +1277,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1243,11 +1313,43 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1255,11 +1357,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
             
             <div class="clearfix"></div>

@@ -150,6 +150,311 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-how-to-debug-osd" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/09/26/how-to-debug-osd/">how-to-debug-osd</a>
+    </h1>
+  
+
+        
+        <a href="/2019/09/26/how-to-debug-osd/" class="archive-article-date">
+  	<time datetime="2019-09-26T14:53:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="OSD是驻留进程怎么调试"><a href="#OSD是驻留进程怎么调试" class="headerlink" title="OSD是驻留进程怎么调试"></a>OSD是驻留进程怎么调试</h1><p>OSD使用的驻留进程，在启动会断开进程连接<br>在global section下面增加这个配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">daemonize = false</span><br></pre></td></tr></table></figure></p>
+<p>可以取消驻留进程调试</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph osd</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/09/26/how-to-debug-osd/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-glance-backend-with-cinder" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/09/26/glance-backend-with-cinder/">glance backend with cinder</a>
+    </h1>
+  
+
+        
+        <a href="/2019/09/26/glance-backend-with-cinder/" class="archive-article-date">
+  	<time datetime="2019-09-26T11:37:16.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="glance对接cinder"><a href="#glance对接cinder" class="headerlink" title="glance对接cinder"></a>glance对接cinder</h1><p>————————————————————————————————————————————————————————————————————————————<br>glance-api.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">default_store = cinder</span><br><span class="line">stores = cinder</span><br></pre></td></tr></table></figure></p>
+<p>cinder.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">glance_api_version = 2</span><br><span class="line">allowed_direct_url_schemes = cinder</span><br><span class="line">image_upload_use_cinder_backend = True</span><br><span class="line">image_upload_use_internal_tenant = True</span><br></pre></td></tr></table></figure></p>
+<h1 id="对接结果"><a href="#对接结果" class="headerlink" title="对接结果"></a>对接结果</h1><p>————————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li><p>glance 数据库<br><img src="1.png" alt="1"></p>
+</li>
+<li><p>ceph中的显示<br><img src="2.png" alt="2"></p>
+</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack cinder glance</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/09/26/glance-backend-with-cinder/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-cpu-100" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/15/cpu-100/">cpu 100%</a>
+    </h1>
+  
+
+        
+        <a href="/2019/04/15/cpu-100/" class="archive-article-date">
+  	<time datetime="2019-04-15T01:18:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-proc-stat和-proc-pid-stat的使用"><a href="#1-proc-stat和-proc-pid-stat的使用" class="headerlink" title="1. /proc/stat和/proc/{pid}/stat的使用"></a>1. /proc/stat和/proc/{pid}/stat的使用</h1><h1 id="2-top默认每3s刷新一次"><a href="#2-top默认每3s刷新一次" class="headerlink" title="2. top默认每3s刷新一次"></a>2. top默认每3s刷新一次</h1><h1 id="3-top中显示的cpu时间包括用户态cpu和内核态cpu时间"><a href="#3-top中显示的cpu时间包括用户态cpu和内核态cpu时间" class="headerlink" title="3. top中显示的cpu时间包括用户态cpu和内核态cpu时间"></a>3. top中显示的cpu时间包括用户态cpu和内核态cpu时间</h1><h1 id="4-显示每个进程cpu时间可以使用pidstat"><a href="#4-显示每个进程cpu时间可以使用pidstat" class="headerlink" title="4. 显示每个进程cpu时间可以使用pidstat"></a>4. 显示每个进程cpu时间可以使用pidstat</h1><h1 id="5-早期性能分析使用perf，后期分析可以使用gdb"><a href="#5-早期性能分析使用perf，后期分析可以使用gdb" class="headerlink" title="5. 早期性能分析使用perf，后期分析可以使用gdb"></a>5. 早期性能分析使用perf，后期分析可以使用gdb</h1><h1 id="6-使用perf-top找出热点函数"><a href="#6-使用perf-top找出热点函数" class="headerlink" title="6. 使用perf top找出热点函数"></a>6. 使用perf top找出热点函数</h1><h1 id="7-使用execsnoop观测短时进程"><a href="#7-使用execsnoop观测短时进程" class="headerlink" title="7. 使用execsnoop观测短时进程"></a>7. 使用execsnoop观测短时进程</h1><h1 id="8-dstat使用"><a href="#8-dstat使用" class="headerlink" title="8. dstat使用"></a>8. dstat使用</h1><h1 id="9-straces使用"><a href="#9-straces使用" class="headerlink" title="9. straces使用"></a>9. straces使用</h1><h1 id="10-进程的状态"><a href="#10-进程的状态" class="headerlink" title="10.进程的状态"></a>10.进程的状态</h1><h1 id="11-sar"><a href="#11-sar" class="headerlink" title="11. sar"></a>11. sar</h1><h1 id="12-hping3"><a href="#12-hping3" class="headerlink" title="12. hping3"></a>12. hping3</h1><h1 id="13-tcpdump"><a href="#13-tcpdump" class="headerlink" title="13. tcpdump"></a>13. tcpdump</h1>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">Linux 性能优化实践（5）</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/04/15/cpu-100/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-ceph-rwl-analysis" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/13/ceph-rwl-analysis/">Intel Ceph rwl分析</a>
+    </h1>
+  
+
+        
+        <a href="/2019/04/13/ceph-rwl-analysis/" class="archive-article-date">
+  	<time datetime="2019-04-13T07:17:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-13</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-Intel-Ceph-rwl"><a href="#1-Intel-Ceph-rwl" class="headerlink" title="1. Intel Ceph rwl"></a>1. Intel Ceph rwl</h1><p>Intel的rwl是对ceph的rbd进行优化，使用可持久化高速介质来缓存rbd的数据，比如SSD。rwl就是这个代码的实现，其简称就是ReplicatedWriteLog。</p>
+<h1 id="2-librbd使用"><a href="#2-librbd使用" class="headerlink" title="2. librbd使用"></a>2. librbd使用</h1><p>一般使用rbd都是通过调用librbd库实现，比如qemu。目前L版的代码里面有两个层次的缓存，一个是image层级的缓存，一个是object层级的缓存。Intel的rwl就是实现的image层级的缓存。</p>
+<h1 id="3"><a href="#3" class="headerlink" title="3."></a>3.</h1>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Ceph rwl</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/04/13/ceph-rwl-analysis/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-osdc-code-analysis" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -849,369 +1154,9 @@
 
 
   
-    <article id="post-cpu-context-switch" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/01/05/cpu-context-switch/">linux性能优化系列（2）cpu上下文切换</a>
-    </h1>
-  
-
-        
-        <a href="/2019/01/05/cpu-context-switch/" class="archive-article-date">
-  	<time datetime="2019-01-05T09:21:32.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="测试cpu上下文切换工具"><a href="#测试cpu上下文切换工具" class="headerlink" title="测试cpu上下文切换工具"></a>测试cpu上下文切换工具</h1><p>—————————————————————————————————————————————————————————————————————————————<br>使用sysbench这个工具，这个工具是线程基准测试工具，用来测试线程，这样可以测试调度和cpu上下文切换<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sysbench --num-threads=10 --max-time=300 --max-requests=10000000 --test=threads run</span><br></pre></td></tr></table></figure></p>
-<h1 id="如何查看系统cpu上下文切换情况"><a href="#如何查看系统cpu上下文切换情况" class="headerlink" title="如何查看系统cpu上下文切换情况"></a>如何查看系统cpu上下文切换情况</h1><p>—————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.vmstat工具可以查看系统的cpu上下文切换</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ~(keystone_admin)]# vmstat 1</span><br><span class="line">procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----</span><br><span class="line"> r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st</span><br><span class="line"> 8  0   2928 28614520 7066708 11676172    0    0     3    34    0    0  1  5 94  0  0</span><br><span class="line"> 4  0   2928 28616408 7066708 11676196    0    0     0    12 8510 19720  2 14 85  0  0</span><br><span class="line"> 2  0   2928 28615164 7066708 11676208    0    0     0   116 7205 7983  2 14 85  0  0</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.pidstat加-w</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pidstat -wt -u 5</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">linux 性能</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/01/05/cpu-context-switch/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-ceph-osd-pg-sum" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/01/05/ceph-osd-pg-sum/">ceph osd pg统计</a>
-    </h1>
-  
-
-        
-        <a href="/2019/01/05/ceph-osd-pg-sum/" class="archive-article-date">
-  	<time datetime="2019-01-05T06:41:23.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="ceph-osd-pg统计脚本"><a href="#ceph-osd-pg统计脚本" class="headerlink" title="ceph osd pg统计脚本"></a>ceph osd pg统计脚本</h1><p>————————————————————————————————————————————————————————————————————<br>这里引用磨磨的一篇博客<br><a href="http://www.zphj1987.com/2015/10/04/%E6%9F%A5%E8%AF%A2osd%E4%B8%8A%E7%9A%84pg%E6%95%B0/" target="_blank" rel="noopener">http://www.zphj1987.com/2015/10/04/%E6%9F%A5%E8%AF%A2osd%E4%B8%8A%E7%9A%84pg%E6%95%B0/</a></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/01/05/ceph-osd-pg-sum/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-cephfs-use" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/01/05/cephfs-use/">cephfs部署，创建和删除</a>
-    </h1>
-  
-
-        
-        <a href="/2019/01/05/cephfs-use/" class="archive-article-date">
-  	<time datetime="2019-01-05T05:34:58.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="cephfs部署"><a href="#cephfs部署" class="headerlink" title="cephfs部署"></a>cephfs部署</h1><p>——————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.ceph-deploy安装</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install ceph-deploy</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.ceph mds服务安装<br>进入到/etc/ceph目录</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ceph-deploy gatherkeys &#123;hostname&#125;</span><br><span class="line">ceph-deploy mds create &#123;hostmane&#125;:&#123;服务名字&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>注意可以在一个节点上面启动多个mds服务，一般推荐一个机器上面跑一个mds服务</p>
-<h1 id="cephfs创建"><a href="#cephfs创建" class="headerlink" title="cephfs创建"></a>cephfs创建</h1><p>—————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li>1.创建cephfs需要使用的池<br>创建数据池<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph osd pool create gkk_data 20 20</span><br><span class="line">pool &apos;gkk_data&apos; created</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>创建元数据池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph osd pool create gkk_metadata 20 20</span><br><span class="line">pool &apos;gkk_metadata&apos; created</span><br></pre></td></tr></table></figure></p>
-<p>创建cephfs文件系统<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph fs new gkk gkk_metadata gkk_data</span><br><span class="line">new fs with metadata pool 7 and data pool 8</span><br></pre></td></tr></table></figure></p>
-<ul>
-<li>2.开启多文件系统模式<br>默认情况ceph集群只允许创建一套cephfs文件系统，但是可以打开一个flag就可以开始多文件系统模式<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph fs flag set enable_multiple true --yes-i-really-mean-it</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>打开flag之后创建多个cephfs文件系统如下所示<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph -s</span><br><span class="line">    cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line">     health HEALTH_OK</span><br><span class="line">     monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">            election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">      fsmap e68: ceph-1/1/1 up gkk-1/1/1 up &#123;[ceph:0]=con03=up:active,[gkk:0]=con01=up:active&#125;, 1 up:standby</span><br><span class="line">     osdmap e255: 3 osds: 3 up, 3 in</span><br><span class="line">            flags sortbitwise,require_jewel_osds</span><br><span class="line">      pgmap v1934353: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">            182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">                4240 active+clean</span><br><span class="line">  client io 0 B/s rd, 5623 B/s wr, 0 op/s rd, 0 op/s wr</span><br></pre></td></tr></table></figure></p>
-<p>可以看到笔者的集群中有三个mds，有两个cephfs文件系统，名字分别叫ceph和gkk，其中他们分别占用一台mds用来管理元数据服务，分别为con03和con01</p>
-<ul>
-<li>3.配置一个文件系统使用多个mds服务，实现使用集群来管理文件系统的元数据<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ceph fs set ceph allow_multimds true --yes-i-really-mean-it</span><br><span class="line">ceph fs set ceph max_mds 3</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>此时集群如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line"> health HEALTH_OK</span><br><span class="line"> monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">        election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">  fsmap e74: ceph-2/2/2 up gkk-1/1/1 up &#123;[ceph:0]=con03=up:active,[ceph:1]=con02=up:active,[gkk:0]=con01=up:active&#125;</span><br><span class="line"> osdmap e255: 3 osds: 3 up, 3 in</span><br><span class="line">        flags sortbitwise,require_jewel_osds</span><br><span class="line">  pgmap v1934434: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">        182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">            4240 active+clean</span><br><span class="line">client io 10459 B/s rd, 2324 B/s wr, 12 op/s rd, 0 op/s wr</span><br></pre></td></tr></table></figure></p>
-<p>可以看到集群没有standby的元数据服务了</p>
-<h1 id="cephfs删除"><a href="#cephfs删除" class="headerlink" title="cephfs删除"></a>cephfs删除</h1><p>—————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.stop 所有的mds服务</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop ceph-mds@&#123;hostname&#125;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.删除文件系统</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ceph fs rm ceph --yes-i-really-mean-it</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>此时看一下集群状态<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph -s</span><br><span class="line">    cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line">     health HEALTH_OK</span><br><span class="line">     monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">            election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">     osdmap e264: 3 osds: 3 up, 3 in</span><br><span class="line">            flags sortbitwise,require_jewel_osds</span><br><span class="line">      pgmap v1934517: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">            182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">                4240 active+clean</span><br><span class="line">  client io 0 B/s rd, 9829 B/s wr, 0 op/s rd, 1 op/s wr</span><br></pre></td></tr></table></figure></p>
-<p>之前fsmap已经没有了</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">cephfs</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/01/05/cephfs-use/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-dashboard-add-download-image-function" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/20/dashboard-add-download-image-function/">dashboard下载镜像</a>
-    </h1>
-  
-
-        
-        <a href="/2018/12/20/dashboard-add-download-image-function/" class="archive-article-date">
-  	<time datetime="2018-12-20T13:51:05.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-20</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>最近有一个功能，需要在dashboard增加下载镜像的功能，我们都知道，可以通过dashboard上传镜像，可以通过命令下载镜像，但是不能通过dashboard上传镜像</p>
-<h1 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h1><p>社区是有一个bp，传输门如下：<br><a href="https://review.openstack.org/#/c/74799/" target="_blank" rel="noopener">https://review.openstack.org/#/c/74799/</a><br>但是这个bp是基于很老的版本，笔者的openstack是pike版，所以需要做一些修改<br>修改如下：</p>
-<ul>
-<li><p>1./usr/share/openstack-dashboard/openstack_dashboard/settings.py文件330行修改</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&apos;images_panel&apos;: False,</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2./usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/images/images/views.py最后的download_image函数修改如下:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">def download_image(request, **kwargs):</span><br><span class="line">    try:</span><br><span class="line">        image_data = api.glance.image_data(request, kwargs[&apos;image_id&apos;])</span><br><span class="line">        image = api.glance.image_get(request, kwargs[&apos;image_id&apos;])</span><br><span class="line">        image_format = getattr(image, &apos;disk_format&apos;, &apos;data&apos;)</span><br><span class="line">        response = http.StreamingHttpResponse(</span><br><span class="line">            image_data,</span><br><span class="line">            content_type=&apos;application/octet-stream&apos;)</span><br><span class="line">        response[&apos;Content-Disposition&apos;] = (&apos;attachment; filename=&quot;%s.%s&quot;&apos; %</span><br><span class="line">                                           (kwargs[&apos;image_id&apos;], image_format))</span><br><span class="line">        response[&apos;Content-Length&apos;] = image.size</span><br><span class="line">        return response</span><br><span class="line">    except Exception:</span><br><span class="line">        msg = _(&apos;An error occured during download of image.&apos;)</span><br><span class="line">        url = reverse(&apos;horizon:project:images:index&apos;)</span><br><span class="line">        exceptions.handle(request, msg, redirect=url)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>3./usr/share/openstack-dashboard/openstack_dashboard/api/glance.py247行修改如下</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@profiler.trace</span><br><span class="line">def image_data(request, image_id):</span><br><span class="line">    &quot;&quot;&quot;Returns an Image object populated with metadata for a given image.&quot;&quot;&quot;</span><br><span class="line">    return glanceclient(request).images.data(image_id)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>4./usr/share/openstack-dashboard/openstack_dashboard/locale/zh_CN/LC_MESSAGES下面的mo对应的文件需要增加</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">msgid &quot;Edit Image&quot;</span><br><span class="line">msgstr &quot;编辑镜像&quot;</span><br><span class="line"></span><br><span class="line">msgid &quot;Download Image&quot;</span><br><span class="line">msgstr &quot;下载镜像&quot;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>ok,重启一下httpd或者apache2服务</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">openstack dashboard horizon</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/12/20/dashboard-add-download-image-function/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/2/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/4/">Next &raquo;</a>
+      <a class="extend prev" rel="prev" href="/page/2/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/4/">Next &raquo;</a>
     </nav>
   
 
@@ -1223,7 +1168,7 @@
   <div class="outer">
     <div id="footer-info">
     	<div class="footer-left">
-    		&copy; 2020 小甲师兄
+    		&copy; 2021 小甲师兄
     	</div>
       	<div class="footer-right">
       		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
@@ -1314,7 +1259,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1326,27 +1271,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1354,7 +1279,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1362,7 +1299,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1374,15 +1315,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1390,39 +1323,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1442,11 +1359,43 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1454,11 +1403,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
             
             <div class="clearfix"></div>
