@@ -150,6 +150,98 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-nova-Pike-changelog分析" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/09/26/nova-Pike-changelog分析/">nova Pike changelog分析</a>
+    </h1>
+  
+
+        
+        <a href="/2018/09/26/nova-Pike-changelog分析/" class="archive-article-date">
+  	<time datetime="2018-09-26T08:14:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-09-26</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="nova-16-0-1修改"><a href="#nova-16-0-1修改" class="headerlink" title="nova-16.0.1修改"></a><strong>nova-16.0.1修改</strong></h1><ul>
+<li><strong>Enable custom certificates for keystone communication</strong><br>允许keystone通信的自定义认证</li>
+<li><strong>Add @targets_cell for live_migrate_instance method in conductor</strong><br>live_migrate_instance增加了一个装饰器</li>
+<li><strong>Set error state after failed evacuation</strong><br>疏散失败的虚拟机设置成”error”状态，原来是”accepted”状态，如果这个状态的话在nova-compute重启之后会有问题</li>
+<li><strong>Functional test for regression bug #1713783</strong><br>增加功能测试，在没有机器可以疏散的时候设置虚拟机状态为”error”</li>
+<li><strong>Call terminate_connection when shelve_offloading</strong><br>增加虚拟机断开连接卷的处理，因为虚拟机在做了shelve操作之后进行unshelve的时候不一定还会调度到相同的机器上</li>
+<li><strong>Handle keypair not found from metadata server using cells</strong><br>修复bug <a href="https://bugs.launchpad.net/nova/+bug/1592167" target="_blank" rel="noopener">https://bugs.launchpad.net/nova/+bug/1592167</a><br>在使用cell的时候，如果删除了创建虚拟机时的keypair，那么在检索虚拟机的时候会报400错误</li>
+<li><strong>Target context when setting instance to ERROR when over quota</strong><br>通知虚拟机所在的cell，当虚拟机设置为error的时候</li>
+<li><strong>Move hash ring initialization to init_host() for ironic</strong><br>把hash环的初始化移到了ironic的init_host函数中</li>
+<li><strong>Remove dest node allocation if evacuate MoveClaim fails</strong><br>当疏散失败之后，需要移除目标机器的资源分配量，因为资源tracker不会自动去释放</li>
+<li><strong>De-duplicate two delete_allocation_for_* methods</strong><br>抽取迁移和疏散函数内部的公共代码部分，属于代码重构</li>
+<li><strong>Add a test to make sure failed evacuate cleans up dest allocation</strong><br>增加功能测试来验证在疏散操作失败之后会清理目的机器分配资源的清空</li>
+<li><strong>Add recreate test for evacuate claim failure</strong><br>增加重建功能测试，在目的主机MoveClaim失败之后上面的资源清空失败</li>
+<li><strong>Create allocations against forced dest host during evacuate</strong><br>在疏散操作期间，如果指定了目的主机，则忽略掉调度select_destinations()过程</li>
+<li><strong>Refactor out claim_resources_on_destination into a utility</strong><br>把claim_resources_on_destination函数提取出来放入到scheduler的工具文件中，属于代码重构</li>
+<li><strong>Add recreate test for forced host evacuate not setting dest allocations</strong><br>指定目标主机的疏散的功能测试</li>
+<li><strong>Provide hints when nova-manage db sync fails to sync cell0</strong><br>增加数据库同步cell0错误提示</li>
+<li><strong>Ensure instance mapping is updated in case of quota recheck fails</strong></li>
+</ul>
+<h1 id="nova-16-0-2修改"><a href="#nova-16-0-2修改" class="headerlink" title="nova-16.0.2修改"></a><strong>nova-16.0.2修改</strong></h1>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/09/26/nova-Pike-changelog分析/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-每天5分钟go-2" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -468,11 +560,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -480,7 +572,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -488,7 +588,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -496,11 +596,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -508,7 +604,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -520,6 +616,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
@@ -528,7 +632,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -540,39 +644,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -580,7 +656,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -592,19 +672,31 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -616,11 +708,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
               </li>
             
             <div class="clearfix"></div>

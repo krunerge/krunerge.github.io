@@ -6,15 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Tag: openstack lvm | 小甲师兄</title>
+  <title>bluestore onde decode | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="小甲师兄">
-<meta property="og:url" content="http://yoursite.com/tags/openstack-lvm/index.html">
+  <meta name="description" content="问题解析bluestore模式下面的Onode 方法1. 首先通过ceph-kv-tool获取对应的元数据1./bin/ceph-kvstore-tool   bluestore-kv dev/osd0 get O %7f%80%00%00%00%00%00%00%02%eaE%e1F%21tangmi%21%3d%ff%ff%ff%ff%ff%ff%ff%fe%ff%ff%ff%ff%ff%ff">
+<meta name="keywords" content="ceph">
+<meta property="og:type" content="article">
+<meta property="og:title" content="bluestore onde decode">
+<meta property="og:url" content="http://yoursite.com/2021/02/22/bluestore-nonde-decode/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="问题解析bluestore模式下面的Onode 方法1. 首先通过ceph-kv-tool获取对应的元数据1./bin/ceph-kvstore-tool   bluestore-kv dev/osd0 get O %7f%80%00%00%00%00%00%00%02%eaE%e1F%21tangmi%21%3d%ff%ff%ff%ff%ff%ff%ff%fe%ff%ff%ff%ff%ff%ff">
 <meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2021-02-22T14:47:18.340Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄">
+<meta name="twitter:title" content="bluestore onde decode">
+<meta name="twitter:description" content="问题解析bluestore模式下面的Onode 方法1. 首先通过ceph-kv-tool获取对应的元数据1./bin/ceph-kvstore-tool   bluestore-kv dev/osd0 get O %7f%80%00%00%00%00%00%00%02%eaE%e1F%21tangmi%21%3d%ff%ff%ff%ff%ff%ff%ff%fe%ff%ff%ff%ff%ff%ff">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -148,60 +153,192 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-bluestore-nonde-decode" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2018" class="archive-year">2018</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2018/12/15/allow-other-lvm-in-lvmgroup/" class="archive-article-date">
-  	<time datetime="2018-12-15T04:47:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-15</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/12/15/allow-other-lvm-in-lvmgroup/">allow other lvm in lvmgroup</a>
+    <h1 class="article-title" itemprop="name">
+      bluestore onde decode
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2021/02/22/bluestore-nonde-decode/" class="archive-article-date">
+  	<time datetime="2021-02-22T14:42:38.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-22</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>解析bluestore模式下面的Onode</p>
+<h1 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h1><h2 id="1-首先通过ceph-kv-tool获取对应的元数据"><a href="#1-首先通过ceph-kv-tool获取对应的元数据" class="headerlink" title="1. 首先通过ceph-kv-tool获取对应的元数据"></a>1. 首先通过ceph-kv-tool获取对应的元数据</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bin/ceph-kvstore-tool   bluestore-kv dev/osd0 get O %7f%80%00%00%00%00%00%00%02%eaE%e1F%21tangmi%21%3d%ff%ff%ff%ff%ff%ff%ff%fe%ff%ff%ff%ff%ff%ff%ff%ffo  out /home/krunerge/onode</span><br></pre></td></tr></table></figure>
+<h2 id="2-这个获取的数据不止包括Onode，我们可以通过写时候的osd日志可以看出"><a href="#2-这个获取的数据不止包括Onode，我们可以通过写时候的osd日志可以看出" class="headerlink" title="2. 这个获取的数据不止包括Onode，我们可以通过写时候的osd日志可以看出"></a>2. 这个获取的数据不止包括Onode，我们可以通过写时候的osd日志可以看出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2021-02-08 14:55:21.519947 7f5b11c7d700 20 bluestore(/data/ceph/ceph-aduit-log/Ceph/build/dev/osd0)   onode #2:ea45e146:::tangmi:head# is 506 (344 bytes onode + 2 bytes spanning blobs + 160 bytes inline extents)</span><br></pre></td></tr></table></figure>
+<p>这个里面有344个字节是Onode结构</p>
+<h2 id="3-dd获取"><a href="#3-dd获取" class="headerlink" title="3. dd获取"></a>3. dd获取</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dd if=/home/krunerge/onode of=/home/krunerge/onode_tmp bs=1 count=344</span><br></pre></td></tr></table></figure>
+<h2 id="4-ceph-dencoder解析"><a href="#4-ceph-dencoder解析" class="headerlink" title="4. ceph-dencoder解析"></a>4. ceph-dencoder解析</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">./bin/ceph-dencoder type bluestore_onode_t import  /home/krunerge/onode_tmp decode dump_json</span><br><span class="line">&#123;</span><br><span class="line">    &quot;nid&quot;: 53306,</span><br><span class="line">    &quot;size&quot;: 131072,</span><br><span class="line">    &quot;attrs&quot;: &#123;</span><br><span class="line">        &quot;attr&quot;: &#123;</span><br><span class="line">            &quot;name&quot;: &quot;_&quot;,</span><br><span class="line">            &quot;len&quot;: 261</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;attr&quot;: &#123;</span><br><span class="line">            &quot;name&quot;: &quot;snapset&quot;,</span><br><span class="line">            &quot;len&quot;: 35</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;flags&quot;: &quot;&quot;,</span><br><span class="line">    &quot;extent_map_shards&quot;: [],</span><br><span class="line">    &quot;expected_object_size&quot;: 0,</span><br><span class="line">    &quot;expected_write_size&quot;: 0,</span><br><span class="line">    &quot;alloc_hint_flags&quot;: 0</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack lvm</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2021/02/22/bluestore-nonde-decode/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
   
   
-    </div></section>
+    <a href="/2021/02/22/pg-log-entry-decode/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">pg log entry decode</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+  
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="bluestore-nonde-decode" data-title="bluestore onde decode" data-url="http://yoursite.com/2021/02/22/bluestore-nonde-decode/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+  
+  
   
 
-    
+  
+
+  
+
+  
 
 
           </div>
@@ -224,9 +361,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: true,

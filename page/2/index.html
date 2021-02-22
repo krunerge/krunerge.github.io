@@ -150,6 +150,141 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-openstack-vm-block-IO-when-create-rbd-snap" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/15/openstack-vm-block-IO-when-create-rbd-snap/">你有遇到在创建rbd快照的时候虚拟机block io挂掉</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/15/openstack-vm-block-IO-when-create-rbd-snap/" class="archive-article-date">
+  	<time datetime="2020-03-15T11:28:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>最近遇到一个问题，我们平台有定时快照功能，快照的个数是有限制的，比如一个虚拟机同一时刻最多有5个快照，如果要创建第六个快照，需要先把时间最久的第一个快照删除，然后再创建新快照，我们使用的是Openstack+Ceph的标准云平台，其中ceph的版本是10.2.7的J版。在创建快照的时候出现虚拟机挂掉，虚拟机qemu日志如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">block i/o error in device &apos;drive-virtio-disk0&apos;: Cannot send after transport endpoint shutdown (108)</span><br></pre></td></tr></table></figure></p>
+<p>而且出现了大概一分多钟的慢请求告警</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><ul>
+<li>1.我们的猜想</li>
+<li><p>（1）删除快照的压力<br>首先我们知道rbd的快照创建的时候是秒级的，因为只是创建了一些元数据，不会对ceph集群产生很多的压力，但是删除快照不一样，删除的快照虽然是异步操作，但是会产生数据的删除操作，而且是删除最老的快照，所以快照的数据很多已经经过cow拷贝了数据，所以删除快照会产生很大的存储压力</p>
+</li>
+<li><p>（2）osd所在磁盘性能比较差<br>我们也注意到了这套出问题的ceph集群在使用ceph osd perf发现这套集群osd磁盘的性能参差不齐，有些延迟有1000-2000ms，可以这是个根源，那为什么会出现虚拟机挂掉呢？</p>
+</li>
+<li><p>2.审计日志的查找<br>因为我们没有开启rbd客户端的日志，所以看不到qemu在调librbd的时候出现了什么问题，于是去Ceph服务端查看，我们在虚拟机挂掉的时间周围在ceph的审计日志中找到了这条记录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">2020-03-12 23:53:11.646925 mon.0 127.0.0.1:6789/0 1565359 : audit [INF] from=&apos;client.? 127.0.0.1:0/3655019494&apos; entity=&apos;client.cinder&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/1548601709&quot;, &quot;blacklistop&quot;: &quot;add&quot;&#125;]&apos;: finished</span><br><span class="line">2020-03-13 00:11:20.690720 mon.0 127.0.0.1:6789/0 1566350 : audit [INF] from=&apos;client.? 127.0.0.1:0/2040474367&apos; entity=&apos;client.cinder&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/1548601709&quot;, &quot;blacklistop&quot;: &quot;rm&quot;&#125;]&apos;: finished</span><br><span class="line">2020-03-13 00:15:28.399958 mon.0 127.0.0.1:6789/0 1566589 : audit [INF] from=&apos;client.? 127.0.0.1:0/66127387&apos; entity=&apos;client.cinder&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/2546996510&quot;, &quot;blacklistop&quot;: &quot;add&quot;&#125;]&apos;: finished</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>触发了把客户端加入黑名单的命令，也就是说qemu虚拟机的客户端被加入到了osd的黑名单，想想加入黑名单确实会导致qemu虚拟机在继续发送数据的时候会被拒绝，后面代码分析也是正确的，具体代码在下面解释</p>
+<ul>
+<li>3.加入黑名单操作谁触发的<br>那到底谁触发了黑名单操作，就是找入口，看了一下大概有三个入口，分析如下：</li>
+<li><p>入口1：librbd有一个break_lock接口，这个接口中会有可以能触发add blocklist</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">int break_lock(ImageCtx *ictx, const string&amp; client,</span><br><span class="line">		 const string&amp; cookie)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  if (ictx-&gt;blacklist_on_break_lock) &#123;</span><br><span class="line">    ...</span><br><span class="line">    r = rados.blacklist_add(client_address,</span><br><span class="line">			      ictx-&gt;blacklist_expire_seconds);</span><br><span class="line">    ...</span><br><span class="line">  &#125;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>入口2：librados有add blocklist接口：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">int blacklist_add(const std::string&amp; client_address,</span><br><span class="line">                      uint32_t expire_seconds);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>入口3：在创建快照的请求一个回调函数中，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">struct C_BlacklistClient : public Context &#123;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  virtual void finish(int r) override &#123;</span><br><span class="line">    librados::Rados rados(image_ctx.md_ctx);</span><br><span class="line">    r = rados.blacklist_add(locker_address,</span><br><span class="line">                            image_ctx.blacklist_expire_seconds);</span><br><span class="line">    on_finish-&gt;complete(r);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>前面两个入口只能是openstack或者qemu代码进行调用，查了一下代码没有，那就是第三个入口，而且我们确实是在创建快照的时候出现问题,而且我们从升级日志中也可以看出我们的请求是来自client.cinder用户，也即是来自外部调ceph，而不是ceph内部产生的，如果内部产生或者有谁命令行调用那用户应该是client.admin</p>
+<ul>
+<li>4.创建快照的时候会什么会有这个回调函数<br>我们首先看一下这个回调类是在哪里创建的<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void BreakRequest&lt;I&gt;::send_blacklist() &#123;</span><br><span class="line">  ...</span><br><span class="line">  m_image_ctx.op_work_queue-&gt;queue(new C_BlacklistClient&lt;I&gt;(m_image_ctx,</span><br><span class="line">                                                            m_locker.address,</span><br><span class="line">                                                            ctx), 0);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看到是在send_blacklist函数中创建的回调类，那这个函数是谁调用的呢？<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void BreakRequest&lt;I&gt;::handle_get_watchers(int r) &#123;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  for (auto &amp;watcher : m_watchers) &#123;</span><br><span class="line">    if ((strncmp(m_locker.address.c_str(),</span><br><span class="line">                 watcher.addr, sizeof(watcher.addr)) == 0) &amp;&amp;</span><br><span class="line">        (m_locker.handle == watcher.cookie)) &#123;</span><br><span class="line">      ldout(cct, 10) &lt;&lt; &quot;lock owner is still alive&quot; &lt;&lt; dendl;</span><br><span class="line"></span><br><span class="line">      if (m_force_break_lock) &#123;</span><br><span class="line">        break;</span><br><span class="line">      &#125; else &#123;</span><br><span class="line">        finish(-EAGAIN);</span><br><span class="line">        return;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  send_blacklist();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在这个handle_get_watchers函数中掉了，这个函数主要是用来获取一个rbd上面的所有watcher，那watcher是什么呢？没跟rbd创建一个新的连接都会有一个watcher，也就是要获取这个rbd的所有客户端，我们可以通过分析创建快照的代码知道，创建快照要获取exclusive_lock锁，并且要知道这个锁现在被哪个watcher，也就是客户端给拥有这个，这样活把创建快照的请求分为local request和remote request交个锁的拥有者去执行创建快照元数据操作，而请求的所有者已经在创建连接refresh的时候已经保存到了m_locker中了，现在在获取watcher只是确认一下这个locker的owner是不是还存在。这里先等一下，我们想一下，在既有qemu客户端又有nova-compute客户端创建快照的操作的时候，因为虚拟机qemu是第一个操作这个rbd的，所以exclusive_lock的owner就是qemu进程。上面的代码的正常流程是nova-compute在创建rbd快照的时候，watcher会返回两个值，一个是qemu虚拟机客户端，一个nova-compute发起创建快照的这个自身客户端，而m_locker这个应该是qemu虚拟机这个客户端，在if判断的时候应该能匹配到qemu的客户端这个watcher，如过匹配到就是走下面的if和else，而m_force_break_lock是写死false<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void AcquireRequest&lt;I&gt;::send_break_lock() &#123;</span><br><span class="line">  ...</span><br><span class="line">  auto req = BreakRequest&lt;I&gt;::create(</span><br><span class="line">    m_image_ctx, m_locker, m_image_ctx.blacklist_on_break_lock, false, ctx);</span><br><span class="line">  req-&gt;send();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>就是上面创建的第四个参数，现在既然能走到send_blacklist，那就有两种可能，一种就是从osd那边返回的watcher是空的，没有进入for循环，一种就是没有匹配进入if也就是qemu虚拟机的watcher没了，猜想是第二种，那watcher为什么会没了呢？首先我们看一下watcher在osd那边是怎么存储的？</p>
+<ul>
+<li><ol start="5">
+<li>watcher持久化<br>watch持久化在前面的文章中我已经分析过是存储在rbd_header的文件对象的扩展属性中，如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 0.ee_head]# attr -q -g &quot;ceph._&quot; rbd\\uheader.301027238e1f29__head_A5BD3CEE__0   &gt; /root/object_info_t.txt</span><br><span class="line">[root@con02 0.ee_head]# attr -q -g &quot;ceph._@1&quot; rbd\\uheader.301027238e1f29__head_A5BD3CEE__0   &gt;&gt; /root/object_info_t.txt</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+</ul>
+<p>内容类似如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;oid&quot;: &#123;</span><br><span class="line">        &quot;oid&quot;: &quot;rbd_header.301027238e1f29&quot;,</span><br><span class="line">        &quot;key&quot;: &quot;&quot;,</span><br><span class="line">        &quot;snapid&quot;: -2,</span><br><span class="line">        &quot;hash&quot;: 2780642542,</span><br><span class="line">        &quot;max&quot;: 0,</span><br><span class="line">        &quot;pool&quot;: 0,</span><br><span class="line">        &quot;namespace&quot;: &quot;&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    &quot;watchers&quot;: &#123;</span><br><span class="line">        &quot;client.8079633&quot;: &#123;</span><br><span class="line">            &quot;cookie&quot;: 139996606507840,</span><br><span class="line">            &quot;timeout_seconds&quot;: 30,</span><br><span class="line">            &quot;addr&quot;: &#123;</span><br><span class="line">                &quot;nonce&quot;: 3613298630,</span><br><span class="line">                &quot;addr&quot;: &quot;127.0.0.1:0&quot;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们看到watchers是一个字典，当前只是示例，可以看到在watcher中有一个timeout_seconds字段，默认是30s，那这个字段是干嘛的呢，看名字就是超过30s删除，那是怎么删除</p>
+<ul>
+<li>6.watcher的timeout<br>watcher就是客户端，其实客户端为了保活，会通过心跳ping来更新超时，如何做的呢，首先心跳在objecter的tick函数中每个5s调用<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">void Objecter::tick()&#123;</span><br><span class="line">  ...</span><br><span class="line">  for (map&lt;uint64_t,LingerOp*&gt;::iterator p = s-&gt;linger_ops.begin();</span><br><span class="line">	p != s-&gt;linger_ops.end();</span><br><span class="line">	++p) &#123;</span><br><span class="line">      LingerOp *op = p-&gt;second;</span><br><span class="line">      LingerOp::unique_lock wl(op-&gt;watch_lock);</span><br><span class="line">      assert(op-&gt;session);</span><br><span class="line">      ldout(cct, 10) &lt;&lt; &quot; pinging osd that serves lingering tid &quot; &lt;&lt; p-&gt;first</span><br><span class="line">		     &lt;&lt; &quot; (osd.&quot; &lt;&lt; op-&gt;session-&gt;osd &lt;&lt; &quot;)&quot; &lt;&lt; dendl;</span><br><span class="line">      found = true;</span><br><span class="line">      if (op-&gt;is_watch &amp;&amp; op-&gt;registered &amp;&amp; !op-&gt;last_error)</span><br><span class="line">	_send_linger_ping(op);</span><br><span class="line">    &#125;</span><br><span class="line">  ...    </span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>通过_send_linger_ping就向osd发送心跳，以更新watcher的超时<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void Objecter::_send_linger_ping(LingerOp *info)&#123;</span><br><span class="line">  ...</span><br><span class="line">	opv[0].op.op = CEPH_OSD_OP_WATCH;</span><br><span class="line">  opv[0].op.watch.cookie = info-&gt;get_cookie();</span><br><span class="line">  opv[0].op.watch.op = CEPH_OSD_WATCH_OP_PING;</span><br><span class="line">  opv[0].op.watch.gen = info-&gt;register_gen;</span><br><span class="line">	...</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看到请求操作码是CEPH_OSD_OP_WATCH，这里还有一个watcher的操作码CEPH_OSD_WATCH_OP_PING，在osd端查看处理流程<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">int ReplicatedPG::do_osd_ops(OpContext *ctx, vector&lt;OSDOp&gt;&amp; ops)&#123;</span><br><span class="line">   ...</span><br><span class="line">	 case CEPH_OSD_OP_WATCH:&#123;</span><br><span class="line">		 ...</span><br><span class="line">		 else if (op.watch.op == CEPH_OSD_WATCH_OP_PING) &#123;</span><br><span class="line">	  ...</span><br><span class="line">	  dout(10) &lt;&lt; &quot; found existing watch &quot; &lt;&lt; w &lt;&lt; &quot; by &quot; &lt;&lt; entity &lt;&lt; dendl;</span><br><span class="line">	  p-&gt;second-&gt;got_ping(ceph_clock_now(NULL));</span><br><span class="line">	  result = 0;</span><br><span class="line">        &#125;</span><br><span class="line">		 ...</span><br><span class="line"></span><br><span class="line">	 &#125;</span><br><span class="line">	 ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过两个操作吗的匹配可以看到是got_ping进行处理，函数如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">void Watch::got_ping(utime_t t)</span><br><span class="line">&#123;</span><br><span class="line">  last_ping = t;</span><br><span class="line">  if (conn) &#123;</span><br><span class="line">    register_cb();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里看到有注册回调<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">void Watch::register_cb()</span><br><span class="line">&#123;</span><br><span class="line">  Mutex::Locker l(osd-&gt;watch_lock);</span><br><span class="line">  if (cb) &#123;</span><br><span class="line">    dout(15) &lt;&lt; &quot;re-registering callback, timeout: &quot; &lt;&lt; timeout &lt;&lt; dendl;</span><br><span class="line">    cb-&gt;cancel();</span><br><span class="line">    osd-&gt;watch_timer.cancel_event(cb);</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    dout(15) &lt;&lt; &quot;registering callback, timeout: &quot; &lt;&lt; timeout &lt;&lt; dendl;</span><br><span class="line">  &#125;</span><br><span class="line">  cb = new HandleWatchTimeout(self.lock());</span><br><span class="line">  osd-&gt;watch_timer.add_event_after(</span><br><span class="line">    timeout,</span><br><span class="line">    cb);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面就是watcher超时更新，大概意思就是如果有收到ping请求，就把原来的超时回调给删了，注册新的30s超时回调，通俗讲就是续命保活，好了到这里我们分析完了watcher超时更新，我们上面说过，加入加黑名单流程是因为没有匹配qemu的watcher，可以就是osd端没有收到ping心跳导致没有更细watcher的超时，然后watcher被删除了。而objecter的tick是每隔5s会调用一次，那为什么osd没有收到呢，那就回想一下我们开头的说的几个条件，osd磁盘性能很差，删除快照的时候产生大量的io，而tick发的心跳也是作为op请求网络发送到osd进行处理，那很有可能会出现osd在磁盘性能很差的情况下出现ping心跳请求被block，这也跟我们收到一分多钟的慢请求告警一致。好我们继续跟踪在触发了add blacklist之后，虚拟机的qemu进程是如何io block挂掉的</p>
+<ul>
+<li><p>7.add blacklist流程<br>创建快照时的回调类在触发add blacklist时，请求是发现mon的，mon在收到请求之后通过paxos，修改osdmap，把黑名单记录在了osdmap里面，由于osdmap的改变，osdmap的版本会加1，从而扩散到各个osd,下面是版本加1的osdmap</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	...</span><br><span class="line">	&quot;pg_temp&quot;: [],</span><br><span class="line">  &quot;blacklist&quot;: &#123;</span><br><span class="line">		&quot;127.0.0.1:0/147234759&quot;: &quot;2020-03-15 22:20:44.052504&quot;</span><br><span class="line">  &#125;,</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>7.qemu读写请求继续操作<br>qemu虚拟机根本不知道自己被加入了黑名单，还是会调用librbd继续发送读写请求，那我们看看osd那边是怎么处理</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void ReplicatedPG::do_op(OpRequestRef&amp; op)</span><br><span class="line">&#123;</span><br><span class="line">	...</span><br><span class="line">	// blacklisted?</span><br><span class="line">  if (get_osdmap()-&gt;is_blacklisted(m-&gt;get_source_addr())) &#123;</span><br><span class="line">    dout(10) &lt;&lt; &quot;do_op &quot; &lt;&lt; m-&gt;get_source_addr() &lt;&lt; &quot; is blacklisted&quot; &lt;&lt; dendl;</span><br><span class="line">    osd-&gt;reply_op_error(op, -EBLACKLISTED);</span><br><span class="line">    return;</span><br><span class="line">  &#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在osd的do_op函数中检查请求来的客户端是不是在黑名单中，是则返回EBLACKLISTED错误码，而这个错误码是108，也即是shutdown错误，所以我们看到qemu虚拟机日志中出现的108错误。<br>至此我们我们就分析完了</p>
+<h1 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h1><p>那有什么可以避免在watcher失效之后，不执行add blacklist，可以修改一个参数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void BreakRequest&lt;I&gt;::send_blacklist() &#123;</span><br><span class="line">  if (!m_blacklist_locker) &#123;</span><br><span class="line">    send_break_lock();</span><br><span class="line">    return;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  CephContext *cct = m_image_ctx.cct;</span><br><span class="line">  ldout(cct, 10) &lt;&lt; dendl;</span><br><span class="line"></span><br><span class="line">  // TODO: need async version of RadosClient::blacklist_add</span><br><span class="line">  using klass = BreakRequest&lt;I&gt;;</span><br><span class="line">  Context *ctx = create_context_callback&lt;klass, &amp;klass::handle_blacklist&gt;(</span><br><span class="line">    this);</span><br><span class="line">  m_image_ctx.op_work_queue-&gt;queue(new C_BlacklistClient&lt;I&gt;(m_image_ctx,</span><br><span class="line">                                                            m_locker.address,</span><br><span class="line">                                                            ctx), 0);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到在生成加黑名单的回调类之前，如果m_blacklist_locker为false，则可以跳过，这个参数是通过配置rbd_blacklist_on_break_lock赋予的，这个配置默认是True，所以修改配置为false，则可以避免add blacklist操作</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">rbd openstack</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/15/openstack-vm-block-IO-when-create-rbd-snap/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-ceph-aduit-log" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1030,84 +1165,6 @@
 
 
   
-    <article id="post-volume-boot-vm-can-delete-rebuild-resize-Why" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/">卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？</a>
-    </h1>
-  
-
-        
-        <a href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/" class="archive-article-date">
-  	<time datetime="2019-10-04T08:14:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-10-04</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>————————————————————————————————————————————————————————————————————————————<br>最近在使用卷启动虚拟机，比如配秒起，glance接cinder，这个过程遇到一个很奇怪的问题，秒起之后卷启动的虚拟机可以delete，resize，rebuild？<br>为什么？镜像秒起的虚拟机就不行，在秒起之后，如果后端接的ceph，秒起其实就是snap和clone。<br>首先我们使用卷启动一个虚拟机，然后创建一个镜像，然后通过这个size为0的镜像在创建一个虚拟机，这里其实是从第一个虚拟机的卷的快照创建第二个虚拟机的卷，这个时候第二个虚拟机的卷就依赖于第一个虚拟机。此时如果要删除第一个虚拟机的卷应该是删除不掉的，那为什么虚拟机操作可以呢？</p>
-<h1 id="根源"><a href="#根源" class="headerlink" title="根源"></a>根源</h1><p>————————————————————————————————————————————————————————————————————————————<br>看了一下代码，上面的delete，rebuild，resize都会涉及到删除操作，但是nova在删除虚拟机的时候会根据需求destroy调磁盘，代码在nova/virt/libvirt/driver.py下面<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">if destroy_disks:</span><br><span class="line">    # NOTE(haomai): destroy volumes if needed</span><br><span class="line">    if CONF.libvirt.images_type == &apos;lvm&apos;:</span><br><span class="line">        self._cleanup_lvm(instance, block_device_info)</span><br><span class="line">    if CONF.libvirt.images_type == &apos;rbd&apos;:</span><br><span class="line">        self._cleanup_rbd(instance)</span><br></pre></td></tr></table></figure></p>
-<p>在看一下_cleanup_rbd函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">def _cleanup_rbd(self, instance):</span><br><span class="line">    # NOTE(nic): On revert_resize, the cleanup steps for the root</span><br><span class="line">    # volume are handled with an &quot;rbd snap rollback&quot; command,</span><br><span class="line">    # and none of this is needed (and is, in fact, harmful) so</span><br><span class="line">    # filter out non-ephemerals from the list</span><br><span class="line">    if instance.task_state == task_states.RESIZE_REVERTING:</span><br><span class="line">        filter_fn = lambda disk: (disk.startswith(instance.uuid) and</span><br><span class="line">                                  disk.endswith(&apos;disk.local&apos;))</span><br><span class="line">    else:</span><br><span class="line">        filter_fn = lambda disk: disk.startswith(instance.uuid)</span><br><span class="line">    LibvirtDriver._get_rbd_driver().cleanup_volumes(filter_fn)</span><br></pre></td></tr></table></figure></p>
-<p>会走else分支，关键就在这个cleanup_volumes函数，一看就是清理卷，但是前面的rbd_driver<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">def _get_rbd_driver():</span><br><span class="line">    return rbd_utils.RBDDriver(</span><br><span class="line">            pool=CONF.libvirt.images_rbd_pool,</span><br><span class="line">            ceph_conf=CONF.libvirt.images_rbd_ceph_conf,</span><br><span class="line">            rbd_user=CONF.libvirt.rbd_user)</span><br></pre></td></tr></table></figure></p>
-<p>哦，其实是在nova对接的ceph池vms中去查找虚拟机id开头的rbd卷，然后删除，其实这个是对镜像启动的操作，也就是说nova没有处理卷启动情况的删除操作</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Openstack nova ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
@@ -1209,11 +1266,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1221,7 +1278,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1229,7 +1294,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1237,11 +1302,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1249,7 +1310,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1261,6 +1322,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
@@ -1269,7 +1338,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1281,39 +1350,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1321,7 +1362,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1333,19 +1378,31 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1357,11 +1414,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
               </li>
             
             <div class="clearfix"></div>
