@@ -783,22 +783,10 @@
     <div class="article-entry" itemprop="articleBody">
       
         <h1 id="坑"><a href="#坑" class="headerlink" title="坑"></a>坑</h1><ul>
-<li><ol>
-<li>target的创建时create命令，删除是clearconfig</li>
-</ol>
-</li>
-<li><ol start="2">
-<li>tpg有创建，没有删除接口</li>
-</ol>
-</li>
-<li><ol start="3">
-<li>创建新gateway没有进行同步</li>
-</ol>
-</li>
-<li><ol start="4">
-<li>lun在后端ceph的创建者，只有lun的owner节点</li>
-</ol>
-</li>
+<li>1.target的创建时create命令，删除是clearconfig</li>
+<li>2.tpg有创建，没有删除接口</li>
+<li>3.创建新gateway没有进行同步</li>
+<li>4.lun在后端ceph的创建者，只有lun的owner节点</li>
 </ul>
 
       
@@ -881,15 +869,11 @@
 </ul>
 <p>这样就可以删除了，有一下两个注意点</p>
 <ul>
-<li><ol>
-<li>iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2 是target的名字，也是内核对象的名字，也是configfs的一个目录名<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/sys/kernel/config/target/iscsi/iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2</span><br></pre></td></tr></table></figure>
+<li><p>1.iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2 是target的名字，也是内核对象的名字，也是configfs的一个目录名</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/sys/kernel/config/target/iscsi/iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2</span><br></pre></td></tr></table></figure>
 </li>
-</ol>
-</li>
-<li><ol start="2">
-<li>TPG构造函数中的3表示是tpg的id，学名叫tag<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">drwxr-xr-x 8 root root 0 Feb 26 14:29 tpgt_1</span><br><span class="line">drwxr-xr-x 8 root root 0 Feb 26 14:39 tpgt_2</span><br></pre></td></tr></table></figure>
-</li>
-</ol>
+<li><p>2.TPG构造函数中的3表示是tpg的id，学名叫tag</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">drwxr-xr-x 8 root root 0 Feb 26 14:29 tpgt_1</span><br><span class="line">drwxr-xr-x 8 root root 0 Feb 26 14:39 tpgt_2</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 <p>就是上面的1和2</p>
@@ -1270,11 +1254,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1298,15 +1282,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1314,11 +1294,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1358,11 +1342,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1374,7 +1358,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1382,7 +1366,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1402,11 +1386,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1414,11 +1398,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
               </li>
             
             <div class="clearfix"></div>
