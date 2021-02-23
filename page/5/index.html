@@ -150,6 +150,200 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-go-learn-5" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/27/go-learn-5/">每天5分钟go（5）</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/27/go-learn-5/" class="archive-article-date">
+  	<time datetime="2018-10-27T11:54:14.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-27</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-并发机制是在runtime库中实现的"><a href="#1-并发机制是在runtime库中实现的" class="headerlink" title="1. 并发机制是在runtime库中实现的"></a>1. 并发机制是在runtime库中实现的</h1><h1 id="2-go程序理论上可以运行10000个协程"><a href="#2-go程序理论上可以运行10000个协程" class="headerlink" title="2. go程序理论上可以运行10000个协程"></a>2. go程序理论上可以运行10000个协程</h1><h1 id="3-M-P-G模型中"><a href="#3-M-P-G模型中" class="headerlink" title="3. M P G模型中"></a>3. M P G模型中</h1><h2 id="3-1-M值的两种设置方法"><a href="#3-1-M值的两种设置方法" class="headerlink" title="3.1 M值的两种设置方法"></a>3.1 M值的两种设置方法</h2><ul>
+<li>初始化的时候可以设置</li>
+<li>之后可以通过runtime/debug设置<h2 id="3-2-P值的两种设置方法"><a href="#3-2-P值的两种设置方法" class="headerlink" title="3.2 P值的两种设置方法"></a>3.2 P值的两种设置方法</h2></li>
+<li>通过runtime.GOMAXPROCS设置</li>
+<li>通过环境变量GOMAXPROCS设置<br>p值有一个硬性上限 256<br>注意：通过runtime.GOMAXPROCS设置的时候会停止所有p和G，影响程序的性能，所以设置P值的时候一般是在main函数之前<h2 id="P有状态"><a href="#P有状态" class="headerlink" title="P有状态"></a>P有状态</h2>见go并发实践136页<br>P有两个队列，一个是可运行队列，用来存放即将运行的程序，另一个是自由队列，用来重用G，就不需要创建新的G<h2 id="go语句的执行顺序"><a href="#go语句的执行顺序" class="headerlink" title="go语句的执行顺序"></a>go语句的执行顺序</h2>步骤1：go 语句<br>步骤2：生成newporc<br>步骤3：本地p和调度器看看有没有可用的自由G，没有新建一个<br>步骤4：初始化关联go函数，G的状态以及ID<br>步骤5：存到本地P的runnext,然后会把原来runnext上面的G放到p的可运行队列的尾，如果队列满了，则追加到调度器的课运行队列中<h2 id="G也有状态"><a href="#G也有状态" class="headerlink" title="G也有状态"></a>G也有状态</h2>见go并发实践140页</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/27/go-learn-5/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-add-nova-periodic-task" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/20/add-nova-periodic-task/">nova周期性任务分析</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/20/add-nova-periodic-task/" class="archive-article-date">
+  	<time datetime="2018-10-20T03:14:24.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-20</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-周期任务"><a href="#1-周期任务" class="headerlink" title="1.周期任务"></a>1.周期任务</h1><p>周期性任务是指每隔指定时间运行一次指定任务，跟linux下面的crontab类似，那nova里面也有很多周期性的任务，比如周期性同步虚拟机的电源状态，周期信息上报计算节点的信息，这些都是在nova-compute服务做的，那这又是怎么实现的呢？</p>
+<h1 id="2-从nova-compute服务启动说起"><a href="#2-从nova-compute服务启动说起" class="headerlink" title="2.从nova-compute服务启动说起"></a>2.从nova-compute服务启动说起</h1><p>对于周期性的任务的启动，如果是你，你准备在哪里启动他们，思考3秒<br>1<br>2<br>3<br>好，应该是在nova-compute服务启动的时候就启动这些周期性的任务，至于这些任务是以何种方式运行，比如是以脱离nova-compute进程的外部进程(exec),还是子进程，还是以一个线程又或者是一个协程？我们来具体看一下。</p>
+<ul>
+<li>1.从cmd看服务启动流程<br>nova的所有服务都从cmd目录下面启动，nova-compute也不例外<br>main函数如下<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">def main():</span><br><span class="line">    config.parse_args(sys.argv)</span><br><span class="line">    logging.setup(CONF, &apos;nova&apos;)</span><br><span class="line">    utils.monkey_patch()</span><br><span class="line">    objects.register_all()</span><br><span class="line"></span><br><span class="line">    gmr.TextGuruMeditation.setup_autorun(version)</span><br><span class="line"></span><br><span class="line">    if not CONF.conductor.use_local:</span><br><span class="line">        block_db_access()</span><br><span class="line">        objects_base.NovaObject.indirection_api = \</span><br><span class="line">            conductor_rpcapi.ConductorAPI()</span><br><span class="line"></span><br><span class="line">    server = service.Service.create(binary=&apos;nova-compute&apos;,</span><br><span class="line">                                    topic=CONF.compute_topic,</span><br><span class="line">                                    db_allowed=CONF.conductor.use_local)</span><br><span class="line">    service.serve(server)</span><br><span class="line">    service.wait()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看出主要是生成一个service服务对象，这个对象是openstack抽出来的一个基础类，一个类代表一个服务，比如nova-api，nova-compute，这个有很多人已经分析过了，可以google一下<br>这里要注意我们要关注的是在创建service对象的时候，它有一个manager成员比较重要，我们来具体看一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">@classmethod</span><br><span class="line">def create(cls, host=None, binary=None, topic=None, manager=None,</span><br><span class="line">           report_interval=None, periodic_enable=None,</span><br><span class="line">           periodic_fuzzy_delay=None, periodic_interval_max=None,</span><br><span class="line">           db_allowed=True):</span><br><span class="line"></span><br><span class="line">    if not host:</span><br><span class="line">        host = CONF.host</span><br><span class="line">    if not binary:</span><br><span class="line">        binary = os.path.basename(sys.argv[0])</span><br><span class="line">    if not topic:</span><br><span class="line">        topic = binary.rpartition(&apos;nova-&apos;)[2]</span><br><span class="line">    if not manager:</span><br><span class="line">        manager_cls = (&apos;%s_manager&apos; %</span><br><span class="line">                       binary.rpartition(&apos;nova-&apos;)[2])</span><br><span class="line">        manager = CONF.get(manager_cls, None)</span><br><span class="line">    if report_interval is None:</span><br><span class="line">        report_interval = CONF.report_interval</span><br><span class="line">    if periodic_enable is None:</span><br><span class="line">        periodic_enable = CONF.periodic_enable</span><br><span class="line">    if periodic_fuzzy_delay is None:</span><br><span class="line">        periodic_fuzzy_delay = CONF.periodic_fuzzy_delay</span><br><span class="line"></span><br><span class="line">    debugger.init()</span><br><span class="line"></span><br><span class="line">    service_obj = cls(host, binary, topic, manager,</span><br><span class="line">                      report_interval=report_interval,</span><br><span class="line">                      periodic_enable=periodic_enable,</span><br><span class="line">                      periodic_fuzzy_delay=periodic_fuzzy_delay,</span><br><span class="line">                      periodic_interval_max=periodic_interval_max,</span><br><span class="line">                      db_allowed=db_allowed)</span><br><span class="line"></span><br><span class="line">    return service_obj</span><br></pre></td></tr></table></figure></p>
+<p>manager主要是nvoa-compute的业务处理入口，这个是在service初始化函数的时候，是通过类的动态函数加载的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">def __init__(self, host, binary, topic, manager, report_interval=None,</span><br><span class="line">             periodic_enable=None, periodic_fuzzy_delay=None,</span><br><span class="line">             periodic_interval_max=None, db_allowed=True,</span><br><span class="line">             *args, **kwargs):</span><br><span class="line">    ....</span><br><span class="line">    self.manager_class_name = manager</span><br><span class="line">    ....</span><br><span class="line">    manager_class = importutils.import_class(self.manager_class_name)</span><br><span class="line">    self.manager = manager_class(host=self.host, *args, **kwargs)</span><br><span class="line">    ....</span><br></pre></td></tr></table></figure></p>
+<p>这个manager对应的代码其实就是ComputeManager函数<br><img src="1.png" alt="aaa"><br>除了manager之外，还有一个periodic_enable属性,用来指示这个service支持周期性事件<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">periodic_enable = CONF.periodic_enable</span><br></pre></td></tr></table></figure></p>
+<p>上面会在service创建完之后，serve服务，就是启动服务，我们跟踪代码<br><img src="2.png" alt="bbb"></p>
+<ul>
+<li>2.服务start分析<br>service函数如下<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">def start(self):</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    if self.periodic_enable:</span><br><span class="line">        if self.periodic_fuzzy_delay:</span><br><span class="line">            initial_delay = random.randint(0, self.periodic_fuzzy_delay)</span><br><span class="line">        else:</span><br><span class="line">            initial_delay = None</span><br><span class="line"></span><br><span class="line">        self.tg.add_dynamic_timer(self.periodic_tasks,</span><br><span class="line">                                 initial_delay=initial_delay,</span><br><span class="line">                                 periodic_interval_max=</span><br><span class="line">                                    self.periodic_interval_max)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>过滤掉跟周期性调度无关的，可以看到如果service支持周期事件，则会在tg这个协程组中增加一个动态定时器，这个定时器就是用来做周期性任务的，可以看到定时器调用的是self.periodic_tasks，这个函数调用流程如下：<br><img src="3.png" alt="ccc"><br>可以有人会问PeriodicTasks是个啥，嗯，好吧，是时候亮出我的python本事了，解释一下nova的周期性事件调度框架</p>
+<ul>
+<li>3.manager继承关系<br>我一般比较喜欢看类的继承关系，通过继承关系能看项目的一个数据大概，想当年看ceph代码的时候就是靠着类的继承关系（好像扯远了）<br><img src="4.png" alt="ddd"><br>可以看到，我们nova的Computemanager间接继承了PeriodicTasks，是我们的compute的管理对象具有周期调度的能力，中间manager是服务管理对象的基类，nova api，conductor都会有一个，所以上面的periodic_tasks最终会调度到PeriodicTasks这个父类的方法中<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">def run_periodic_tasks(self, context, raise_on_error=False):</span><br><span class="line">    &quot;&quot;&quot;Tasks to be run at a periodic interval.&quot;&quot;&quot;</span><br><span class="line">    idle_for = DEFAULT_INTERVAL</span><br><span class="line">    for task_name, task in self._periodic_tasks:</span><br><span class="line">        full_task_name = &apos;.&apos;.join([self.__class__.__name__, task_name])</span><br><span class="line"></span><br><span class="line">        spacing = self._periodic_spacing[task_name]</span><br><span class="line">        last_run = self._periodic_last_run[task_name]</span><br><span class="line"></span><br><span class="line">        # Check if due, if not skip</span><br><span class="line">        idle_for = min(idle_for, spacing)</span><br><span class="line">        if last_run is not None:</span><br><span class="line">            delta = last_run + spacing - time.time()</span><br><span class="line">            if delta &gt; 0:</span><br><span class="line">                idle_for = min(idle_for, delta)</span><br><span class="line">                continue</span><br><span class="line"></span><br><span class="line">        LOG.debug(&quot;Running periodic task %(full_task_name)s&quot;,</span><br><span class="line">                  &#123;&quot;full_task_name&quot;: full_task_name&#125;)</span><br><span class="line">        self._periodic_last_run[task_name] = _nearest_boundary(</span><br><span class="line">            last_run, spacing)</span><br><span class="line"></span><br><span class="line">        try:</span><br><span class="line">            task(self, context)</span><br><span class="line">        except Exception as e:</span><br><span class="line">            if raise_on_error:</span><br><span class="line">                raise</span><br><span class="line">            LOG.exception(_LE(&quot;Error during %(full_task_name)s: %(e)s&quot;),</span><br><span class="line">                          &#123;&quot;full_task_name&quot;: full_task_name, &quot;e&quot;: e&#125;)</span><br><span class="line">        time.sleep(0)</span><br><span class="line"></span><br><span class="line">    return idle_for</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看出这个代码就是循环调用周期函数，然后执行<br>这里有一个问题周期性的函数怎么注册的呢，我们可以看到Computemanager类中，很多函数有这个装饰器periodic_task.periodic_task<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@periodic_task.periodic_task</span><br><span class="line">def _check_instance_build_time()</span><br></pre></td></tr></table></figure></p>
+<p>这有什么用呢，好我们分析一下周期任务框架</p>
+<ul>
+<li>4.周期任务框架<h2 id="4-1周期任务注册"><a href="#4-1周期任务注册" class="headerlink" title="4.1周期任务注册"></a>4.1周期任务注册</h2>就是使用上面提到的periodic_task.periodic_task装饰器对一个普通的函数进行注册就可以变成周期性任务函数，可以看一下装饰器函数<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">def periodic_task(*args, **kwargs):</span><br><span class="line"></span><br><span class="line">    def decorator(f):</span><br><span class="line">        # Test for old style invocation</span><br><span class="line">        if &apos;ticks_between_runs&apos; in kwargs:</span><br><span class="line">            raise InvalidPeriodicTaskArg(arg=&apos;ticks_between_runs&apos;)</span><br><span class="line"></span><br><span class="line">        # Control if run at all</span><br><span class="line">        f._periodic_task = True</span><br><span class="line">        f._periodic_external_ok = kwargs.pop(&apos;external_process_ok&apos;, False)</span><br><span class="line">        if f._periodic_external_ok and not CONF.run_external_periodic_tasks:</span><br><span class="line">            f._periodic_enabled = False</span><br><span class="line">        else:</span><br><span class="line">            f._periodic_enabled = kwargs.pop(&apos;enabled&apos;, True)</span><br><span class="line">        f._periodic_name = kwargs.pop(&apos;name&apos;, f.__name__)</span><br><span class="line"></span><br><span class="line">        # Control frequency</span><br><span class="line">        f._periodic_spacing = kwargs.pop(&apos;spacing&apos;, 0)</span><br><span class="line">        f._periodic_immediate = kwargs.pop(&apos;run_immediately&apos;, False)</span><br><span class="line">        if f._periodic_immediate:</span><br><span class="line">            f._periodic_last_run = None</span><br><span class="line">        else:</span><br><span class="line">            f._periodic_last_run = time.time()</span><br><span class="line">        return f</span><br><span class="line"></span><br><span class="line">        return decorator</span><br><span class="line">    else:</span><br><span class="line">        return decorator(args[0])</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>函数很简单的就是给普通的函数增加了一些属性，可以周期调度的属性，这个是用了python中一切都是对象的特性，对象都可以增加属性</p>
+<h2 id="4-2周期任务的加载"><a href="#4-2周期任务的加载" class="headerlink" title="4.2周期任务的加载"></a>4.2周期任务的加载</h2><p>通过上面4.1周期性任务注册之后，任务是怎么加载到Computemanager的呢？<br>我们注意到<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@six.add_metaclass(_PeriodicTasksMeta)</span><br><span class="line">class PeriodicTasks(object):</span><br></pre></td></tr></table></figure></p>
+<p>PeriodicTasks这个类有一个元类，嗯，使用到了python的元编程，一般元类用来可以改变类对象的构造方法，python中的构造方法和初始化方法可以google，这里不是重点<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">class _PeriodicTasksMeta(type):</span><br><span class="line">    ...</span><br><span class="line">    def __init__(cls, names, bases, dict_):</span><br><span class="line">        ....</span><br><span class="line">        for value in cls.__dict__.values():</span><br><span class="line">            if getattr(value, &apos;_periodic_task&apos;, False):</span><br><span class="line">                cls._add_periodic_task(value)</span><br></pre></td></tr></table></figure></p>
+<p>这里面的__init__就是构造方案，就是在生成PeriodicTasks类对象的构造方法，也是生成Computemanager类对象的构造方法，里面有一个_add_periodic_task函数，嗯，这就是把周期性任务函数加入Computemanager的地方，这里的cls不是指代PeriodicTasks类，而是Computemanager,cls.__dict__这个可以找到一个类的所有属性，包括变量和方法，我们上面注册看到，周期性的方法是增加了_periodic_task属性，所以getattr(value, ‘_periodic_task’, False)这个函数就是捞出周期性任务<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">def _add_periodic_task(cls, task):</span><br><span class="line"></span><br><span class="line">    if task._periodic_spacing &lt; 0:</span><br><span class="line">        LOG.info(_LI(&apos;Skipping periodic task %(task)s because &apos;</span><br><span class="line">                     &apos;its interval is negative&apos;),</span><br><span class="line">                 &#123;&apos;task&apos;: name&#125;)</span><br><span class="line">        return False</span><br><span class="line">    if not task._periodic_enabled:</span><br><span class="line">        LOG.info(_LI(&apos;Skipping periodic task %(task)s because &apos;</span><br><span class="line">                     &apos;it is disabled&apos;),</span><br><span class="line">                 &#123;&apos;task&apos;: name&#125;)</span><br><span class="line">        return False</span><br><span class="line"></span><br><span class="line">    if task._periodic_spacing == 0:</span><br><span class="line">        task._periodic_spacing = DEFAULT_INTERVAL</span><br><span class="line"></span><br><span class="line">    cls._periodic_tasks.append((name, task))</span><br><span class="line">    cls._periodic_spacing[name] = task._periodic_spacing</span><br><span class="line">    return True</span><br></pre></td></tr></table></figure></p>
+<p>可以看出加入任务主要是在Computemanager对象中增加三个缓存对象_periodic_tasks,_periodic_spacing,以及下面的_periodic_last_run,分别代表任务队列，每个任务的执行间隔，每个任务的上次运行时间点，使用的dict存储<br>说到这里我们大致知道，在service服务对象创建的时候会生成computemanager对象，生成这个对象的时候会把这个类中使用periodic_task.periodic_task装饰的任务注册到computemanager对象的三个缓存dict中，然后再在service.start启动的时候，会根据是否本服务支持周期任务调度，在协程池中增加一个动态定时器，这个定时器会有周期性的调度在computermanager中注册的周期性任务</p>
+<ul>
+<li>5.周期任务是跑在线程还是协程<br>那么这些周期任务是怎么运行的呢？这个就需要我们去看一下那个动态定时器<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">def add_dynamic_timer(self, callback, initial_delay=None,</span><br><span class="line">                      periodic_interval_max=None, *args, **kwargs):</span><br><span class="line">    timer = loopingcall.DynamicLoopingCall(callback, *args, **kwargs)</span><br><span class="line">    timer.start(initial_delay=initial_delay,</span><br><span class="line">                periodic_interval_max=periodic_interval_max)</span><br><span class="line">    self.timers.append(timer)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看出定时器就是一个loopcall，只不过是会根据任务指定的时间间隔进行周期性的调度，进入timer.start函数看一下周期性任务是怎么运行的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">def start(self, initial_delay=None, periodic_interval_max=None):</span><br><span class="line">    self._running = True</span><br><span class="line">    done = event.Event()</span><br><span class="line"></span><br><span class="line">    def _inner():</span><br><span class="line">        if initial_delay:</span><br><span class="line">            greenthread.sleep(initial_delay)</span><br><span class="line"></span><br><span class="line">        try:</span><br><span class="line">            while self._running:</span><br><span class="line">                idle = self.f(*self.args, **self.kw)</span><br><span class="line">                if not self._running:</span><br><span class="line">                    break</span><br><span class="line"></span><br><span class="line">                if periodic_interval_max is not None:</span><br><span class="line">                    idle = min(idle, periodic_interval_max)</span><br><span class="line">                LOG.debug(&apos;Dynamic looping call %(func_name)r sleeping &apos;</span><br><span class="line">                          &apos;for %(idle).02f seconds&apos;,</span><br><span class="line">                          &#123;&apos;func_name&apos;: self.f, &apos;idle&apos;: idle&#125;)</span><br><span class="line">                greenthread.sleep(idle)</span><br><span class="line">        except LoopingCallDone as e:</span><br><span class="line">            self.stop()</span><br><span class="line">            done.send(e.retvalue)</span><br><span class="line">        except Exception:</span><br><span class="line">            LOG.exception(_LE(&apos;in dynamic looping call&apos;))</span><br><span class="line">            done.send_exception(*sys.exc_info())</span><br><span class="line">            return</span><br><span class="line">        else:</span><br><span class="line">            done.send(True)</span><br><span class="line"></span><br><span class="line">    self.done = done</span><br><span class="line"></span><br><span class="line">    greenthread.spawn(_inner)</span><br><span class="line">    return self.done</span><br></pre></td></tr></table></figure></p>
+<p>找到答案了，周期任务是以协程方式运行的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">greenthread.spawn(_inner)</span><br></pre></td></tr></table></figure></p>
+<p>而且是所有的周期任务都在一个协程里面使用死循环运行<br>到这里，周期性任务框架讲完，那我们如何增加自己的周期性任务呢</p>
+<h1 id="3-增加周期性的任务"><a href="#3-增加周期性的任务" class="headerlink" title="3.增加周期性的任务"></a>3.增加周期性的任务</h1><ul>
+<li>1.在computemanager中增加需要周期性任务运行的逻辑代码函数然后使用periodic_task.periodic_task装饰器进行修饰</li>
+<li>2.可以要增加一个周期任务的间隔时间的配置参数作为spacing参数，例如<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">periodic_task.periodic_task(spacing=CONF.scheduler_instance_sync_interval)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="4-后续有空可以分享一下ceph代码中的周期性任务调度方法"><a href="#4-后续有空可以分享一下ceph代码中的周期性任务调度方法" class="headerlink" title="4.后续有空可以分享一下ceph代码中的周期性任务调度方法"></a>4.后续有空可以分享一下ceph代码中的周期性任务调度方法</h1>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">nova periodic</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/20/add-nova-periodic-task/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-k8s-learn-14" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -830,264 +1024,6 @@
 
 
   
-    <article id="post-go-learn-3" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/06/go-learn-3/">每天5分钟go-3</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/06/go-learn-3/" class="archive-article-date">
-  	<time datetime="2018-10-06T07:49:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-06</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="go的并发"><a href="#go的并发" class="headerlink" title="go的并发"></a>go的并发</h1><ul>
-<li>同步时遇到竟态<br>有两种解决：</li>
-</ul>
-<ol>
-<li>原子操作（sync/atomic）</li>
-<li>临界区（互斥）</li>
-</ol>
-<h1 id="go中的管道使用"><a href="#go中的管道使用" class="headerlink" title="go中的管道使用"></a>go中的管道使用</h1><ul>
-<li><p>os/exec<br>使用示例</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cmd0 := exec.Command(&quot;echo&quot;, &quot;-n&quot;, &quot;My first&quot;)</span><br><span class="line">cmd0.Start()</span><br><span class="line">stdout0, err := cmd0.StdoutPipe()</span><br><span class="line">output0 := make([]byte, 30)</span><br><span class="line">n, err := stdout0.Read(output0)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>两个进程间管道的使用示例</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">cmd1 := exec.Command(&quot;ps&quot;, &quot;aux&quot;)</span><br><span class="line">cmd2 := exec.Command(&quot;grep&quot;, &quot;apipe&quot;)</span><br><span class="line">var outputBuf1 bytes.Buffer</span><br><span class="line">cmd1.Stdout = &amp;outputBuf1</span><br><span class="line">if err := cmd1.Start(); err != nil &#123;</span><br><span class="line">        fmt.Printf(&quot;Error: The first command can not be startup %s\n&quot;, err)</span><br><span class="line">        return</span><br><span class="line">&#125;</span><br><span class="line">if err := cmd1.Wait(); err != nil &#123;</span><br><span class="line">        fmt.Printf(&quot;Error: Couldn&apos;t wait for the first command: %s\n&quot;, err)</span><br><span class="line">        return</span><br><span class="line">&#125;</span><br><span class="line">cmd2.Stdin = &amp;outputBuf1</span><br><span class="line">var outputBuf2 bytes.Buffer</span><br><span class="line">cmd2.Stdout = &amp;outputBuf2</span><br><span class="line">if err := cmd2.Start(); err != nil &#123;</span><br><span class="line">        fmt.Printf(&quot;Error: The second command can not be startup: %s\n&quot;, err)</span><br><span class="line">        return</span><br><span class="line">&#125;</span><br><span class="line">if err := cmd2.Wait(); err != nil &#123;</span><br><span class="line">        fmt.Printf(&quot;Error: Couldn&apos;t wait for the second command: %s\n&quot;, err)</span><br><span class="line">        return</span><br><span class="line">&#125;</span><br><span class="line">fmt.Printf(&quot;%s\n&quot;, outputBuf2.Bytes())</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>此管道为匿名管道</p>
-<ul>
-<li>命令管道创建<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">reader, writer, err := os.Pipe()</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>注意：匿名管道会在管道缓冲区被写满之后使写数据的进程阻塞，命名管道会在其中一段未被就绪钱阻塞另一端的进程</p>
-<ul>
-<li>基于内存的有原子操作保证的管道<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">reader, writer := io.Pipe()</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h1 id="信号"><a href="#信号" class="headerlink" title="信号"></a>信号</h1><p>是IPC中唯一一种异步通信方式<br>信号的来源<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. 键盘输入</span><br><span class="line">2. 硬件故障</span><br><span class="line">3. 系统函数调用</span><br><span class="line">4. 软件中的非法运算</span><br></pre></td></tr></table></figure></p>
-<p>信号所在代码库os/signal</p>
-<ul>
-<li><p>发送信号函数</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func Notify（）</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>两个信号是不能被忽略的<br>信号可以被忽略，捕捉和执行默认操作，有两个信号不能被忽略:SIGKILL和SIGSTOP</p>
-</li>
-<li><p>恢复信号的默认操作</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func Stop()</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>go中操作进程</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. os.StartProcess()启动进程，返回进程值</span><br><span class="line">2. os.FindProcess()查找进程， 返回进程值</span><br><span class="line">3. 调用进程值的signal方法可以给进程发送信号</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h1 id="socket"><a href="#socket" class="headerlink" title="socket"></a>socket</h1><p>包net</p>
-<ul>
-<li><p>服务端</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">net.Listen()</span><br><span class="line">lintener.Accept()</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>客户端</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">func Dial()</span><br><span class="line">func DialTime()同时设置超时时间</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>操作系统的socket操作不是阻塞的</p>
-</li>
-<li>socket关闭之后，read会返回io.EOF错误</li>
-<li>net.Conn方法<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Read</span><br><span class="line">Write</span><br><span class="line">Close</span><br><span class="line">LocalAddr</span><br><span class="line">RemoteAddr</span><br><span class="line">SetDeadline（超时时间，包括读写，还有其他）,超时时间需要每次循环都要设置，使用time.Time&#123;&#125;零值参数取消超时时间</span><br><span class="line">SetReadDeadline（读超时时间）</span><br><span class="line">SetWriteDeadline（写超时时间）</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>注:客户端也是有端口，毕竟是端到端的通信，不过客户端的端口是内核自己分配的</p>
-<ul>
-<li>闲置连接<br>超时说明这个连接已经是闲置连接</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/06/go-learn-3/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-four-cases-when-boot-from-volume" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/05/four-cases-when-boot-from-volume/">卷启动虚拟机的四种情况</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/05/four-cases-when-boot-from-volume/" class="archive-article-date">
-  	<time datetime="2018-10-05T08:18:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-05</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="卷启动虚拟机"><a href="#卷启动虚拟机" class="headerlink" title="卷启动虚拟机"></a>卷启动虚拟机</h1><p>卷启动虚拟机的使用方式有很多，这里通过看代码列出四种使用场景</p>
-<h2 id="1-glance直接接ceph，使用images池"><a href="#1-glance直接接ceph，使用images池" class="headerlink" title="1.glance直接接ceph，使用images池"></a>1.glance直接接ceph，使用images池</h2><ul>
-<li>镜像在ceph的images池中，其实我们可以直接通过ceph的clone拷贝镜像的rbd到volumes（cinder池）池中就可以，不过这要把glance的show_multiple_locations和show_dirct_url两个配置打开，这两个配置主要是用来输出image的时候把在ceph上面的位置信息也输出来</li>
-<li>代码如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">cinder/volume/flows/manager/create_volume.py</span><br><span class="line">_create_from_image</span><br><span class="line">def _create_from_image(self, context, volume,</span><br><span class="line">                       image_location, image_id, image_meta,</span><br><span class="line">                       image_service, **kwargs):</span><br><span class="line">    if (CONF.image_conversion_dir and not</span><br><span class="line">            os.path.exists(CONF.image_conversion_dir)):</span><br><span class="line">        os.makedirs(CONF.image_conversion_dir)</span><br><span class="line">    try:</span><br><span class="line">        image_utils.check_available_space(CONF.image_conversion_dir,</span><br><span class="line">                                          image_meta[&apos;size&apos;], image_id)</span><br><span class="line">    except exception.ImageTooBig as err:</span><br><span class="line">        with excutils.save_and_reraise_exception():</span><br><span class="line">            self.message.create(</span><br><span class="line">                context,</span><br><span class="line">                message_field.Action.COPY_IMAGE_TO_VOLUME,</span><br><span class="line">                resource_uuid=volume.id,</span><br><span class="line">                detail=message_field.Detail.NOT_ENOUGH_SPACE_FOR_IMAGE,</span><br><span class="line">                exception=err)</span><br><span class="line"></span><br><span class="line">    virtual_size = image_meta.get(&apos;virtual_size&apos;)</span><br><span class="line">    if virtual_size:</span><br><span class="line">        virtual_size = image_utils.check_virtual_size(virtual_size,</span><br><span class="line">                                                      volume.size,</span><br><span class="line">                                                      image_id)</span><br><span class="line"></span><br><span class="line">    volume_is_encrypted = volume.encryption_key_id is not None</span><br><span class="line">    cloned = False</span><br><span class="line">    model_update = None</span><br><span class="line">    if not volume_is_encrypted:</span><br><span class="line">        model_update, cloned = self.driver.clone_image(context,</span><br><span class="line">                                                       volume,</span><br><span class="line">                                                       image_location,</span><br><span class="line">                                                       image_meta,</span><br><span class="line">                                                       image_service)</span><br><span class="line"></span><br><span class="line">    # Try and clone the image if we have it set as a glance location.</span><br><span class="line">    if not cloned and &apos;cinder&apos; in CONF.allowed_direct_url_schemes:</span><br><span class="line">        model_update, cloned = self._clone_image_volume(context,</span><br><span class="line">                                                        volume,</span><br><span class="line">                                                        image_location,</span><br><span class="line">                                                        image_meta)</span><br><span class="line"></span><br><span class="line">    # Try and use the image cache, and download if not cached.</span><br><span class="line">    if not cloned:</span><br><span class="line">        model_update = self._create_from_image_cache_or_download(</span><br><span class="line">            context,</span><br><span class="line">            volume,</span><br><span class="line">            image_location,</span><br><span class="line">            image_id,</span><br><span class="line">            image_meta,</span><br><span class="line">            image_service)</span><br><span class="line"></span><br><span class="line">    self._handle_bootable_volume_glance_meta(context, volume,</span><br><span class="line">                                             image_id=image_id,</span><br><span class="line">                                             image_meta=image_meta)</span><br><span class="line">    return model_update</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>其中clone_image就是上面第一种情况<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">def clone_image(self, context, volume,</span><br><span class="line">                image_location, image_meta,</span><br><span class="line">                image_service):</span><br><span class="line">    if image_location:</span><br><span class="line">        # Note: image_location[0] is glance image direct_url.</span><br><span class="line">        # image_location[1] contains the list of all locations (including</span><br><span class="line">        # direct_url) or None if show_multiple_locations is False in</span><br><span class="line">        # glance configuration.</span><br><span class="line">        if image_location[1]:</span><br><span class="line">            url_locations = [location[&apos;url&apos;] for</span><br><span class="line">                             location in image_location[1]]</span><br><span class="line">        else:</span><br><span class="line">            url_locations = [image_location[0]]</span><br><span class="line"></span><br><span class="line">        # iterate all locations to look for a cloneable one.</span><br><span class="line">        for url_location in url_locations:</span><br><span class="line">            if url_location and self._is_cloneable(</span><br><span class="line">                    url_location, image_meta):</span><br><span class="line">                _prefix, pool, image, snapshot = \</span><br><span class="line">                    self._parse_location(url_location)</span><br><span class="line">                volume_update = self._clone(volume, pool, image, snapshot)</span><br><span class="line">                volume_update[&apos;provider_location&apos;] = None</span><br><span class="line">                self._resize(volume)</span><br><span class="line">                return volume_update, True</span><br><span class="line">    return (&#123;&#125;, False)</span><br></pre></td></tr></table></figure></p>
-<p>直接就是分析镜像的location，然后对镜像的snap镜像clone，很快，秒级</p>
-<h2 id="2-glance不直接对接ceph，而是对接cinder，这个是glance新支持的"><a href="#2-glance不直接对接ceph，而是对接cinder，这个是glance新支持的" class="headerlink" title="2.glance不直接对接ceph，而是对接cinder，这个是glance新支持的"></a>2.glance不直接对接ceph，而是对接cinder，这个是glance新支持的</h2><ul>
-<li><p>这个不仅需要把glance的两个配置打开，还要配置cinder的配置：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">allowed_direct_url_schemes = cinder</span><br><span class="line">glance_api_version = 2</span><br><span class="line">image_upload_use_cinder_backend = true</span><br><span class="line">image_upload_use_internal_tenant = true</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>代码就是如下的分支：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">if not cloned and &apos;cinder&apos; in CONF.allowed_direct_url_schemes:</span><br><span class="line">    model_update, cloned = self._clone_image_volume(context,</span><br><span class="line">                                                    volume,</span><br><span class="line">                                                    image_location,</span><br><span class="line">                                                    image_meta)</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">def _clone_image_volume(self, context, volume, image_location, image_meta):</span><br><span class="line">    &quot;&quot;&quot;Create a volume efficiently from an existing image.</span><br><span class="line"></span><br><span class="line">    Returns a dict of volume properties eg. provider_location,</span><br><span class="line">    boolean indicating whether cloning occurred</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    # NOTE (lixiaoy1): currently can&apos;t create volume from source vol with</span><br><span class="line">    # different encryptions, so just return.</span><br><span class="line">    if not image_location or volume.encryption_key_id:</span><br><span class="line">        return None, False</span><br><span class="line"></span><br><span class="line">    if (image_meta.get(&apos;container_format&apos;) != &apos;bare&apos; or</span><br><span class="line">            image_meta.get(&apos;disk_format&apos;) != &apos;raw&apos;):</span><br><span class="line">        LOG.info(&quot;Requested image %(id)s is not in raw format.&quot;,</span><br><span class="line">                 &#123;&apos;id&apos;: image_meta.get(&apos;id&apos;)&#125;)</span><br><span class="line">        return None, False</span><br><span class="line"></span><br><span class="line">    image_volume = None</span><br><span class="line">    direct_url, locations = image_location</span><br><span class="line">    urls = set([direct_url] + [loc.get(&apos;url&apos;) for loc in locations or []])</span><br><span class="line">    image_volume_ids = [url[9:] for url in urls</span><br><span class="line">                        if url and url.startswith(&apos;cinder://&apos;)]</span><br><span class="line">    image_volumes = self.db.volume_get_all_by_host(</span><br><span class="line">        context, volume[&apos;host&apos;], filters=&#123;&apos;id&apos;: image_volume_ids&#125;)</span><br><span class="line"></span><br><span class="line">    for image_volume in image_volumes:</span><br><span class="line">        # For the case image volume is stored in the service tenant,</span><br><span class="line">        # image_owner volume metadata should also be checked.</span><br><span class="line">        image_owner = None</span><br><span class="line">        volume_metadata = image_volume.get(&apos;volume_metadata&apos;) or &#123;&#125;</span><br><span class="line">        for m in volume_metadata:</span><br><span class="line">            if m[&apos;key&apos;] == &apos;image_owner&apos;:</span><br><span class="line">                image_owner = m[&apos;value&apos;]</span><br><span class="line">        if (image_meta[&apos;owner&apos;] != volume[&apos;project_id&apos;] and</span><br><span class="line">                image_meta[&apos;owner&apos;] != image_owner):</span><br><span class="line">            LOG.info(&quot;Skipping image volume %(id)s because &quot;</span><br><span class="line">                     &quot;it is not accessible by current Tenant.&quot;,</span><br><span class="line">                     &#123;&apos;id&apos;: image_volume.id&#125;)</span><br><span class="line">            continue</span><br><span class="line"></span><br><span class="line">        LOG.info(&quot;Will clone a volume from the image volume &quot;</span><br><span class="line">                 &quot;%(id)s.&quot;, &#123;&apos;id&apos;: image_volume.id&#125;)</span><br><span class="line">        break</span><br><span class="line">    else:</span><br><span class="line">        LOG.debug(&quot;No accessible image volume for image %(id)s found.&quot;,</span><br><span class="line">                  &#123;&apos;id&apos;: image_meta[&apos;id&apos;]&#125;)</span><br><span class="line">        return None, False</span><br><span class="line"></span><br><span class="line">    try:</span><br><span class="line">        ret = self.driver.create_cloned_volume(volume, image_volume)</span><br><span class="line">        self._cleanup_cg_in_volume(volume)</span><br><span class="line">        return ret, True</span><br><span class="line">    except (NotImplementedError, exception.CinderException):</span><br><span class="line">        LOG.exception(&apos;Failed to clone image volume %(id)s.&apos;,</span><br><span class="line">                      &#123;&apos;id&apos;: image_volume[&apos;id&apos;]&#125;)</span><br><span class="line">        return None, False</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">create_cloned_volume</span><br><span class="line">判断cinder的rbd_max_clone_depth配置：</span><br><span class="line">  1. 如果&lt;=0，则使用rbd copy创建新卷</span><br><span class="line">  2. 如果&gt;0, 同时当前缓存卷的深度==rbd_max_clone_depth，则要先做flatten操作，然后在做snap加clone</span><br><span class="line">  3. 如果&gt;0, 同时当前缓存卷的深度&lt;rbd_max_clone_depth, 则直接snap加clone</span><br></pre></td></tr></table></figure>
-<p>从cinder卷中取出卷id，然后也是clone，很快，秒级</p>
-<h3 id="3-对镜像做cache"><a href="#3-对镜像做cache" class="headerlink" title="3.对镜像做cache"></a>3.对镜像做cache</h3><ul>
-<li>对镜像做cache，可以设置把启动的卷缓存在某一个租户下面，这样以后再从这个镜像使用卷启动直接就可以从缓存的卷做快照加clone，还是很快的，秒级，不过如果缓存中没有，也就是第一次使用这个镜像从卷启动，则就是常规流程，先把镜像下载到本地，如果不是raw格式还要做一下转化，然后在上传到创建的空的rbd中，使用的是rbd import命令</li>
-<li><p>需要增加的配置</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">cinder_internal_tenant_project_id = 13d54e99646f4d04a52323576d35ab44</span><br><span class="line">cinder_internal_tenant_user_id = 65c9479b8bc24869b7bf441a147d8404</span><br><span class="line">allowed_direct_url_schemes = cinder</span><br><span class="line">image_upload_use_internal_tenant = true</span><br><span class="line">image_volume_cache_enabled = true</span><br><span class="line">image_volume_cache_max_size_gb = 0</span><br><span class="line">image_volume_cache_max_count = 0</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>代码分析</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">if not cloned:</span><br><span class="line">    model_update = self._create_from_image_cache_or_download(</span><br><span class="line">        context,</span><br><span class="line">        volume,</span><br><span class="line">        image_location,</span><br><span class="line">        image_id,</span><br><span class="line">        image_meta,</span><br><span class="line">        image_service)</span><br></pre></td></tr></table></figure>
-<ul>
-<li>第一次使用镜像从卷启动:<ul>
-<li>下载镜像到本地临时目录（可以配置）</li>
-<li>copy数据到volume</li>
-<li>在从这个volume创建一个缓存volume（在同一个池）</li>
-<li>把这个缓存volume加入到cache数据库中</li>
-</ul>
-</li>
-<li>cache中有缓存了：<ul>
-<li>从cache取出缓存volume</li>
-<li>判断cinder的rbd_max_clone_depth配置：<ol>
-<li>如果&lt;=0，则使用rbd copy创建新卷</li>
-<li>如果&gt;0, 同时当前缓存卷的深度==rbd_max_clone_depth，则要先做flatten操作，然后在做snap加clone</li>
-<li>如果&gt;0, 同时当前缓存卷的深度&lt;rbd_max_clone_depth, 则直接snap加clone</li>
-</ol>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="4-常规流程，下载到本地"><a href="#4-常规流程，下载到本地" class="headerlink" title="4.常规流程，下载到本地"></a>4.常规流程，下载到本地</h3><p>下载到本地的流程跟上面3情况的”第一次使用镜像从卷启动”差不多，只是不要记录到cache数据库</p>
-<ul>
-<li>下载镜像到本地临时目录（可以配置）</li>
-<li>copy数据到volume</li>
-<li>在从这个volume创建一个缓存volume</li>
-</ul>
-<p>由于笔者不能开启glance中location的配置，所以选择做镜像卷做缓存还是比较好的</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack nova cinder glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/05/four-cases-when-boot-from-volume/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/4/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/6/">Next &raquo;</a>
@@ -1193,10 +1129,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
@@ -1205,7 +1137,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1217,23 +1157,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1245,7 +1177,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1253,7 +1185,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1261,11 +1193,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1277,15 +1213,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1321,11 +1257,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">

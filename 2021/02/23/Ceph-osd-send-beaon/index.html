@@ -6,15 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Tag: Ceph osd | 小甲师兄</title>
+  <title>Ceph osd发送beaon请求分析 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="小甲师兄">
-<meta property="og:url" content="http://yoursite.com/tags/Ceph-osd/index.html">
+  <meta name="description" content="问题在调试mon的时候，发现osd被标记为down了，为什么？ 分析 1.ceph的osd每隔5分钟会向mon上报一次1234567891011121314151617181920212223242526void OSD::tick_without_osd_lock()&amp;#123;  ....  if (is_active()) &amp;#123;    if (!scrub_random_backof">
+<meta name="keywords" content="Ceph">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ceph osd发送beaon请求分析">
+<meta property="og:url" content="http://yoursite.com/2021/02/23/Ceph-osd-send-beaon/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="问题在调试mon的时候，发现osd被标记为down了，为什么？ 分析 1.ceph的osd每隔5分钟会向mon上报一次1234567891011121314151617181920212223242526void OSD::tick_without_osd_lock()&amp;#123;  ....  if (is_active()) &amp;#123;    if (!scrub_random_backof">
 <meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2021-02-23T12:32:15.718Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄">
+<meta name="twitter:title" content="Ceph osd发送beaon请求分析">
+<meta name="twitter:description" content="问题在调试mon的时候，发现osd被标记为down了，为什么？ 分析 1.ceph的osd每隔5分钟会向mon上报一次1234567891011121314151617181920212223242526void OSD::tick_without_osd_lock()&amp;#123;  ....  if (is_active()) &amp;#123;    if (!scrub_random_backof">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -148,60 +153,211 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-Ceph-osd-send-beaon" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2020" class="archive-year">2020</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/03/30/OSD-Slow-start-due-to-high-frequency-snapshot/" class="archive-article-date">
-  	<time datetime="2020-03-30T02:00:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-30</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/03/30/OSD-Slow-start-due-to-high-frequency-snapshot/">频繁的创建删除快照导致OSD启动很慢</a>
+    <h1 class="article-title" itemprop="name">
+      Ceph osd发送beaon请求分析
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2021/02/23/Ceph-osd-send-beaon/" class="archive-article-date">
+  	<time datetime="2021-02-23T12:22:33.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-23</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>在调试mon的时候，发现osd被标记为down了，为什么？</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><ul>
+<li>1.ceph的osd每隔5分钟会向mon上报一次<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">void OSD::tick_without_osd_lock()</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  if (is_active()) &#123;</span><br><span class="line">    if (!scrub_random_backoff()) &#123;</span><br><span class="line">      sched_scrub();</span><br><span class="line">    &#125;</span><br><span class="line">    service.promote_throttle_recalibrate();</span><br><span class="line">    resume_creating_pg();</span><br><span class="line">    bool need_send_beacon = false;</span><br><span class="line">    const auto now = ceph::coarse_mono_clock::now();</span><br><span class="line">    &#123;</span><br><span class="line">      // borrow lec lock to pretect last_sent_beacon from changing</span><br><span class="line">      Mutex::Locker l&#123;min_last_epoch_clean_lock&#125;;</span><br><span class="line">      const auto elapsed = now - last_sent_beacon;</span><br><span class="line">      if (chrono::duration_cast&lt;chrono::seconds&gt;(elapsed).count() &gt;</span><br><span class="line">        cct-&gt;_conf-&gt;osd_beacon_report_interval) &#123;</span><br><span class="line">        need_send_beacon = true;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (need_send_beacon) &#123;</span><br><span class="line">      send_beacon(now);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>小甲在给mon打断点的时候，其实是stop了进程，那mon那边是不会处理这个请求的，也就会导致mon里面记录的osd report时间不会更新，最后导致osd超过15分钟被标记为down</p>
+<ul>
+<li>2.mon的osdmonitor会周期性的tick会调用handle_osd_timeouts<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">void OSDMonitor::tick()</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  if (osdmap.require_osd_release &gt;= CEPH_RELEASE_LUMINOUS &amp;&amp;</span><br><span class="line">      mon-&gt;monmap-&gt;get_required_features().contains_all(</span><br><span class="line">	ceph::features::mon::FEATURE_LUMINOUS)) &#123;</span><br><span class="line">    if (handle_osd_timeouts(now, last_osd_report)) &#123;</span><br><span class="line">      do_propose = true;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>检查beacon，超时标记down<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">bool OSDMonitor::handle_osd_timeouts(const utime_t &amp;now,</span><br><span class="line">				     std::map&lt;int,utime_t&gt; &amp;last_osd_report)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  for (int i=0; i &lt; max_osd; ++i) &#123;</span><br><span class="line">  ...</span><br><span class="line">    &#125; else if (can_mark_down(i)) &#123;</span><br><span class="line">      utime_t diff = now - t-&gt;second;</span><br><span class="line">      if (diff &gt; timeo) &#123;</span><br><span class="line">	mon-&gt;clog-&gt;info() &lt;&lt; &quot;osd.&quot; &lt;&lt; i &lt;&lt; &quot; marked down after no beacon for &quot;</span><br><span class="line">			  &lt;&lt; diff &lt;&lt; &quot; seconds&quot;;</span><br><span class="line">	derr &lt;&lt; &quot;no beacon from osd.&quot; &lt;&lt; i &lt;&lt; &quot; since &quot; &lt;&lt; t-&gt;second</span><br><span class="line">	     &lt;&lt; &quot;, &quot; &lt;&lt; diff &lt;&lt; &quot; seconds ago.  marking down&quot; &lt;&lt; dendl;</span><br><span class="line">	pending_inc.new_state[i] = CEPH_OSD_UP;</span><br><span class="line">	new_down = true;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  return new_down;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>3.其实osd的进程还是在的，还是会发送beacon，但是在osd被mon标记down之后，后面osd发送的beacon，mon已经不再处理了<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">bool OSDMonitor::prepare_beacon(MonOpRequestRef op)</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  if (!src.is_osd() ||</span><br><span class="line">      !osdmap.is_up(from) ||</span><br><span class="line">      beacon-&gt;get_orig_source_inst() != osdmap.get_inst(from)) &#123;</span><br><span class="line">    dout(1) &lt;&lt; &quot; ignoring beacon from non-active osd.&quot; &lt;&lt; dendl;</span><br><span class="line">    return false;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"> ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>所以在我取消mon的断点之后，即使osd还是发送beacon，mon也不会在标记osd为up</p>
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Ceph osd</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2021/02/23/Ceph-osd-send-beaon/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
+  
+    <a href="/2021/02/23/One-mon-time-error-hold-osd/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          Mon时间超前卡住osd
+        
+      </div>
+    </a>
   
   
-    </div></section>
+    <a href="/2021/02/23/Ceph-pg状态怎么标记为stale/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Ceph pg状态怎么标记为stale</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+  
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="Ceph-osd-send-beaon" data-title="Ceph osd发送beaon请求分析" data-url="http://yoursite.com/2021/02/23/Ceph-osd-send-beaon/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+  
+  
   
 
-    
+  
+
+  
+
+  
 
 
           </div>
@@ -224,9 +380,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: true,
