@@ -6,20 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>k8s learn(8)重新认识Docker容器 | 小甲师兄</title>
+  <title>数据还没有apply前进行读 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="镜像上传到Docker hub 1.docker login登陆 2.docker tag  hellword krunerge/hellword:v1其中krunerge是你的仓库名，也是你docker hub的用户名 3.docker push krunerge/hellword:v1  docker exec原理 1.找到容器的进程id 12# docker inspect --format">
-<meta name="keywords" content="k8s 张磊">
+  <meta name="description" content="问题ceph在写完日志之后就回调commit发送ack，write操作就完成了，这个时候表示数据写完成，但是还是不能读的，只有apply回调完成才变成可读，那这个可读是哪里的控制的呢？ 分析1. 对象上面有读写锁 在写的时候会进行ondiskwritelock123456789void ondisk_read_lock() &amp;#123;   lock.Lock();   readers_waiti">
+<meta name="keywords" content="Ceph">
 <meta property="og:type" content="article">
-<meta property="og:title" content="k8s learn(8)重新认识Docker容器">
-<meta property="og:url" content="http://yoursite.com/2018/10/08/k8s-learn-8/index.html">
+<meta property="og:title" content="数据还没有apply前进行读">
+<meta property="og:url" content="http://yoursite.com/2021/02/23/Ceph-read-not-apply-data/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="镜像上传到Docker hub 1.docker login登陆 2.docker tag  hellword krunerge/hellword:v1其中krunerge是你的仓库名，也是你docker hub的用户名 3.docker push krunerge/hellword:v1  docker exec原理 1.找到容器的进程id 12# docker inspect --format">
+<meta property="og:description" content="问题ceph在写完日志之后就回调commit发送ack，write操作就完成了，这个时候表示数据写完成，但是还是不能读的，只有apply回调完成才变成可读，那这个可读是哪里的控制的呢？ 分析1. 对象上面有读写锁 在写的时候会进行ondiskwritelock123456789void ondisk_read_lock() &amp;#123;   lock.Lock();   readers_waiti">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-08T15:04:31.458Z">
+<meta property="og:updated_time" content="2021-02-23T09:52:13.675Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="k8s learn(8)重新认识Docker容器">
-<meta name="twitter:description" content="镜像上传到Docker hub 1.docker login登陆 2.docker tag  hellword krunerge/hellword:v1其中krunerge是你的仓库名，也是你docker hub的用户名 3.docker push krunerge/hellword:v1  docker exec原理 1.找到容器的进程id 12# docker inspect --format">
+<meta name="twitter:title" content="数据还没有apply前进行读">
+<meta name="twitter:description" content="问题ceph在写完日志之后就回调commit发送ack，write操作就完成了，这个时候表示数据写完成，但是还是不能读的，只有apply回调完成才变成可读，那这个可读是哪里的控制的呢？ 分析1. 对象上面有读写锁 在写的时候会进行ondiskwritelock123456789void ondisk_read_lock() &amp;#123;   lock.Lock();   readers_waiti">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,50 +153,43 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-k8s-learn-8" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-Ceph-read-not-apply-data" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      k8s learn(8)重新认识Docker容器
+      数据还没有apply前进行读
     </h1>
   
 
         
-        <a href="/2018/10/08/k8s-learn-8/" class="archive-article-date">
-  	<time datetime="2018-10-08T14:21:46.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-08</time>
+        <a href="/2021/02/23/Ceph-read-not-apply-data/" class="archive-article-date">
+  	<time datetime="2021-02-23T09:41:32.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-23</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="镜像上传到Docker-hub"><a href="#镜像上传到Docker-hub" class="headerlink" title="镜像上传到Docker hub"></a>镜像上传到Docker hub</h1><ul>
-<li>1.docker login登陆</li>
-<li>2.docker tag  hellword krunerge/hellword:v1<br>其中krunerge是你的仓库名，也是你docker hub的用户名</li>
-<li>3.docker push krunerge/hellword:v1</li>
-</ul>
-<h1 id="docker-exec原理"><a href="#docker-exec原理" class="headerlink" title="docker exec原理"></a>docker exec原理</h1><ul>
-<li><p>1.找到容器的进程id</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># docker inspect --format &apos;&#123;&#123;.State.Pid&#125;&#125;&apos; e4065bd03082</span><br><span class="line">48987</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.找到进程的相关的namespace</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># ll /proc/48987/ns</span><br><span class="line">总用量 0</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 cgroup -&gt; cgroup:[4026531835]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 ipc -&gt; ipc:[4026533013]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 mnt -&gt; mnt:[4026533009]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 net -&gt; net:[4026533016]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid_for_children -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 user -&gt; user:[4026531837]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 uts -&gt; uts:[4026533012]</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>3.docker exec的原理就是创建一个新进程，加入到之前容器进程的namespace中，就是通过上面找到的namespace<br>使用setns()系统调用实现，模拟实现如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">#define _GNU_SOURCE</span><br><span class="line">#include &lt;fcntl.h&gt;</span><br><span class="line">#include &lt;sched.h&gt;</span><br><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">#define errExit(msg) do&#123; perror(msg); exit(EXIT_FAILURE);&#125; while(0)</span><br><span class="line"></span><br><span class="line">int main(int argc, char *argv[])&#123;</span><br><span class="line">  int fd;</span><br><span class="line"></span><br><span class="line">  fd = open(argv[1], O_RDONLY);</span><br><span class="line">  if (setns(fd, 0) == -1)&#123;</span><br><span class="line">      errExit(&quot;setns&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  execvp(argv[2], &amp;argv[2]);</span><br><span class="line">  errExit(&quot;execvp&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>ceph在写完日志之后就回调commit发送ack，write操作就完成了，这个时候表示数据写完成，但是<br>还是不能读的，只有apply回调完成才变成可读，那这个可读是哪里的控制的呢？</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><h2 id="1-对象上面有读写锁"><a href="#1-对象上面有读写锁" class="headerlink" title="1. 对象上面有读写锁"></a>1. 对象上面有读写锁</h2><ul>
+<li>在写的时候会进行ondiskwritelock<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void ondisk_read_lock() &#123;</span><br><span class="line">   lock.Lock();</span><br><span class="line">   readers_waiting++;</span><br><span class="line">   while (unstable_writes)</span><br><span class="line">     cond.Wait(lock);</span><br><span class="line">   readers_waiting--;</span><br><span class="line">   readers++;</span><br><span class="line">   lock.Unlock();</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
-<h1 id="docker的数据卷"><a href="#docker的数据卷" class="headerlink" title="docker的数据卷"></a>docker的数据卷</h1><ul>
-<li><p>docker支持两种数据卷声明方式</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. docker run -v /test ...</span><br><span class="line">这个会创建一个临时目录/var/lib/docker/volumes/[VOLUME_ID]/_data</span><br><span class="line">2. docker run -v /home:/test ...</span><br><span class="line">使用宿主机的/home目录挂载</span><br></pre></td></tr></table></figure>
+<p>unstable_writes增加，也就是对一个对象来写请求的时候会增加unstable_write在看一下读请求</p>
+<ul>
+<li>在execute_ctx里面有如下代码<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void PrimaryLogPG::execute_ctx(OpContext *ctx)</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  if (op-&gt;may_read()) &#123;</span><br><span class="line">    dout(10) &lt;&lt; &quot; taking ondisk_read_lock&quot; &lt;&lt; dendl;</span><br><span class="line">    obc-&gt;ondisk_read_lock();</span><br><span class="line">  &#125;</span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 </li>
-<li><p>数据挂载时机<br>1.首先使用镜像生成rootfs<br>2.然后挂载数据卷到容器目录（使用的绑定挂载bind mount）<br>3.在执行chroot操作</p>
-</li>
-<li>数据卷是挂载容器的可读写层<br>docker commit的时候不会提交，因为docker commit是在宿主机执行，看不到，但是commit之后会有一个空挂载点目录生成</li>
 </ul>
+<p>如果是读请求会申请ondisk_read_lock<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void ondisk_read_lock() &#123;</span><br><span class="line">   lock.Lock();</span><br><span class="line">   readers_waiting++;</span><br><span class="line">   while (unstable_writes)</span><br><span class="line">     cond.Wait(lock);</span><br><span class="line">   readers_waiting--;</span><br><span class="line">   readers++;</span><br><span class="line">   lock.Unlock();</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个ondisk_read_lock会在unstable_writes不为0的时候进行条件变量的阻塞，</p>
+<ul>
+<li>而unstable_writes减少是在issue_repop的这个回调中<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void PrimaryLogPG::issue_repop(RepGather *repop, OpContext *ctx)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  Context *on_all_commit = new C_OSD_RepopCommit(this, repop);</span><br><span class="line"> Context *on_all_applied = new C_OSD_RepopApplied(this, repop);</span><br><span class="line"> Context *onapplied_sync = new C_OSD_OndiskWriteUnlock(</span><br><span class="line">   ctx-&gt;obc,</span><br><span class="line">   ctx-&gt;clone_obc,</span><br><span class="line">   unlock_snapset_obc ? ctx-&gt;snapset_obc : ObjectContextRef());</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>C_OSD_OndiskWriteUnlock中回调进行ondisk_write_unlock<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">class PrimaryLogPG::C_OSD_OndiskWriteUnlock : public Context &#123;</span><br><span class="line">  ObjectContextRef obc, obc2, obc3;</span><br><span class="line">  public:</span><br><span class="line">  C_OSD_OndiskWriteUnlock(</span><br><span class="line">    ObjectContextRef o,</span><br><span class="line">    ObjectContextRef o2 = ObjectContextRef(),</span><br><span class="line">    ObjectContextRef o3 = ObjectContextRef()) : obc(o), obc2(o2), obc3(o3) &#123;&#125;</span><br><span class="line">  void finish(int r) override &#123;</span><br><span class="line">    obc-&gt;ondisk_write_unlock();</span><br><span class="line">    if (obc2)</span><br><span class="line">      obc2-&gt;ondisk_write_unlock();</span><br><span class="line">    if (obc3)</span><br><span class="line">      obc3-&gt;ondisk_write_unlock();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">void ondisk_write_unlock() &#123;</span><br><span class="line">  lock.Lock();</span><br><span class="line">  assert(unstable_writes &gt; 0);</span><br><span class="line">  unstable_writes--;</span><br><span class="line">  if (!unstable_writes &amp;&amp; readers_waiting)</span><br><span class="line">    cond.Signal();</span><br><span class="line">  lock.Unlock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 
       
 
@@ -231,7 +224,7 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
         		</li>
       		
 		</ul>
@@ -287,7 +280,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/10/08/k8s-learn-8/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2021/02/23/Ceph-read-not-apply-data/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -301,18 +294,18 @@
   
 <nav id="article-nav">
   
-    <a href="/2018/10/09/virsh-domain/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2021/02/23/Ceph-pg状态怎么标记为stale/" id="article-nav-newer" class="article-nav-link-wrap">
       <i class="icon-circle-left"></i>
       <div class="article-nav-title">
         
-          virsh-domain.c文件下命令分析
+          Ceph pg状态怎么标记为stale
         
       </div>
     </a>
   
   
-    <a href="/2018/10/06/go-learn-3/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">每天5分钟go-3</div>
+    <a href="/2021/02/22/bluestore-nonde-decode/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">解析bluestore onode</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -340,7 +333,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="k8s-learn-8" data-title="k8s learn(8)重新认识Docker容器" data-url="http://yoursite.com/2018/10/08/k8s-learn-8/"></div>
+	<div class="ds-thread" data-thread-key="Ceph-read-not-apply-data" data-title="数据还没有apply前进行读" data-url="http://yoursite.com/2021/02/23/Ceph-read-not-apply-data/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">

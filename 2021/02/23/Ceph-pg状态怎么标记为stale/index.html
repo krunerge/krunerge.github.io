@@ -6,20 +6,23 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>k8s learn(8)重新认识Docker容器 | 小甲师兄</title>
+  <title>Ceph pg状态怎么标记为stale | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="镜像上传到Docker hub 1.docker login登陆 2.docker tag  hellword krunerge/hellword:v1其中krunerge是你的仓库名，也是你docker hub的用户名 3.docker push krunerge/hellword:v1  docker exec原理 1.找到容器的进程id 12# docker inspect --format">
-<meta name="keywords" content="k8s 张磊">
+  <meta name="description" content="问题Ceph中的pg是合适标记为stale状态的 分析1.做了一个实验，把osd的beacan超时这是为5s（原来是900s）1ceph daemon mon.a config set mon_osd_report_timeout 5 这个命令之后ceph 的osd都会标记为down状态，同时ceph 的pg（我的pg是单pool单pg，并且只在一个osd上面）状态按理来说应该是stale+act">
+<meta name="keywords" content="Ceph">
 <meta property="og:type" content="article">
-<meta property="og:title" content="k8s learn(8)重新认识Docker容器">
-<meta property="og:url" content="http://yoursite.com/2018/10/08/k8s-learn-8/index.html">
+<meta property="og:title" content="Ceph pg状态怎么标记为stale">
+<meta property="og:url" content="http://yoursite.com/2021/02/23/Ceph-pg状态怎么标记为stale/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="镜像上传到Docker hub 1.docker login登陆 2.docker tag  hellword krunerge/hellword:v1其中krunerge是你的仓库名，也是你docker hub的用户名 3.docker push krunerge/hellword:v1  docker exec原理 1.找到容器的进程id 12# docker inspect --format">
+<meta property="og:description" content="问题Ceph中的pg是合适标记为stale状态的 分析1.做了一个实验，把osd的beacan超时这是为5s（原来是900s）1ceph daemon mon.a config set mon_osd_report_timeout 5 这个命令之后ceph 的osd都会标记为down状态，同时ceph 的pg（我的pg是单pool单pg，并且只在一个osd上面）状态按理来说应该是stale+act">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-08T15:04:31.458Z">
+<meta property="og:image" content="http://yoursite.com/2021/02/23/Ceph-pg状态怎么标记为stale/2.png">
+<meta property="og:image" content="http://yoursite.com/2021/02/23/Ceph-pg状态怎么标记为stale/1.png">
+<meta property="og:updated_time" content="2021-02-23T10:05:23.464Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="k8s learn(8)重新认识Docker容器">
-<meta name="twitter:description" content="镜像上传到Docker hub 1.docker login登陆 2.docker tag  hellword krunerge/hellword:v1其中krunerge是你的仓库名，也是你docker hub的用户名 3.docker push krunerge/hellword:v1  docker exec原理 1.找到容器的进程id 12# docker inspect --format">
+<meta name="twitter:title" content="Ceph pg状态怎么标记为stale">
+<meta name="twitter:description" content="问题Ceph中的pg是合适标记为stale状态的 分析1.做了一个实验，把osd的beacan超时这是为5s（原来是900s）1ceph daemon mon.a config set mon_osd_report_timeout 5 这个命令之后ceph 的osd都会标记为down状态，同时ceph 的pg（我的pg是单pool单pg，并且只在一个osd上面）状态按理来说应该是stale+act">
+<meta name="twitter:image" content="http://yoursite.com/2021/02/23/Ceph-pg状态怎么标记为stale/2.png">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -153,50 +156,33 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-k8s-learn-8" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-Ceph-pg状态怎么标记为stale" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      k8s learn(8)重新认识Docker容器
+      Ceph pg状态怎么标记为stale
     </h1>
   
 
         
-        <a href="/2018/10/08/k8s-learn-8/" class="archive-article-date">
-  	<time datetime="2018-10-08T14:21:46.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-08</time>
+        <a href="/2021/02/23/Ceph-pg状态怎么标记为stale/" class="archive-article-date">
+  	<time datetime="2021-02-23T09:52:59.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-23</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="镜像上传到Docker-hub"><a href="#镜像上传到Docker-hub" class="headerlink" title="镜像上传到Docker hub"></a>镜像上传到Docker hub</h1><ul>
-<li>1.docker login登陆</li>
-<li>2.docker tag  hellword krunerge/hellword:v1<br>其中krunerge是你的仓库名，也是你docker hub的用户名</li>
-<li>3.docker push krunerge/hellword:v1</li>
-</ul>
-<h1 id="docker-exec原理"><a href="#docker-exec原理" class="headerlink" title="docker exec原理"></a>docker exec原理</h1><ul>
-<li><p>1.找到容器的进程id</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># docker inspect --format &apos;&#123;&#123;.State.Pid&#125;&#125;&apos; e4065bd03082</span><br><span class="line">48987</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.找到进程的相关的namespace</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># ll /proc/48987/ns</span><br><span class="line">总用量 0</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 cgroup -&gt; cgroup:[4026531835]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 ipc -&gt; ipc:[4026533013]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 mnt -&gt; mnt:[4026533009]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 net -&gt; net:[4026533016]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid_for_children -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 user -&gt; user:[4026531837]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 uts -&gt; uts:[4026533012]</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>3.docker exec的原理就是创建一个新进程，加入到之前容器进程的namespace中，就是通过上面找到的namespace<br>使用setns()系统调用实现，模拟实现如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">#define _GNU_SOURCE</span><br><span class="line">#include &lt;fcntl.h&gt;</span><br><span class="line">#include &lt;sched.h&gt;</span><br><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">#define errExit(msg) do&#123; perror(msg); exit(EXIT_FAILURE);&#125; while(0)</span><br><span class="line"></span><br><span class="line">int main(int argc, char *argv[])&#123;</span><br><span class="line">  int fd;</span><br><span class="line"></span><br><span class="line">  fd = open(argv[1], O_RDONLY);</span><br><span class="line">  if (setns(fd, 0) == -1)&#123;</span><br><span class="line">      errExit(&quot;setns&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  execvp(argv[2], &amp;argv[2]);</span><br><span class="line">  errExit(&quot;execvp&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h1 id="docker的数据卷"><a href="#docker的数据卷" class="headerlink" title="docker的数据卷"></a>docker的数据卷</h1><ul>
-<li><p>docker支持两种数据卷声明方式</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. docker run -v /test ...</span><br><span class="line">这个会创建一个临时目录/var/lib/docker/volumes/[VOLUME_ID]/_data</span><br><span class="line">2. docker run -v /home:/test ...</span><br><span class="line">使用宿主机的/home目录挂载</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>数据挂载时机<br>1.首先使用镜像生成rootfs<br>2.然后挂载数据卷到容器目录（使用的绑定挂载bind mount）<br>3.在执行chroot操作</p>
-</li>
-<li>数据卷是挂载容器的可读写层<br>docker commit的时候不会提交，因为docker commit是在宿主机执行，看不到，但是commit之后会有一个空挂载点目录生成</li>
-</ul>
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>Ceph中的pg是合适标记为stale状态的</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><h2 id="1-做了一个实验，把osd的beacan超时这是为5s（原来是900s）"><a href="#1-做了一个实验，把osd的beacan超时这是为5s（原来是900s）" class="headerlink" title="1.做了一个实验，把osd的beacan超时这是为5s（原来是900s）"></a>1.做了一个实验，把osd的beacan超时这是为5s（原来是900s）</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ceph daemon mon.a config set mon_osd_report_timeout 5</span><br></pre></td></tr></table></figure>
+<p>这个命令之后ceph 的osd都会标记为down状态，同时ceph 的pg（我的pg是单pool单pg，并且只在一个osd上面）状态按理来说应该是stale+active+clean,但是我ceph -s看状态一致都是active + clean,<br><img src="2.png" alt="2"><br>其他原因如下，我们这种把超时设置小了，其实osd的进程还在，没有挂掉，osd还是会定时向mgr上报pg的状态，而osd里面记录的状态还是active+clean（这里有peering过），ceph -s看到也是从mgr获取，也就是其实是mgr在一个时刻设置了stale，但是后来被osd上报的pg状态给刷掉了，日志如下<br><img src="1.png" alt="1"><br>那osd为什么会还是active+clean呢，其实刚开始设置超时的时候，osd被标记为 down，收到mon osdmap更新（mgr设置pg为stale也是收到mon的osdmap更新），经过peering，pg状态恢复到active+clean，后面osd状态没有变过，也就是osdmap没有变化，所以这个osd的pg状态会一直维护为active+clean</p>
+<h2 id="2-pg状态被标记为stale是mgr做的事情"><a href="#2-pg状态被标记为stale是mgr做的事情" class="headerlink" title="2.pg状态被标记为stale是mgr做的事情"></a>2.pg状态被标记为stale是mgr做的事情</h2><p>mon在osdmap变化之后，会发送osdmap给mgr，mgr通过notify_osdmap进行处理<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">void ClusterState::notify_osdmap(const OSDMap &amp;osd_map)</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  PGMapUpdater::check_down_pgs(osd_map, pg_map, true,</span><br><span class="line">			       need_check_down_pg_osds, &amp;pending_inc);</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在这里会调用check_down_pgs检查<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void PGMapUpdater::check_down_pgs(</span><br><span class="line">    const OSDMap &amp;osdmap,</span><br><span class="line">    const PGMap &amp;pg_map,</span><br><span class="line">    bool check_all,</span><br><span class="line">    const set&lt;int&gt;&amp; need_check_down_pg_osds,</span><br><span class="line">    PGMap::Incremental *pending_inc)</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">	  _try_mark_pg_stale(osdmap, pgid, stat, pending_inc);</span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>_try_mark_pg_stale这个函数有修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">static void _try_mark_pg_stale(</span><br><span class="line">  const OSDMap&amp; osdmap,</span><br><span class="line">  pg_t pgid,</span><br><span class="line">  const pg_stat_t&amp; cur,</span><br><span class="line">  PGMap::Incremental *pending_inc)</span><br><span class="line">&#123;</span><br><span class="line">    ....</span><br><span class="line">    newstat-&gt;state |= PG_STATE_STALE;</span><br><span class="line">    newstat-&gt;last_unstale = ceph_clock_now();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>并在这里修改mgr内存的pg状态，然后向mon一直会报，因为我们kill调的osd已经不再像mgr会报pg状态了</p>
 
       
 
@@ -231,7 +217,7 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
         		</li>
       		
 		</ul>
@@ -287,7 +273,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2018/10/08/k8s-learn-8/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2021/02/23/Ceph-pg状态怎么标记为stale/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -301,18 +287,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2018/10/09/virsh-domain/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          virsh-domain.c文件下命令分析
-        
-      </div>
-    </a>
   
-  
-    <a href="/2018/10/06/go-learn-3/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">每天5分钟go-3</div>
+    <a href="/2021/02/23/Ceph-read-not-apply-data/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">数据还没有apply前进行读</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -340,7 +317,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="k8s-learn-8" data-title="k8s learn(8)重新认识Docker容器" data-url="http://yoursite.com/2018/10/08/k8s-learn-8/"></div>
+	<div class="ds-thread" data-thread-key="Ceph-pg状态怎么标记为stale" data-title="Ceph pg状态怎么标记为stale" data-url="http://yoursite.com/2021/02/23/Ceph-pg状态怎么标记为stale/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">

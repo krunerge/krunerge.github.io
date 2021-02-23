@@ -6,19 +6,19 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>pg log entry decode | 小甲师兄</title>
+  <title>解析Ceph pglog条目 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="问题今天主要分析一下如何记下OSD的pg_log_entry, 我们只要pg_log是存在osd的radosdb里面的那如何去反序列化解析出来 方法1. 用ceph-kvstore-tool导出pglog条目信息1234567891011121314151617181920212223242526272829# ceph-kvstore-tool   rocksdb dev/osd0/curren">
 <meta name="keywords" content="ceph">
 <meta property="og:type" content="article">
-<meta property="og:title" content="pg log entry decode">
+<meta property="og:title" content="解析Ceph pglog条目">
 <meta property="og:url" content="http://yoursite.com/2021/02/22/pg-log-entry-decode/index.html">
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="问题今天主要分析一下如何记下OSD的pg_log_entry, 我们只要pg_log是存在osd的radosdb里面的那如何去反序列化解析出来 方法1. 用ceph-kvstore-tool导出pglog条目信息1234567891011121314151617181920212223242526272829# ceph-kvstore-tool   rocksdb dev/osd0/curren">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2021-02-22T14:47:15.676Z">
+<meta property="og:updated_time" content="2021-02-23T09:42:15.510Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="pg log entry decode">
+<meta name="twitter:title" content="解析Ceph pglog条目">
 <meta name="twitter:description" content="问题今天主要分析一下如何记下OSD的pg_log_entry, 我们只要pg_log是存在osd的radosdb里面的那如何去反序列化解析出来 方法1. 用ceph-kvstore-tool导出pglog条目信息1234567891011121314151617181920212223242526272829# ceph-kvstore-tool   rocksdb dev/osd0/curren">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
@@ -160,7 +160,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      pg log entry decode
+      解析Ceph pglog条目
     </h1>
   
 
@@ -289,7 +289,7 @@
       <i class="icon-circle-left"></i>
       <div class="article-nav-title">
         
-          bluestore onde decode
+          解析bluestore onode
         
       </div>
     </a>
@@ -324,7 +324,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="pg-log-entry-decode" data-title="pg log entry decode" data-url="http://yoursite.com/2021/02/22/pg-log-entry-decode/"></div>
+	<div class="ds-thread" data-thread-key="pg-log-entry-decode" data-title="解析Ceph pglog条目" data-url="http://yoursite.com/2021/02/22/pg-log-entry-decode/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
@@ -442,15 +442,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -470,15 +474,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -486,7 +482,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -506,6 +502,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
@@ -514,19 +514,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -542,11 +542,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -558,11 +558,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -582,11 +582,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
