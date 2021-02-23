@@ -8,18 +8,18 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>ceph talk(1) | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="以下是ceph的知识随笔  M版将增加pg的合并功能    osd之间传播osdmap只是增量传播    增加了两个工具用来部署osd，ceph-disk和ceph-volume    L版osd增加了标签，如HDD或者SSD    L版pool也增加了标签，如rbd或者rgw    一个请求如果32s没有解决就会成为慢请求    L版增加了Mgr，分离了一部分mon的能力    osd中monc">
+  <meta name="description" content="以下是ceph的知识随笔 1.M版将增加pg的合并功能 2.osd之间传播osdmap只是增量传播 3.增加了两个工具用来部署osd，ceph-disk和ceph-volume 4.L版osd增加了标签，如HDD或者SSD 5.L版pool也增加了标签，如rbd或者rgw 6.一个请求如果32s没有解决就会成为慢请求 7.L版增加了Mgr，分离了一部分mon的能力 8.osd中monclient的">
 <meta name="keywords" content="ceph">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ceph talk(1)">
 <meta property="og:url" content="http://yoursite.com/2019/02/15/ceph-talk-1/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="以下是ceph的知识随笔  M版将增加pg的合并功能    osd之间传播osdmap只是增量传播    增加了两个工具用来部署osd，ceph-disk和ceph-volume    L版osd增加了标签，如HDD或者SSD    L版pool也增加了标签，如rbd或者rgw    一个请求如果32s没有解决就会成为慢请求    L版增加了Mgr，分离了一部分mon的能力    osd中monc">
+<meta property="og:description" content="以下是ceph的知识随笔 1.M版将增加pg的合并功能 2.osd之间传播osdmap只是增量传播 3.增加了两个工具用来部署osd，ceph-disk和ceph-volume 4.L版osd增加了标签，如HDD或者SSD 5.L版pool也增加了标签，如rbd或者rgw 6.一个请求如果32s没有解决就会成为慢请求 7.L版增加了Mgr，分离了一部分mon的能力 8.osd中monclient的">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2019-02-21T07:13:50.945Z">
+<meta property="og:updated_time" content="2021-02-23T11:40:42.691Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ceph talk(1)">
-<meta name="twitter:description" content="以下是ceph的知识随笔  M版将增加pg的合并功能    osd之间传播osdmap只是增量传播    增加了两个工具用来部署osd，ceph-disk和ceph-volume    L版osd增加了标签，如HDD或者SSD    L版pool也增加了标签，如rbd或者rgw    一个请求如果32s没有解决就会成为慢请求    L版增加了Mgr，分离了一部分mon的能力    osd中monc">
+<meta name="twitter:description" content="以下是ceph的知识随笔 1.M版将增加pg的合并功能 2.osd之间传播osdmap只是增量传播 3.增加了两个工具用来部署osd，ceph-disk和ceph-volume 4.L版osd增加了标签，如HDD或者SSD 5.L版pool也增加了标签，如rbd或者rgw 6.一个请求如果32s没有解决就会成为慢请求 7.L版增加了Mgr，分离了一部分mon的能力 8.osd中monclient的">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -174,54 +174,18 @@
     <div class="article-entry" itemprop="articleBody">
       
         <h1 id="以下是ceph的知识随笔"><a href="#以下是ceph的知识随笔" class="headerlink" title="以下是ceph的知识随笔"></a>以下是ceph的知识随笔</h1><ul>
-<li><ol>
-<li>M版将增加pg的合并功能</li>
-</ol>
-</li>
-<li><ol start="2">
-<li>osd之间传播osdmap只是增量传播</li>
-</ol>
-</li>
-<li><ol start="3">
-<li>增加了两个工具用来部署osd，ceph-disk和ceph-volume</li>
-</ol>
-</li>
-<li><ol start="4">
-<li>L版osd增加了标签，如HDD或者SSD</li>
-</ol>
-</li>
-<li><ol start="5">
-<li>L版pool也增加了标签，如rbd或者rgw</li>
-</ol>
-</li>
-<li><ol start="6">
-<li>一个请求如果32s没有解决就会成为慢请求</li>
-</ol>
-</li>
-<li><ol start="7">
-<li>L版增加了Mgr，分离了一部分mon的能力</li>
-</ol>
-</li>
-<li><ol start="8">
-<li>osd中monclient的作用用来封装跟mon交互的细节</li>
-</ol>
-</li>
-<li><ol start="9">
-<li>ceph分public网和集群网，主要是因为public网是client操作的请求，优先级比较高，集群网是ceph内部的请求，流量比较大，分开之后可以快速响应client的请求</li>
-</ol>
-</li>
-<li><ol start="10">
-<li>M版osd的线程池减少了，只留了两个，一个用来处理用户命令，一个用来处理其他</li>
-</ol>
-</li>
-<li><ol start="11">
-<li>osd的down状态表示临时故障，out表示永久性故障</li>
-</ol>
-</li>
-<li><ol start="12">
-<li>每个host上面的osd编号最好不要连续，因为心跳检测的时候有用</li>
-</ol>
-</li>
+<li>1.M版将增加pg的合并功能</li>
+<li>2.osd之间传播osdmap只是增量传播</li>
+<li>3.增加了两个工具用来部署osd，ceph-disk和ceph-volume</li>
+<li>4.L版osd增加了标签，如HDD或者SSD</li>
+<li>5.L版pool也增加了标签，如rbd或者rgw</li>
+<li>6.一个请求如果32s没有解决就会成为慢请求</li>
+<li>7.L版增加了Mgr，分离了一部分mon的能力</li>
+<li>8.osd中monclient的作用用来封装跟mon交互的细节</li>
+<li>9.ceph分public网和集群网，主要是因为public网是client操作的请求，优先级比较高，集群网是ceph内部的请求，流量比较大，分开之后可以快速响应client的请求</li>
+<li>10.M版osd的线程池减少了，只留了两个，一个用来处理用户命令，一个用来处理其他</li>
+<li>11.osd的down状态表示临时故障，out表示永久性故障</li>
+<li>12.每个host上面的osd编号最好不要连续，因为心跳检测的时候有用</li>
 <li>13.读是同步，写一般是异步</li>
 <li>14.数据的可靠性引入了日志储存系统</li>
 <li>15.数据的一致性引入事务</li>
@@ -335,11 +299,11 @@
   
 <nav id="article-nav">
   
-    <a href="/2019/02/21/ceph-rgw-talk-2/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2019/03/16/docker-registry-s3/" id="article-nav-newer" class="article-nav-link-wrap">
       <i class="icon-circle-left"></i>
       <div class="article-nav-title">
         
-          ceph rgw talk(2)
+          听说你的harbor不能使用s3
         
       </div>
     </a>
@@ -492,11 +456,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -512,15 +476,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -529,6 +489,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -556,7 +520,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -564,15 +528,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -588,11 +552,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -608,10 +576,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
@@ -620,19 +584,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -641,10 +605,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">

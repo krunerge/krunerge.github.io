@@ -8,18 +8,18 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>k8s learn(14)为什么我们需要pod | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息  volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在">
+  <meta name="description" content="1. k8s中api对象 1.1.metadata表示对象，主要有label 1.2.spec具体api对象信息  2.volume属于pod，类似于磁盘属于虚拟机3.empty宿主机临时目录，hostpath宿主机某个目录4.kubectl exec进入容器5.pod的生命周期跟基础容器相同6.有两种容器 initcontainer：运行网就退出，先于container运行 container：">
 <meta name="keywords" content="k8s 张磊">
 <meta property="og:type" content="article">
 <meta property="og:title" content="k8s learn(14)为什么我们需要pod">
 <meta property="og:url" content="http://yoursite.com/2018/10/17/k8s-learn-14/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息  volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在">
+<meta property="og:description" content="1. k8s中api对象 1.1.metadata表示对象，主要有label 1.2.spec具体api对象信息  2.volume属于pod，类似于磁盘属于虚拟机3.empty宿主机临时目录，hostpath宿主机某个目录4.kubectl exec进入容器5.pod的生命周期跟基础容器相同6.有两种容器 initcontainer：运行网就退出，先于container运行 container：">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-10-20T06:13:24.284Z">
+<meta property="og:updated_time" content="2021-02-23T11:42:55.695Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="k8s learn(14)为什么我们需要pod">
-<meta name="twitter:description" content="k8s中api对象 1.metadata表示对象，主要有label 2.spec具体api对象信息  volume属于pod，类似于磁盘属于虚拟机empty宿主机临时目录，hostpath宿主机某个目录kubectl exec进入容器pod的生命周期跟基础容器相同有两种容器 initcontainer：运行网就退出，先于container运行 container：initcontainer运行完在">
+<meta name="twitter:description" content="1. k8s中api对象 1.1.metadata表示对象，主要有label 1.2.spec具体api对象信息  2.volume属于pod，类似于磁盘属于虚拟机3.empty宿主机临时目录，hostpath宿主机某个目录4.kubectl exec进入容器5.pod的生命周期跟基础容器相同6.有两种容器 initcontainer：运行网就退出，先于container运行 container：">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -173,15 +173,15 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="k8s中api对象"><a href="#k8s中api对象" class="headerlink" title="k8s中api对象"></a>k8s中api对象</h1><ul>
-<li>1.metadata表示对象，主要有label</li>
-<li>2.spec具体api对象信息</li>
+        <h1 id="1-k8s中api对象"><a href="#1-k8s中api对象" class="headerlink" title="1. k8s中api对象"></a>1. k8s中api对象</h1><ul>
+<li>1.1.metadata表示对象，主要有label</li>
+<li>1.2.spec具体api对象信息</li>
 </ul>
-<h1 id="volume属于pod，类似于磁盘属于虚拟机"><a href="#volume属于pod，类似于磁盘属于虚拟机" class="headerlink" title="volume属于pod，类似于磁盘属于虚拟机"></a>volume属于pod，类似于磁盘属于虚拟机</h1><h1 id="empty宿主机临时目录，hostpath宿主机某个目录"><a href="#empty宿主机临时目录，hostpath宿主机某个目录" class="headerlink" title="empty宿主机临时目录，hostpath宿主机某个目录"></a>empty宿主机临时目录，hostpath宿主机某个目录</h1><h1 id="kubectl-exec进入容器"><a href="#kubectl-exec进入容器" class="headerlink" title="kubectl exec进入容器"></a>kubectl exec进入容器</h1><h1 id="pod的生命周期跟基础容器相同"><a href="#pod的生命周期跟基础容器相同" class="headerlink" title="pod的生命周期跟基础容器相同"></a>pod的生命周期跟基础容器相同</h1><h1 id="有两种容器"><a href="#有两种容器" class="headerlink" title="有两种容器"></a>有两种容器</h1><ul>
+<h1 id="2-volume属于pod，类似于磁盘属于虚拟机"><a href="#2-volume属于pod，类似于磁盘属于虚拟机" class="headerlink" title="2.volume属于pod，类似于磁盘属于虚拟机"></a>2.volume属于pod，类似于磁盘属于虚拟机</h1><h1 id="3-empty宿主机临时目录，hostpath宿主机某个目录"><a href="#3-empty宿主机临时目录，hostpath宿主机某个目录" class="headerlink" title="3.empty宿主机临时目录，hostpath宿主机某个目录"></a>3.empty宿主机临时目录，hostpath宿主机某个目录</h1><h1 id="4-kubectl-exec进入容器"><a href="#4-kubectl-exec进入容器" class="headerlink" title="4.kubectl exec进入容器"></a>4.kubectl exec进入容器</h1><h1 id="5-pod的生命周期跟基础容器相同"><a href="#5-pod的生命周期跟基础容器相同" class="headerlink" title="5.pod的生命周期跟基础容器相同"></a>5.pod的生命周期跟基础容器相同</h1><h1 id="6-有两种容器"><a href="#6-有两种容器" class="headerlink" title="6.有两种容器"></a>6.有两种容器</h1><ul>
 <li>initcontainer：运行网就退出，先于container运行</li>
 <li>container：initcontainer运行完在运行</li>
 </ul>
-<h1 id="容器设计模式–sidecar"><a href="#容器设计模式–sidecar" class="headerlink" title="容器设计模式–sidecar"></a>容器设计模式–sidecar</h1><ul>
+<h1 id="7-容器设计模式–sidecar"><a href="#7-容器设计模式–sidecar" class="headerlink" title="7.容器设计模式–sidecar"></a>7.容器设计模式–sidecar</h1><ul>
 <li>运用网络共享：Istio</li>
 <li>运用卷共享：日志收集</li>
 </ul>
@@ -446,11 +446,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
+                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -466,15 +466,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rgw</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -483,6 +479,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -510,7 +510,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -518,15 +518,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -542,11 +542,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -562,10 +566,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
               </li>
              
@@ -574,19 +574,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -595,10 +595,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
