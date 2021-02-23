@@ -22,7 +22,7 @@
 <meta property="og:image" content="http://yoursite.com/2021/02/23/One-mon-time-error-hold-osd/4.png">
 <meta property="og:image" content="http://yoursite.com/2021/02/23/One-mon-time-error-hold-osd/5.png">
 <meta property="og:image" content="http://yoursite.com/2021/02/23/One-mon-time-error-hold-osd/6.png">
-<meta property="og:updated_time" content="2021-02-23T12:43:25.035Z">
+<meta property="og:updated_time" content="2021-02-23T12:44:35.303Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Mon时间超前卡住osd">
 <meta name="twitter:description" content="问题现象：一个osd一直是down，osd的状态一直在bootosd的日志只有tick，打开osd的ms日志，可以看到osd一直在发送auth认证 分析 1.ceph -s是能看到mon是有时钟偏移的查看我们osd所连接的mon查看日志，是一个非leader mon，刚开始只开了ms日志，看不出啥，只有一直auth请求重试，然后打开paxos日志，可以看到相关信息一个是时间，now和lease_e">
@@ -295,9 +295,18 @@
   
 <nav id="article-nav">
   
+    <a href="/2021/02/23/Ceph-pg-split/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          Ceph pg split发生在什么时候
+        
+      </div>
+    </a>
   
-    <a href="/2021/02/23/Ceph-osd-send-beaon/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">Ceph osd发送beaon请求分析</div>
+  
+    <a href="/2021/02/23/Ceph-pg状态怎么标记为stale/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Ceph pg状态怎么标记为stale</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -451,15 +460,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -479,15 +488,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -499,7 +512,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -507,19 +520,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -527,11 +532,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -543,10 +556,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
@@ -555,11 +564,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -571,11 +580,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">

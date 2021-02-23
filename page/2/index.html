@@ -150,6 +150,95 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-compile-tcmu-runner" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/04/05/compile-tcmu-runner/">tcmu-runner编译</a>
+    </h1>
+  
+
+        
+        <a href="/2020/04/05/compile-tcmu-runner/" class="archive-article-date">
+  	<time datetime="2020-04-05T11:01:02.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-04-05</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="tcmu-runner编译"><a href="#tcmu-runner编译" class="headerlink" title="tcmu-runner编译"></a>tcmu-runner编译</h1><p>之前使用的是tcmu-runner的1.3.0版本，看了一下github上面最新的是1.5.2准备拿来更新一下，看看有没有什么性能的优化</p>
+<h1 id="源码编译"><a href="#源码编译" class="headerlink" title="源码编译"></a>源码编译</h1><ul>
+<li>1.下载源码包<br>这个可以直接在github上面下载</li>
+<li>2.编译有问题<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~/tcmu-runner/tcmu-runner-1.5.2]# make</span><br><span class="line">[  2%] Building C object CMakeFiles/tcmu.dir/libtcmu.c.o</span><br><span class="line">/root/tcmu-runner/tcmu-runner-1.5.2/libtcmu.c:38:37: error: &apos;NLA_S32&apos; undeclared here (not in a function)</span><br><span class="line">  [TCMU_ATTR_CMD_STATUS] = &#123; .type = NLA_S32 &#125;,</span><br><span class="line">                                     ^</span><br><span class="line">/root/tcmu-runner/tcmu-runner-1.5.2/libtcmu.c: In function &apos;send_netlink_reply&apos;:</span><br><span class="line">/root/tcmu-runner/tcmu-runner-1.5.2/libtcmu.c:100:2: error: implicit declaration of function &apos;nla_put_s32&apos; [-Werror=implicit-function-declaration]</span><br><span class="line">  ret = nla_put_s32(msg, TCMU_ATTR_CMD_STATUS, status);</span><br><span class="line">  ^</span><br><span class="line">cc1: all warnings being treated as errors</span><br><span class="line">make[2]: *** [CMakeFiles/tcmu.dir/libtcmu.c.o] Error 1</span><br><span class="line">make[1]: *** [CMakeFiles/tcmu.dir/all] Error 2</span><br><span class="line">make: *** [all] Error 2</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>说没有NLA_S32和nla_put_s32定义，看了一下代码，有头文件导入<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;libnl3/netlink/genl/genl.h&gt;</span><br><span class="line">#include &lt;libnl3/netlink/genl/mngt.h&gt;</span><br><span class="line">#include &lt;libnl3/netlink/genl/ctrl.h&gt;</span><br></pre></td></tr></table></figure></p>
+<p>在系统头文件/usr/include进行搜索，发现应该在这个文件中<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/include/libnl3/netlink/attr.h</span><br></pre></td></tr></table></figure></p>
+<p>但是没有，该开始以为是内核的头文件，后来看一下是<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~/tcmu-runner/tcmu-runner-1.5.2]# rpm -qf  /usr/include/libnl3/netlink/attr.h</span><br><span class="line">libnl3-devel-3.2.28-4.el7.x86_64</span><br></pre></td></tr></table></figure></p>
+<p>是这个包libnl3-devel版本有点低，代码中没有定义NLA_S32，这个是一个无符号32位，所以升级，上面的3.2.28便是我升级后的版本</p>
+<ul>
+<li>3.编译<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~/tcmu-runner/tcmu-runner-1.5.2]# make</span><br><span class="line">[  2%] Generating tcmuhandler-generated.c, tcmuhandler-generated.h</span><br><span class="line">Scanning dependencies of target tcmu</span><br><span class="line">[  5%] Building C object CMakeFiles/tcmu.dir/strlcpy.c.o</span><br><span class="line">[  7%] Building C object CMakeFiles/tcmu.dir/configfs.c.o</span><br><span class="line">[ 10%] Building C object CMakeFiles/tcmu.dir/api.c.o</span><br><span class="line">[ 12%] Building C object CMakeFiles/tcmu.dir/libtcmu.c.o</span><br><span class="line">[ 15%] Building C object CMakeFiles/tcmu.dir/libtcmu-register.c.o</span><br><span class="line">[ 17%] Building C object CMakeFiles/tcmu.dir/tcmuhandler-generated.c.o</span><br><span class="line">[ 20%] Building C object CMakeFiles/tcmu.dir/libtcmu_log.c.o</span><br><span class="line">[ 23%] Building C object CMakeFiles/tcmu.dir/libtcmu_config.c.o</span><br><span class="line">[ 25%] Building C object CMakeFiles/tcmu.dir/libtcmu_time.c.o</span><br><span class="line">Linking C shared library libtcmu.so</span><br><span class="line">[ 25%] Built target tcmu</span><br><span class="line">[ 28%] Building C object CMakeFiles/consumer.dir/scsi.c.o</span><br><span class="line">[ 30%] Building C object CMakeFiles/consumer.dir/consumer.c.o</span><br><span class="line">Linking C executable consumer</span><br><span class="line">[ 30%] Built target consumer</span><br><span class="line">[ 33%] Building C object CMakeFiles/handler_file.dir/file_example.c.o</span><br><span class="line">Linking C shared library handler_file.so</span><br><span class="line">[ 33%] Built target handler_file</span><br><span class="line">[ 35%] Building C object CMakeFiles/handler_file_optical.dir/scsi.c.o</span><br><span class="line">[ 38%] Building C object CMakeFiles/handler_file_optical.dir/file_optical.c.o</span><br><span class="line">Linking C shared library handler_file_optical.so</span><br><span class="line">[ 38%] Built target handler_file_optical</span><br><span class="line">[ 41%] Building C object CMakeFiles/handler_file_zbc.dir/scsi.c.o</span><br><span class="line">[ 43%] Building C object CMakeFiles/handler_file_zbc.dir/file_zbc.c.o</span><br><span class="line">Linking C shared library handler_file_zbc.so</span><br><span class="line">[ 43%] Built target handler_file_zbc</span><br><span class="line">[ 46%] Building C object CMakeFiles/handler_rbd.dir/rbd.c.o</span><br><span class="line">Linking C shared library handler_rbd.so</span><br><span class="line">[ 46%] Built target handler_rbd</span><br><span class="line">Scanning dependencies of target tcmu-runner</span><br><span class="line">[ 48%] Building C object CMakeFiles/tcmu-runner.dir/tcmur_cmd_handler.c.o</span><br><span class="line">[ 51%] Building C object CMakeFiles/tcmu-runner.dir/tcmur_aio.c.o</span><br><span class="line">[ 53%] Building C object CMakeFiles/tcmu-runner.dir/tcmur_device.c.o</span><br><span class="line">[ 56%] Building C object CMakeFiles/tcmu-runner.dir/target.c.o</span><br><span class="line">[ 58%] Building C object CMakeFiles/tcmu-runner.dir/alua.c.o</span><br><span class="line">[ 61%] Building C object CMakeFiles/tcmu-runner.dir/scsi.c.o</span><br><span class="line">[ 64%] Building C object CMakeFiles/tcmu-runner.dir/main.c.o</span><br><span class="line">[ 66%] Building C object CMakeFiles/tcmu-runner.dir/tcmuhandler-generated.c.o</span><br><span class="line">Linking C executable tcmu-runner</span><br><span class="line">[ 69%] Built target tcmu-runner</span><br><span class="line">[ 71%] Building C object CMakeFiles/tcmu-synthesizer.dir/scsi.c.o</span><br><span class="line">[ 74%] Building C object CMakeFiles/tcmu-synthesizer.dir/tcmu-synthesizer.c.o</span><br><span class="line">Linking C executable tcmu-synthesizer</span><br><span class="line">[ 74%] Built target tcmu-synthesizer</span><br><span class="line">Scanning dependencies of target tcmu_static</span><br><span class="line">[ 76%] Building C object CMakeFiles/tcmu_static.dir/strlcpy.c.o</span><br><span class="line">[ 79%] Building C object CMakeFiles/tcmu_static.dir/configfs.c.o</span><br><span class="line">[ 82%] Building C object CMakeFiles/tcmu_static.dir/api.c.o</span><br><span class="line">[ 84%] Building C object CMakeFiles/tcmu_static.dir/libtcmu.c.o</span><br><span class="line">[ 87%] Building C object CMakeFiles/tcmu_static.dir/libtcmu-register.c.o</span><br><span class="line">[ 89%] Building C object CMakeFiles/tcmu_static.dir/tcmuhandler-generated.c.o</span><br><span class="line">[ 92%] Building C object CMakeFiles/tcmu_static.dir/libtcmu_log.c.o</span><br><span class="line">[ 94%] Building C object CMakeFiles/tcmu_static.dir/libtcmu_config.c.o</span><br><span class="line">[ 97%] Building C object CMakeFiles/tcmu_static.dir/libtcmu_time.c.o</span><br><span class="line">Linking C static library libtcmu_static.a</span><br><span class="line">[100%] Built target tcmu_static</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>make一下编译完成</p>
+<h1 id="更新二进制"><a href="#更新二进制" class="headerlink" title="更新二进制"></a>更新二进制</h1><p>ldd和pldd看一下tcmu-runner二进制和进程依赖哪些动态库，发现有libtcmu.so和handler_rbd.so，所以替换这两个动态库加上tcmu-runner二进制就可以</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">C tcmu-runner</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/04/05/compile-tcmu-runner/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-OSD-Slow-start-due-to-high-frequency-snapshot" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1077,100 +1166,6 @@
 
 
   
-    <article id="post-how-to-operate-configfs" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/02/26/how-to-operate-configfs/">教你操作configfs</a>
-    </h1>
-  
-
-        
-        <a href="/2020/02/26/how-to-operate-configfs/" class="archive-article-date">
-  	<time datetime="2020-02-26T07:01:15.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>我在开发ceph rbd iscsi的时候会使用configfs创建内核的相关对象，比如target，tpg等，但是创建的时候删除不了，如下所示<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">[root@openstack-con02 /sys/kernel/config/target/iscsi/iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2]# rm -rf tpgt_1</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/OFMarkInt&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/IFMarkInt&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/OFMarker&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/IFMarker&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/ErrorRecoveryLevel&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DataSequenceInOrder&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DataPDUInOrder&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxOutstandingR2T&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DefaultTime2Retain&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DefaultTime2Wait&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/FirstBurstLength&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxBurstLength&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxXmitDataSegmentLength&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxRecvDataSegmentLength&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/ImmediateData&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/InitialR2T&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/TargetAlias&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/MaxConnections&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/DataDigest&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/HeaderDigest&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/param/AuthMethod&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/password_mutual&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/userid_mutual&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/authenticate_target&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/password&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/auth/userid&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/tpg_enabled_sendtargets&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/fabric_prot_type&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/t10_pi&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/default_erl&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/demo_mode_discovery&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/prod_mode_write_protect&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/demo_mode_write_protect&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/cache_dynamic_acls&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/default_cmdsn_depth&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/generate_node_acls&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/netif_timeout&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/login_timeout&apos;: Operation not permitted</span><br><span class="line">rm: cannot remove &apos;tpgt_1/attrib/authentication&apos;: Operation not permitted</span><br></pre></td></tr></table></figure></p>
-<p>一堆没有权限，我们知道configfs是内存文件系统，那么重启一下肯定是可以解决的，除此之外还有其他方法吗？<br>这里研究了一下可以通过python进行相关的操作<br>tpg，tpg相关多gateway，就是一个target可能有多个gateway，一个tpg对应一个gateway，里面包含了一些ip等</p>
-<h1 id="tpg的删除"><a href="#tpg的删除" class="headerlink" title="tpg的删除"></a>tpg的删除</h1><ul>
-<li>代码如下<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">from rtslib_fb.target import TPG</span><br><span class="line">from rtslib_fb import root</span><br><span class="line">lio_root = root.RTSRoot()</span><br><span class="line">target = [tgt for tgt in lio_root.targets if tgt.wwn == &apos;iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2&apos;][0]</span><br><span class="line">tpg = TPG(target, 3)</span><br><span class="line">tpg.delete()</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>这样就可以删除了，有一下两个注意点</p>
-<ul>
-<li><p>1.iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2 是target的名字，也是内核对象的名字，也是configfs的一个目录名</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/sys/kernel/config/target/iscsi/iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.TPG构造函数中的3表示是tpg的id，学名叫tag</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">drwxr-xr-x 8 root root 0 Feb 26 14:29 tpgt_1</span><br><span class="line">drwxr-xr-x 8 root root 0 Feb 26 14:39 tpgt_2</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>就是上面的1和2</p>
-<h1 id="target的删除"><a href="#target的删除" class="headerlink" title="target的删除"></a>target的删除</h1><ul>
-<li>代码如下<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">from rtslib_fb.target import Target</span><br><span class="line">from rtslib_fb.fabric import ISCSIFabricModule</span><br><span class="line">iscsi_fabric = ISCSIFabricModule()</span><br><span class="line">target = Target(iscsi_fabric, wwn=&apos;iqn.2003-01.com.redhat.iscsi-gw:iscsi-igw2&apos;)</span><br><span class="line">target.delete()</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>如果target下面还有tpg的话，也会自动被删除</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">python iscsi kernel</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/02/26/how-to-operate-configfs/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/3/">Next &raquo;</a>
@@ -1276,15 +1271,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1304,15 +1299,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1324,7 +1323,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1332,19 +1331,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1352,11 +1343,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1368,10 +1367,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
@@ -1380,11 +1375,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1396,11 +1391,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">

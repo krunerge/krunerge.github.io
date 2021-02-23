@@ -150,6 +150,164 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-Ceph-pg-up-set-and-acting-set" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/02/23/Ceph-pg-up-set-and-acting-set/">Ceph中up set和acting set的区别</a>
+    </h1>
+  
+
+        
+        <a href="/2021/02/23/Ceph-pg-up-set-and-acting-set/" class="archive-article-date">
+  	<time datetime="2021-02-23T12:53:55.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-23</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>Ceph中up set和acting set的区别，它们到底是怎么获得的</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>在Crush计算那块得到<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">void OSDMap::_pg_to_up_acting_osds(</span><br><span class="line">  const pg_t&amp; pg, vector&lt;int&gt; *up, int *up_primary,</span><br><span class="line">  vector&lt;int&gt; *acting, int *acting_primary,</span><br><span class="line">  bool raw_pg_to_pg) const</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  _get_temp_osds(*pool, pg, &amp;_acting, &amp;_acting_primary);</span><br><span class="line"> if (_acting.empty() || up || up_primary) &#123;</span><br><span class="line">   _pg_to_raw_osds(*pool, pg, &amp;raw, &amp;pps);</span><br><span class="line">   _apply_upmap(*pool, pg, &amp;raw);</span><br><span class="line">   _raw_to_up_osds(*pool, raw, &amp;_up);</span><br><span class="line">   _up_primary = _pick_primary(_up);</span><br><span class="line">   _apply_primary_affinity(pps, *pool, &amp;_up, &amp;_up_primary);</span><br><span class="line">   if (_acting.empty()) &#123;</span><br><span class="line">     _acting = _up;</span><br><span class="line">     if (_acting_primary == -1) &#123;</span><br><span class="line">       _acting_primary = _up_primary;</span><br><span class="line">     &#125;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   if (up)</span><br><span class="line">     up-&gt;swap(_up);</span><br><span class="line">   if (up_primary)</span><br><span class="line">     *up_primary = _up_primary;</span><br><span class="line"> &#125;</span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面这段可以大致看出crush计算出来的步骤</p>
+<ul>
+<li>首先算出的是raw集合</li>
+<li>然后通过upmap调整</li>
+<li>然后在去掉不是up的</li>
+<li>先算出up集合，然后在算出acting集合<br>可以看出：如果有pg temp，acting就是pg temp，否者acting等于up</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2021/02/23/Ceph-pg-up-set-and-acting-set/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Ceph-pg-split" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/02/23/Ceph-pg-split/">Ceph pg split发生在什么时候</a>
+    </h1>
+  
+
+        
+        <a href="/2021/02/23/Ceph-pg-split/" class="archive-article-date">
+  	<time datetime="2021-02-23T12:48:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-23</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>之前一直好奇Ceph pg split发生在什么时候</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>pg的分裂是在peering过程进行的</p>
+<p>命令修改osdmap ，mon发散osdmap，然后通过peering advmap同步pg 的osdmap，在peering的时候会给每个pg进行osdmap的更新，更新的时候会判断是不是要split分裂，代码如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">bool OSD::advance_pg(</span><br><span class="line">  epoch_t osd_epoch, PG *pg,</span><br><span class="line">  ThreadPool::TPHandle &amp;handle,</span><br><span class="line">  PG::RecoveryCtx *rctx,</span><br><span class="line">  set&lt;PGRef&gt; *new_pgs)</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  // Check for split!</span><br><span class="line">    set&lt;spg_t&gt; children;</span><br><span class="line">    spg_t parent(pg-&gt;info.pgid);</span><br><span class="line">    if (parent.is_split(</span><br><span class="line">	lastmap-&gt;get_pg_num(pg-&gt;pool.id),</span><br><span class="line">	nextmap-&gt;get_pg_num(pg-&gt;pool.id),</span><br><span class="line">	&amp;children)) &#123;</span><br><span class="line">      service.mark_split_in_progress(pg-&gt;info.pgid, children);</span><br><span class="line">      split_pgs(</span><br><span class="line">	pg, children, new_pgs, lastmap, nextmap,</span><br><span class="line">	rctx);</span><br><span class="line">    &#125;</span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2021/02/23/Ceph-pg-split/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-One-mon-time-error-hold-osd" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -205,95 +363,6 @@
       
         <p class="article-more-link">
           <a class="article-more-a" href="/2021/02/23/One-mon-time-error-hold-osd/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-Ceph-osd-send-beaon" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/02/23/Ceph-osd-send-beaon/">Ceph osd发送beaon请求分析</a>
-    </h1>
-  
-
-        
-        <a href="/2021/02/23/Ceph-osd-send-beaon/" class="archive-article-date">
-  	<time datetime="2021-02-23T12:22:33.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-23</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>在调试mon的时候，发现osd被标记为down了，为什么？</p>
-<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><ul>
-<li>1.ceph的osd每隔5分钟会向mon上报一次<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">void OSD::tick_without_osd_lock()</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  if (is_active()) &#123;</span><br><span class="line">    if (!scrub_random_backoff()) &#123;</span><br><span class="line">      sched_scrub();</span><br><span class="line">    &#125;</span><br><span class="line">    service.promote_throttle_recalibrate();</span><br><span class="line">    resume_creating_pg();</span><br><span class="line">    bool need_send_beacon = false;</span><br><span class="line">    const auto now = ceph::coarse_mono_clock::now();</span><br><span class="line">    &#123;</span><br><span class="line">      // borrow lec lock to pretect last_sent_beacon from changing</span><br><span class="line">      Mutex::Locker l&#123;min_last_epoch_clean_lock&#125;;</span><br><span class="line">      const auto elapsed = now - last_sent_beacon;</span><br><span class="line">      if (chrono::duration_cast&lt;chrono::seconds&gt;(elapsed).count() &gt;</span><br><span class="line">        cct-&gt;_conf-&gt;osd_beacon_report_interval) &#123;</span><br><span class="line">        need_send_beacon = true;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (need_send_beacon) &#123;</span><br><span class="line">      send_beacon(now);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>小甲在给mon打断点的时候，其实是stop了进程，那mon那边是不会处理这个请求的，也就会导致mon里面记录的osd report时间不会更新，最后导致osd超过15分钟被标记为down</p>
-<ul>
-<li>2.mon的osdmonitor会周期性的tick会调用handle_osd_timeouts<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">void OSDMonitor::tick()</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  if (osdmap.require_osd_release &gt;= CEPH_RELEASE_LUMINOUS &amp;&amp;</span><br><span class="line">      mon-&gt;monmap-&gt;get_required_features().contains_all(</span><br><span class="line">	ceph::features::mon::FEATURE_LUMINOUS)) &#123;</span><br><span class="line">    if (handle_osd_timeouts(now, last_osd_report)) &#123;</span><br><span class="line">      do_propose = true;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>检查beacon，超时标记down<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">bool OSDMonitor::handle_osd_timeouts(const utime_t &amp;now,</span><br><span class="line">				     std::map&lt;int,utime_t&gt; &amp;last_osd_report)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  for (int i=0; i &lt; max_osd; ++i) &#123;</span><br><span class="line">  ...</span><br><span class="line">    &#125; else if (can_mark_down(i)) &#123;</span><br><span class="line">      utime_t diff = now - t-&gt;second;</span><br><span class="line">      if (diff &gt; timeo) &#123;</span><br><span class="line">	mon-&gt;clog-&gt;info() &lt;&lt; &quot;osd.&quot; &lt;&lt; i &lt;&lt; &quot; marked down after no beacon for &quot;</span><br><span class="line">			  &lt;&lt; diff &lt;&lt; &quot; seconds&quot;;</span><br><span class="line">	derr &lt;&lt; &quot;no beacon from osd.&quot; &lt;&lt; i &lt;&lt; &quot; since &quot; &lt;&lt; t-&gt;second</span><br><span class="line">	     &lt;&lt; &quot;, &quot; &lt;&lt; diff &lt;&lt; &quot; seconds ago.  marking down&quot; &lt;&lt; dendl;</span><br><span class="line">	pending_inc.new_state[i] = CEPH_OSD_UP;</span><br><span class="line">	new_down = true;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  return new_down;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<ul>
-<li>3.其实osd的进程还是在的，还是会发送beacon，但是在osd被mon标记down之后，后面osd发送的beacon，mon已经不再处理了<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">bool OSDMonitor::prepare_beacon(MonOpRequestRef op)</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  if (!src.is_osd() ||</span><br><span class="line">      !osdmap.is_up(from) ||</span><br><span class="line">      beacon-&gt;get_orig_source_inst() != osdmap.get_inst(from)) &#123;</span><br><span class="line">    dout(1) &lt;&lt; &quot; ignoring beacon from non-active osd.&quot; &lt;&lt; dendl;</span><br><span class="line">    return false;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"> ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>所以在我取消mon的断点之后，即使osd还是发送beacon，mon也不会在标记osd为up</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2021/02/23/Ceph-osd-send-beaon/">展开全文 >></a>
         </p>
       
 
@@ -912,95 +981,6 @@
 
 
   
-    <article id="post-compile-tcmu-runner" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/04/05/compile-tcmu-runner/">tcmu-runner编译</a>
-    </h1>
-  
-
-        
-        <a href="/2020/04/05/compile-tcmu-runner/" class="archive-article-date">
-  	<time datetime="2020-04-05T11:01:02.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-04-05</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="tcmu-runner编译"><a href="#tcmu-runner编译" class="headerlink" title="tcmu-runner编译"></a>tcmu-runner编译</h1><p>之前使用的是tcmu-runner的1.3.0版本，看了一下github上面最新的是1.5.2准备拿来更新一下，看看有没有什么性能的优化</p>
-<h1 id="源码编译"><a href="#源码编译" class="headerlink" title="源码编译"></a>源码编译</h1><ul>
-<li>1.下载源码包<br>这个可以直接在github上面下载</li>
-<li>2.编译有问题<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~/tcmu-runner/tcmu-runner-1.5.2]# make</span><br><span class="line">[  2%] Building C object CMakeFiles/tcmu.dir/libtcmu.c.o</span><br><span class="line">/root/tcmu-runner/tcmu-runner-1.5.2/libtcmu.c:38:37: error: &apos;NLA_S32&apos; undeclared here (not in a function)</span><br><span class="line">  [TCMU_ATTR_CMD_STATUS] = &#123; .type = NLA_S32 &#125;,</span><br><span class="line">                                     ^</span><br><span class="line">/root/tcmu-runner/tcmu-runner-1.5.2/libtcmu.c: In function &apos;send_netlink_reply&apos;:</span><br><span class="line">/root/tcmu-runner/tcmu-runner-1.5.2/libtcmu.c:100:2: error: implicit declaration of function &apos;nla_put_s32&apos; [-Werror=implicit-function-declaration]</span><br><span class="line">  ret = nla_put_s32(msg, TCMU_ATTR_CMD_STATUS, status);</span><br><span class="line">  ^</span><br><span class="line">cc1: all warnings being treated as errors</span><br><span class="line">make[2]: *** [CMakeFiles/tcmu.dir/libtcmu.c.o] Error 1</span><br><span class="line">make[1]: *** [CMakeFiles/tcmu.dir/all] Error 2</span><br><span class="line">make: *** [all] Error 2</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>说没有NLA_S32和nla_put_s32定义，看了一下代码，有头文件导入<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;libnl3/netlink/genl/genl.h&gt;</span><br><span class="line">#include &lt;libnl3/netlink/genl/mngt.h&gt;</span><br><span class="line">#include &lt;libnl3/netlink/genl/ctrl.h&gt;</span><br></pre></td></tr></table></figure></p>
-<p>在系统头文件/usr/include进行搜索，发现应该在这个文件中<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/include/libnl3/netlink/attr.h</span><br></pre></td></tr></table></figure></p>
-<p>但是没有，该开始以为是内核的头文件，后来看一下是<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~/tcmu-runner/tcmu-runner-1.5.2]# rpm -qf  /usr/include/libnl3/netlink/attr.h</span><br><span class="line">libnl3-devel-3.2.28-4.el7.x86_64</span><br></pre></td></tr></table></figure></p>
-<p>是这个包libnl3-devel版本有点低，代码中没有定义NLA_S32，这个是一个无符号32位，所以升级，上面的3.2.28便是我升级后的版本</p>
-<ul>
-<li>3.编译<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~/tcmu-runner/tcmu-runner-1.5.2]# make</span><br><span class="line">[  2%] Generating tcmuhandler-generated.c, tcmuhandler-generated.h</span><br><span class="line">Scanning dependencies of target tcmu</span><br><span class="line">[  5%] Building C object CMakeFiles/tcmu.dir/strlcpy.c.o</span><br><span class="line">[  7%] Building C object CMakeFiles/tcmu.dir/configfs.c.o</span><br><span class="line">[ 10%] Building C object CMakeFiles/tcmu.dir/api.c.o</span><br><span class="line">[ 12%] Building C object CMakeFiles/tcmu.dir/libtcmu.c.o</span><br><span class="line">[ 15%] Building C object CMakeFiles/tcmu.dir/libtcmu-register.c.o</span><br><span class="line">[ 17%] Building C object CMakeFiles/tcmu.dir/tcmuhandler-generated.c.o</span><br><span class="line">[ 20%] Building C object CMakeFiles/tcmu.dir/libtcmu_log.c.o</span><br><span class="line">[ 23%] Building C object CMakeFiles/tcmu.dir/libtcmu_config.c.o</span><br><span class="line">[ 25%] Building C object CMakeFiles/tcmu.dir/libtcmu_time.c.o</span><br><span class="line">Linking C shared library libtcmu.so</span><br><span class="line">[ 25%] Built target tcmu</span><br><span class="line">[ 28%] Building C object CMakeFiles/consumer.dir/scsi.c.o</span><br><span class="line">[ 30%] Building C object CMakeFiles/consumer.dir/consumer.c.o</span><br><span class="line">Linking C executable consumer</span><br><span class="line">[ 30%] Built target consumer</span><br><span class="line">[ 33%] Building C object CMakeFiles/handler_file.dir/file_example.c.o</span><br><span class="line">Linking C shared library handler_file.so</span><br><span class="line">[ 33%] Built target handler_file</span><br><span class="line">[ 35%] Building C object CMakeFiles/handler_file_optical.dir/scsi.c.o</span><br><span class="line">[ 38%] Building C object CMakeFiles/handler_file_optical.dir/file_optical.c.o</span><br><span class="line">Linking C shared library handler_file_optical.so</span><br><span class="line">[ 38%] Built target handler_file_optical</span><br><span class="line">[ 41%] Building C object CMakeFiles/handler_file_zbc.dir/scsi.c.o</span><br><span class="line">[ 43%] Building C object CMakeFiles/handler_file_zbc.dir/file_zbc.c.o</span><br><span class="line">Linking C shared library handler_file_zbc.so</span><br><span class="line">[ 43%] Built target handler_file_zbc</span><br><span class="line">[ 46%] Building C object CMakeFiles/handler_rbd.dir/rbd.c.o</span><br><span class="line">Linking C shared library handler_rbd.so</span><br><span class="line">[ 46%] Built target handler_rbd</span><br><span class="line">Scanning dependencies of target tcmu-runner</span><br><span class="line">[ 48%] Building C object CMakeFiles/tcmu-runner.dir/tcmur_cmd_handler.c.o</span><br><span class="line">[ 51%] Building C object CMakeFiles/tcmu-runner.dir/tcmur_aio.c.o</span><br><span class="line">[ 53%] Building C object CMakeFiles/tcmu-runner.dir/tcmur_device.c.o</span><br><span class="line">[ 56%] Building C object CMakeFiles/tcmu-runner.dir/target.c.o</span><br><span class="line">[ 58%] Building C object CMakeFiles/tcmu-runner.dir/alua.c.o</span><br><span class="line">[ 61%] Building C object CMakeFiles/tcmu-runner.dir/scsi.c.o</span><br><span class="line">[ 64%] Building C object CMakeFiles/tcmu-runner.dir/main.c.o</span><br><span class="line">[ 66%] Building C object CMakeFiles/tcmu-runner.dir/tcmuhandler-generated.c.o</span><br><span class="line">Linking C executable tcmu-runner</span><br><span class="line">[ 69%] Built target tcmu-runner</span><br><span class="line">[ 71%] Building C object CMakeFiles/tcmu-synthesizer.dir/scsi.c.o</span><br><span class="line">[ 74%] Building C object CMakeFiles/tcmu-synthesizer.dir/tcmu-synthesizer.c.o</span><br><span class="line">Linking C executable tcmu-synthesizer</span><br><span class="line">[ 74%] Built target tcmu-synthesizer</span><br><span class="line">Scanning dependencies of target tcmu_static</span><br><span class="line">[ 76%] Building C object CMakeFiles/tcmu_static.dir/strlcpy.c.o</span><br><span class="line">[ 79%] Building C object CMakeFiles/tcmu_static.dir/configfs.c.o</span><br><span class="line">[ 82%] Building C object CMakeFiles/tcmu_static.dir/api.c.o</span><br><span class="line">[ 84%] Building C object CMakeFiles/tcmu_static.dir/libtcmu.c.o</span><br><span class="line">[ 87%] Building C object CMakeFiles/tcmu_static.dir/libtcmu-register.c.o</span><br><span class="line">[ 89%] Building C object CMakeFiles/tcmu_static.dir/tcmuhandler-generated.c.o</span><br><span class="line">[ 92%] Building C object CMakeFiles/tcmu_static.dir/libtcmu_log.c.o</span><br><span class="line">[ 94%] Building C object CMakeFiles/tcmu_static.dir/libtcmu_config.c.o</span><br><span class="line">[ 97%] Building C object CMakeFiles/tcmu_static.dir/libtcmu_time.c.o</span><br><span class="line">Linking C static library libtcmu_static.a</span><br><span class="line">[100%] Built target tcmu_static</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>make一下编译完成</p>
-<h1 id="更新二进制"><a href="#更新二进制" class="headerlink" title="更新二进制"></a>更新二进制</h1><p>ldd和pldd看一下tcmu-runner二进制和进程依赖哪些动态库，发现有libtcmu.so和handler_rbd.so，所以替换这两个动态库加上tcmu-runner二进制就可以</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">C tcmu-runner</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/04/05/compile-tcmu-runner/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
@@ -1106,15 +1086,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1134,15 +1114,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1154,7 +1138,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1162,19 +1146,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1182,11 +1158,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1198,10 +1182,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
@@ -1210,11 +1190,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1226,11 +1206,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
