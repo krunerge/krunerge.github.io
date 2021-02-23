@@ -150,181 +150,6 @@
           <div id="js-content" class="content-ll">
             
   
-    <article id="post-linux-optimization-load-average" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/11/29/linux-optimization-load-average/">linux性能优化系列（1）平均负载</a>
-    </h1>
-  
-
-        
-        <a href="/2018/11/29/linux-optimization-load-average/" class="archive-article-date">
-  	<time datetime="2018-11-29T01:50:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-11-29</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="获取平均负载"><a href="#获取平均负载" class="headerlink" title="获取平均负载"></a>获取平均负载</h1><p>————————————————————————————————————————————————————————————————————————————<br>笔者一般使用两条命令获取平均负载:<br>uptime<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 ~]# uptime</span><br><span class="line"> 15:37:00 up 814 days, 22:02,  4 users,  load average: 0.87, 0.83, 0.82</span><br></pre></td></tr></table></figure></p>
-<p>top<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">top - 15:37:37 up 814 days, 22:02,  4 users,  load average: 1.01, 0.87, 0.84</span><br><span class="line">Tasks: 644 total,   2 running, 642 sleeping,   0 stopped,   0 zombie</span><br><span class="line">%Cpu(s):  4.2 us,  0.9 sy,  0.0 ni, 94.8 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st</span><br><span class="line">KiB Mem : 65858136 total,  8405052 free, 37853144 used, 19599940 buff/cache</span><br><span class="line">KiB Swap:        0 total,        0 free,        0 used. 23213220 avail Mem</span><br><span class="line"></span><br><span class="line">  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                                                                                                  </span><br><span class="line">31919 nova      20   0 6284804 108152  16248 R  35.3  0.2  52:59.05 nova-compute                                                                                                                             </span><br><span class="line">32023 nova      20   0  499104  95988   3664 S  23.5  0.1   9:26.80 nova-conductor                                                                                                                           </span><br><span class="line">32005 nova      20   0  499616  96448   3660 S  17.6  0.1   9:23.34 nova-conductor                                                                                                                           </span><br><span class="line">32014 nova      20   0  499288  96220   3664 S  17.6  0.1   9:19.99 nova-conductor                                                                                                                           </span><br><span class="line">32025 nova      20   0  499008  95772   3664 S  17.6  0.1   9:24.99 nova-conductor                                                                                                                           </span><br><span class="line">21167 root      20   0  147744   2452   1388 R  11.8  0.0   0:00.02 top                                                                                                                                      </span><br><span class="line">32028 nova      20   0  499692  96616   3660 S  11.8  0.1  10:28.59 nova-conductor                                                                                                                           </span><br><span class="line">   72 root      20   0       0      0      0 S   5.9  0.0  90:48.89 ksoftirqd/3                                                                                                                              </span><br><span class="line"> 7329 root      20   0   41992  23172  21824 S   5.9  0.0  30:39.54 sap1007                                                                                                                                  </span><br><span class="line"> 7893 qemu      20   0 10.171g 5.320g  12468 S   5.9  8.5  92:06.55 qemu-kvm                                                                                                                                 </span><br><span class="line">10461 qemu      20   0 6319884 224920  12192 S   5.9  0.3  80:59.01 qemu-kvm                                                                                                                                 </span><br><span class="line">13771 glance    20   0  714392  66352   5760 S   5.9  0.1 557:17.33 glance-api                                                                                                                               </span><br><span class="line">31637 mysql     20   0 15.114g 3.001g 138444 S   5.9  4.8   2315:34 mysqld                                                                                                                                   </span><br><span class="line">32002 nova      20   0  498576  95528   3664 S   5.9  0.1  10:26.97 nova-conductor                                                                                                                           </span><br><span class="line">32004 nova      20   0  499644  96488   3664 S   5.9  0.1  10:43.25 nova-conductor                                                                                                                           </span><br><span class="line">32007 nova      20   0  499436  96344   3660 S   5.9  0.1  10:26.56 nova-conductor                                                                                                                           </span><br><span class="line">32021 nova      20   0  498600  95548   3660 S   5.9  0.1   9:46.67 nova-conductor                                                                                                                           </span><br><span class="line">    1 root      20   0  338680   4888   1940 S   0.0  0.0  80:02.58 systemd                                                                                                                                  </span><br><span class="line">    2 root      20   0       0      0      0 S   0.0  0.0   0:42.26 kthreadd                                                                                                                                 </span><br><span class="line">    3 root      20   0       0      0      0 S   0.0  0.0 132:42.57 ksoftirqd/0                                                                                                                              </span><br><span class="line">    5 root       0 -20       0      0      0 S   0.0  0.0   0:00.00 kworker/0:0H                                                                                                                             </span><br><span class="line">    8 root      rt   0       0      0      0 S   0.0  0.0  10:13.38 migration/0                                                                                                                              </span><br><span class="line">    9 root      20   0       0      0      0 S   0.0  0.0   0:00.01 rcu_bh                                                                                                                                   </span><br><span class="line">   10 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/0                                                                                                                                  </span><br><span class="line">   11 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/1                                                                                                                                  </span><br><span class="line">   12 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/2                                                                                                                                  </span><br><span class="line">   13 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/3                                                                                                                                  </span><br><span class="line">   14 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/4                                                                                                                                  </span><br><span class="line">   15 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/5                                                                                                                                  </span><br><span class="line">   16 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/6                                                                                                                                  </span><br><span class="line">   17 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/7                                                                                                                                  </span><br><span class="line">   18 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/8                                                                                                                                  </span><br><span class="line">   19 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/9                                                                                                                                  </span><br><span class="line">   20 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/10                                                                                                                                 </span><br><span class="line">   21 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/11                                                                                                                                 </span><br><span class="line">   22 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/12                                                                                                                                 </span><br><span class="line">   23 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/13                                                                                                                                 </span><br><span class="line">   24 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/14                                                                                                                                 </span><br><span class="line">   25 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/15                                                                                                                                 </span><br><span class="line">   26 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/16                                                                                                                                 </span><br><span class="line">   27 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/17                                                                                                                                 </span><br><span class="line">   28 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/18                                                                                                                                 </span><br><span class="line">   29 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/19                                                                                                                                 </span><br><span class="line">   30 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/20                                                                                                                                 </span><br><span class="line">   31 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/21                                                                                                                                 </span><br><span class="line">   32 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/22                                                                                                                                 </span><br><span class="line">   33 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcuob/23                                                                                                                                 </span><br><span class="line">   34 root      20   0       0      0      0 S   0.0  0.0   5143:32 rcu_sched</span><br></pre></td></tr></table></figure></p>
-<p>负载就是上面的load average: 0.87, 0.83, 0.82，分别表示过去一分钟，五分钟，十五分钟的负载</p>
-<h1 id="负载代表什么"><a href="#负载代表什么" class="headerlink" title="负载代表什么"></a>负载代表什么</h1><p>——————————————————————————————————————————————————————————————————————————————<br>上面的负载值代表的其实是系统中的活跃进程数，包括正在运行和不可中断运行（比如一些内核态的写磁盘调度）</p>
-<h1 id="如何判断负载是高还是低"><a href="#如何判断负载是高还是低" class="headerlink" title="如何判断负载是高还是低"></a>如何判断负载是高还是低</h1><p>——————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.首先需要查看系统中有多少cpu</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 ~]# grep &quot;model name&quot; /proc/cpuinfo | wc -l</span><br><span class="line">24</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.比较负载值和cpu数目<br>如果负载值大于cpu数目，name系统就处于超负载状态</p>
-</li>
-</ul>
-<h1 id="查看分析负载工具"><a href="#查看分析负载工具" class="headerlink" title="查看分析负载工具"></a>查看分析负载工具</h1><p>—————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.mpstat<br>查看多个cpu的性能使用情况</p>
-</li>
-<li><p>2.pidstat<br>查看进程的性能</p>
-</li>
-</ul>
-<h1 id="压测工具"><a href="#压测工具" class="headerlink" title="压测工具"></a>压测工具</h1><p>—————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li>1.stress<br>这个stress可以压测cpu，内存和磁盘io</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">linux 性能</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/11/29/linux-optimization-load-average/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-go-learn-5" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/27/go-learn-5/">每天5分钟go（5）</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/27/go-learn-5/" class="archive-article-date">
-  	<time datetime="2018-10-27T11:54:14.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-27</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-并发机制是在runtime库中实现的"><a href="#1-并发机制是在runtime库中实现的" class="headerlink" title="1. 并发机制是在runtime库中实现的"></a>1. 并发机制是在runtime库中实现的</h1><h1 id="2-go程序理论上可以运行10000个协程"><a href="#2-go程序理论上可以运行10000个协程" class="headerlink" title="2. go程序理论上可以运行10000个协程"></a>2. go程序理论上可以运行10000个协程</h1><h1 id="3-M-P-G模型中"><a href="#3-M-P-G模型中" class="headerlink" title="3. M P G模型中"></a>3. M P G模型中</h1><h2 id="3-1-M值的两种设置方法"><a href="#3-1-M值的两种设置方法" class="headerlink" title="3.1 M值的两种设置方法"></a>3.1 M值的两种设置方法</h2><ul>
-<li>初始化的时候可以设置</li>
-<li>之后可以通过runtime/debug设置<h2 id="3-2-P值的两种设置方法"><a href="#3-2-P值的两种设置方法" class="headerlink" title="3.2 P值的两种设置方法"></a>3.2 P值的两种设置方法</h2></li>
-<li>通过runtime.GOMAXPROCS设置</li>
-<li>通过环境变量GOMAXPROCS设置<br>p值有一个硬性上限 256<br>注意：通过runtime.GOMAXPROCS设置的时候会停止所有p和G，影响程序的性能，所以设置P值的时候一般是在main函数之前<h2 id="P有状态"><a href="#P有状态" class="headerlink" title="P有状态"></a>P有状态</h2>见go并发实践136页<br>P有两个队列，一个是可运行队列，用来存放即将运行的程序，另一个是自由队列，用来重用G，就不需要创建新的G<h2 id="go语句的执行顺序"><a href="#go语句的执行顺序" class="headerlink" title="go语句的执行顺序"></a>go语句的执行顺序</h2>步骤1：go 语句<br>步骤2：生成newporc<br>步骤3：本地p和调度器看看有没有可用的自由G，没有新建一个<br>步骤4：初始化关联go函数，G的状态以及ID<br>步骤5：存到本地P的runnext,然后会把原来runnext上面的G放到p的可运行队列的尾，如果队列满了，则追加到调度器的课运行队列中<h2 id="G也有状态"><a href="#G也有状态" class="headerlink" title="G也有状态"></a>G也有状态</h2>见go并发实践140页</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/27/go-learn-5/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
     <article id="post-add-nova-periodic-task" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1023,6 +848,234 @@
 
 
   
+    <article id="post-k8s-learn-8" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/08/k8s-learn-8/">k8s learn(8)重新认识Docker容器</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/08/k8s-learn-8/" class="archive-article-date">
+  	<time datetime="2018-10-08T14:21:46.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-08</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="镜像上传到Docker-hub"><a href="#镜像上传到Docker-hub" class="headerlink" title="镜像上传到Docker hub"></a>镜像上传到Docker hub</h1><ul>
+<li>1.docker login登陆</li>
+<li>2.docker tag  hellword krunerge/hellword:v1<br>其中krunerge是你的仓库名，也是你docker hub的用户名</li>
+<li>3.docker push krunerge/hellword:v1</li>
+</ul>
+<h1 id="docker-exec原理"><a href="#docker-exec原理" class="headerlink" title="docker exec原理"></a>docker exec原理</h1><ul>
+<li><p>1.找到容器的进程id</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># docker inspect --format &apos;&#123;&#123;.State.Pid&#125;&#125;&apos; e4065bd03082</span><br><span class="line">48987</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2.找到进程的相关的namespace</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># ll /proc/48987/ns</span><br><span class="line">总用量 0</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 cgroup -&gt; cgroup:[4026531835]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 ipc -&gt; ipc:[4026533013]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 mnt -&gt; mnt:[4026533009]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:05 net -&gt; net:[4026533016]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 pid_for_children -&gt; pid:[4026533014]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 user -&gt; user:[4026531837]</span><br><span class="line">lrwxrwxrwx. 1 root root 0 10月  8 22:19 uts -&gt; uts:[4026533012]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>3.docker exec的原理就是创建一个新进程，加入到之前容器进程的namespace中，就是通过上面找到的namespace<br>使用setns()系统调用实现，模拟实现如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">#define _GNU_SOURCE</span><br><span class="line">#include &lt;fcntl.h&gt;</span><br><span class="line">#include &lt;sched.h&gt;</span><br><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">#define errExit(msg) do&#123; perror(msg); exit(EXIT_FAILURE);&#125; while(0)</span><br><span class="line"></span><br><span class="line">int main(int argc, char *argv[])&#123;</span><br><span class="line">  int fd;</span><br><span class="line"></span><br><span class="line">  fd = open(argv[1], O_RDONLY);</span><br><span class="line">  if (setns(fd, 0) == -1)&#123;</span><br><span class="line">      errExit(&quot;setns&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  execvp(argv[2], &amp;argv[2]);</span><br><span class="line">  errExit(&quot;execvp&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="docker的数据卷"><a href="#docker的数据卷" class="headerlink" title="docker的数据卷"></a>docker的数据卷</h1><ul>
+<li><p>docker支持两种数据卷声明方式</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. docker run -v /test ...</span><br><span class="line">这个会创建一个临时目录/var/lib/docker/volumes/[VOLUME_ID]/_data</span><br><span class="line">2. docker run -v /home:/test ...</span><br><span class="line">使用宿主机的/home目录挂载</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>数据挂载时机<br>1.首先使用镜像生成rootfs<br>2.然后挂载数据卷到容器目录（使用的绑定挂载bind mount）<br>3.在执行chroot操作</p>
+</li>
+<li>数据卷是挂载容器的可读写层<br>docker commit的时候不会提交，因为docker commit是在宿主机执行，看不到，但是commit之后会有一个空挂载点目录生成</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/08/k8s-learn-8/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-go-learn-3" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/06/go-learn-3/">每天5分钟go-3</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/06/go-learn-3/" class="archive-article-date">
+  	<time datetime="2018-10-06T07:49:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-06</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="go的并发"><a href="#go的并发" class="headerlink" title="go的并发"></a>go的并发</h1><ul>
+<li>同步时遇到竟态<br>有两种解决：</li>
+</ul>
+<ol>
+<li>原子操作（sync/atomic）</li>
+<li>临界区（互斥）</li>
+</ol>
+<h1 id="go中的管道使用"><a href="#go中的管道使用" class="headerlink" title="go中的管道使用"></a>go中的管道使用</h1><ul>
+<li><p>os/exec<br>使用示例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cmd0 := exec.Command(&quot;echo&quot;, &quot;-n&quot;, &quot;My first&quot;)</span><br><span class="line">cmd0.Start()</span><br><span class="line">stdout0, err := cmd0.StdoutPipe()</span><br><span class="line">output0 := make([]byte, 30)</span><br><span class="line">n, err := stdout0.Read(output0)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>两个进程间管道的使用示例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">cmd1 := exec.Command(&quot;ps&quot;, &quot;aux&quot;)</span><br><span class="line">cmd2 := exec.Command(&quot;grep&quot;, &quot;apipe&quot;)</span><br><span class="line">var outputBuf1 bytes.Buffer</span><br><span class="line">cmd1.Stdout = &amp;outputBuf1</span><br><span class="line">if err := cmd1.Start(); err != nil &#123;</span><br><span class="line">        fmt.Printf(&quot;Error: The first command can not be startup %s\n&quot;, err)</span><br><span class="line">        return</span><br><span class="line">&#125;</span><br><span class="line">if err := cmd1.Wait(); err != nil &#123;</span><br><span class="line">        fmt.Printf(&quot;Error: Couldn&apos;t wait for the first command: %s\n&quot;, err)</span><br><span class="line">        return</span><br><span class="line">&#125;</span><br><span class="line">cmd2.Stdin = &amp;outputBuf1</span><br><span class="line">var outputBuf2 bytes.Buffer</span><br><span class="line">cmd2.Stdout = &amp;outputBuf2</span><br><span class="line">if err := cmd2.Start(); err != nil &#123;</span><br><span class="line">        fmt.Printf(&quot;Error: The second command can not be startup: %s\n&quot;, err)</span><br><span class="line">        return</span><br><span class="line">&#125;</span><br><span class="line">if err := cmd2.Wait(); err != nil &#123;</span><br><span class="line">        fmt.Printf(&quot;Error: Couldn&apos;t wait for the second command: %s\n&quot;, err)</span><br><span class="line">        return</span><br><span class="line">&#125;</span><br><span class="line">fmt.Printf(&quot;%s\n&quot;, outputBuf2.Bytes())</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>此管道为匿名管道</p>
+<ul>
+<li>命令管道创建<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">reader, writer, err := os.Pipe()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>注意：匿名管道会在管道缓冲区被写满之后使写数据的进程阻塞，命名管道会在其中一段未被就绪钱阻塞另一端的进程</p>
+<ul>
+<li>基于内存的有原子操作保证的管道<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">reader, writer := io.Pipe()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="信号"><a href="#信号" class="headerlink" title="信号"></a>信号</h1><p>是IPC中唯一一种异步通信方式<br>信号的来源<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. 键盘输入</span><br><span class="line">2. 硬件故障</span><br><span class="line">3. 系统函数调用</span><br><span class="line">4. 软件中的非法运算</span><br></pre></td></tr></table></figure></p>
+<p>信号所在代码库os/signal</p>
+<ul>
+<li><p>发送信号函数</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func Notify（）</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>两个信号是不能被忽略的<br>信号可以被忽略，捕捉和执行默认操作，有两个信号不能被忽略:SIGKILL和SIGSTOP</p>
+</li>
+<li><p>恢复信号的默认操作</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func Stop()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>go中操作进程</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. os.StartProcess()启动进程，返回进程值</span><br><span class="line">2. os.FindProcess()查找进程， 返回进程值</span><br><span class="line">3. 调用进程值的signal方法可以给进程发送信号</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="socket"><a href="#socket" class="headerlink" title="socket"></a>socket</h1><p>包net</p>
+<ul>
+<li><p>服务端</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">net.Listen()</span><br><span class="line">lintener.Accept()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>客户端</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">func Dial()</span><br><span class="line">func DialTime()同时设置超时时间</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>操作系统的socket操作不是阻塞的</p>
+</li>
+<li>socket关闭之后，read会返回io.EOF错误</li>
+<li>net.Conn方法<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Read</span><br><span class="line">Write</span><br><span class="line">Close</span><br><span class="line">LocalAddr</span><br><span class="line">RemoteAddr</span><br><span class="line">SetDeadline（超时时间，包括读写，还有其他）,超时时间需要每次循环都要设置，使用time.Time&#123;&#125;零值参数取消超时时间</span><br><span class="line">SetReadDeadline（读超时时间）</span><br><span class="line">SetWriteDeadline（写超时时间）</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>注:客户端也是有端口，毕竟是端到端的通信，不过客户端的端口是内核自己分配的</p>
+<ul>
+<li>闲置连接<br>超时说明这个连接已经是闲置连接</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">go</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/06/go-learn-3/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/4/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/6/">Next &raquo;</a>
@@ -1164,11 +1217,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1176,11 +1229,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1232,15 +1285,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1260,11 +1313,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1272,11 +1325,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
             
             <div class="clearfix"></div>

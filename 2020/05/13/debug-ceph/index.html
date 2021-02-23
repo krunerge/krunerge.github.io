@@ -8,17 +8,17 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>debug ceph | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="centos安装clion 1.安装jdk 1yum install java-1.8.0-openjdk   DISPLAY1export DISPLAY=:0     X11    1234567891011vi /etc/ssh/sshd_config    配置：X11Forwarding yes    然后重启服务service sshd restart然后确保xshell客户端配置为：">
+  <meta name="description" content="centos安装clion 1.安装jdk 1yum install java-1.8.0-openjdk  2.DISPLAY 1export DISPLAY=:0  3.X11   1234567891011vi /etc/ssh/sshd_config    配置：X11Forwarding yes    然后重启服务service sshd restart然后确保xshell客户端配置为：">
 <meta property="og:type" content="article">
 <meta property="og:title" content="debug ceph">
 <meta property="og:url" content="http://yoursite.com/2020/05/13/debug-ceph/index.html">
 <meta property="og:site_name" content="小甲师兄">
-<meta property="og:description" content="centos安装clion 1.安装jdk 1yum install java-1.8.0-openjdk   DISPLAY1export DISPLAY=:0     X11    1234567891011vi /etc/ssh/sshd_config    配置：X11Forwarding yes    然后重启服务service sshd restart然后确保xshell客户端配置为：">
+<meta property="og:description" content="centos安装clion 1.安装jdk 1yum install java-1.8.0-openjdk  2.DISPLAY 1export DISPLAY=:0  3.X11   1234567891011vi /etc/ssh/sshd_config    配置：X11Forwarding yes    然后重启服务service sshd restart然后确保xshell客户端配置为：">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2020-05-13T12:14:16.300Z">
+<meta property="og:updated_time" content="2021-02-23T11:34:58.082Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="debug ceph">
-<meta name="twitter:description" content="centos安装clion 1.安装jdk 1yum install java-1.8.0-openjdk   DISPLAY1export DISPLAY=:0     X11    1234567891011vi /etc/ssh/sshd_config    配置：X11Forwarding yes    然后重启服务service sshd restart然后确保xshell客户端配置为：">
+<meta name="twitter:description" content="centos安装clion 1.安装jdk 1yum install java-1.8.0-openjdk  2.DISPLAY 1export DISPLAY=:0  3.X11   1234567891011vi /etc/ssh/sshd_config    配置：X11Forwarding yes    然后重启服务service sshd restart然后确保xshell客户端配置为：">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -176,14 +176,10 @@
 <li><p>1.安装jdk</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install java-1.8.0-openjdk</span><br></pre></td></tr></table></figure>
 </li>
-<li><ol start="2">
-<li>DISPLAY<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">export DISPLAY=:0</span><br></pre></td></tr></table></figure>
+<li><p>2.DISPLAY</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">export DISPLAY=:0</span><br></pre></td></tr></table></figure>
 </li>
-</ol>
-</li>
-<li><ol start="3">
-<li>X11</li>
-</ol>
+<li><p>3.X11</p>
 </li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/ssh/sshd_config</span><br><span class="line">    配置：X11Forwarding yes</span><br><span class="line">    然后重启服务service sshd restart</span><br><span class="line"></span><br><span class="line">然后确保xshell客户端配置为：</span><br><span class="line">    属性-连接-SSH-隧道：</span><br><span class="line">    X11转移-（选中）转发X11连接到-（选中）Xmanager</span><br><span class="line"></span><br><span class="line">然后打开xshell会话后：</span><br><span class="line">    echo $DISPLAY 查看是有值的</span><br><span class="line">    此时直接运行脚本可以打开程序GUI界面</span><br></pre></td></tr></table></figure>
@@ -481,11 +477,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -493,11 +489,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -549,15 +545,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -577,11 +573,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -589,11 +585,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
             
             <div class="clearfix"></div>
