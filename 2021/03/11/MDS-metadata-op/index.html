@@ -6,15 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Archives | 小甲师兄</title>
+  <title>MDS元数据请求操作流程 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="小甲师兄">
-<meta property="og:url" content="http://yoursite.com/archives/page/3/index.html">
+  <meta name="description" content="小记这篇是学生时代写的笔记 概要本文章主要是讲解两种元数据请求：（1）需要修改元数据的请求；（2）不需要修改的元数据请求。解析元数据请求的接收，处理以及回复客户端 MDS元数据请求处理流程 1.接受元数据请求首先元数据的请求是client发出来的，充当client角色的那台电脑通过simplemessage模块发送到网络上，然后充当MDS角色的那台电脑通过simplemssage从网络中接收消息，">
+<meta name="keywords" content="Ceph">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MDS元数据请求操作流程">
+<meta property="og:url" content="http://yoursite.com/2021/03/11/MDS-metadata-op/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="小记这篇是学生时代写的笔记 概要本文章主要是讲解两种元数据请求：（1）需要修改元数据的请求；（2）不需要修改的元数据请求。解析元数据请求的接收，处理以及回复客户端 MDS元数据请求处理流程 1.接受元数据请求首先元数据的请求是client发出来的，充当client角色的那台电脑通过simplemessage模块发送到网络上，然后充当MDS角色的那台电脑通过simplemssage从网络中接收消息，">
 <meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2021-03-11T14:13:49.689Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄">
+<meta name="twitter:title" content="MDS元数据请求操作流程">
+<meta name="twitter:description" content="小记这篇是学生时代写的笔记 概要本文章主要是讲解两种元数据请求：（1）需要修改元数据的请求；（2）不需要修改的元数据请求。解析元数据请求的接收，处理以及回复客户端 MDS元数据请求处理流程 1.接受元数据请求首先元数据的请求是client发出来的，充当client角色的那台电脑通过simplemessage模块发送到网络上，然后充当MDS角色的那台电脑通过simplemssage从网络中接收消息，">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -148,415 +153,270 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-MDS-metadata-op" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      MDS元数据请求操作流程
+    </h1>
+  
+
+        
+        <a href="/2021/03/11/MDS-metadata-op/" class="archive-article-date">
+  	<time datetime="2021-03-11T13:35:04.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-03-11</time>
+</a>
+        
+      </header>
     
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="小记"><a href="#小记" class="headerlink" title="小记"></a>小记</h1><p>这篇是学生时代写的笔记</p>
+<h1 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h1><p>本文章主要是讲解两种元数据请求：<br>（1）需要修改元数据的请求；<br>（2）不需要修改的元数据请求。解析元数据请求的接收，处理以及回复客户端</p>
+<h1 id="MDS元数据请求处理流程"><a href="#MDS元数据请求处理流程" class="headerlink" title="MDS元数据请求处理流程"></a>MDS元数据请求处理流程</h1><ul>
+<li><p>1.接受元数据请求<br>首先元数据的请求是client发出来的，充当client角色的那台电脑通过simplemessage模块发送到网络上，然后充当MDS角色的那台电脑通过simplemssage从网络中接收消息，然后分发给那台电脑的MDS模块。这些是网络模块消息的传递，你应该懂吧！不懂我要打屁屁了。<br>接着上面，在MDS模块接收到消息之后我们看一下代码的流程：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MDS::ms_dispatch（）--&gt; MDS::_dispatch(Message *m)</span><br></pre></td></tr></table></figure>
+<p>这个函数式接收消息，对于接收到的消息可能有很多，因为client，Mon，OSD和其他的MDS都可以和这台MDS都可以进行消息的通信，对于这些消息有分为两大类：（1）优先级比较高的，主要是一些map信息这些map记录了集群的很多信息，比如MDS集群，OSD集群和MON集群；（2）优先级比较低的消息，client，Mon，OSD和其他的MDS发送过来的消息这些就是属于这种。代码如下（在MDS::_dispatch（）函数中）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"> bool MDS::_dispatch(Message *m)</span><br><span class="line">&#123;</span><br><span class="line">// core处理消息的重点</span><br><span class="line">  if (!handle_core_message(m))//优先级比较的高的消息</span><br><span class="line">  &#123;</span><br><span class="line">    if (is_laggy())</span><br><span class="line">	&#123;</span><br><span class="line">      dout(10) &lt;&lt; &quot; laggy, deferring &quot; &lt;&lt; *m &lt;&lt; dendl;</span><br><span class="line">      waiting_for_nolaggy.push_back(m);</span><br><span class="line">    &#125;</span><br><span class="line">	else</span><br><span class="line">	&#123;</span><br><span class="line">      if (!handle_deferrable_message(m))  // 优先级低的消息</span><br><span class="line">	  &#123;</span><br><span class="line">	    dout(0) &lt;&lt; &quot;unrecognized message &quot; &lt;&lt; *m &lt;&lt; dendl;</span><br><span class="line">	    m-&gt;put();</span><br><span class="line">	    return false;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面已标出两大类消息类型,我们这里主要是讨论client发过来的元数据请求属于优先级低的消息,所以代码流程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MDS::_dispatch(Message *m) --&gt; MDS::handle_deferrable_message(Message *m)</span><br></pre></td></tr></table></figure>
+<p>在handle_deferrable_message()函数中根据消息的类型标识，知道需要Server这个模块进行代码的出来，如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"> bool MDS::handle_deferrable_message(Message *m)</span><br><span class="line">&#123;</span><br><span class="line"> ...</span><br><span class="line">case CEPH_MSG_CLIENT_SESSION:</span><br><span class="line">case CEPH_MSG_CLIENT_RECONNECT:</span><br><span class="line">case CEPH_MSG_CLIENT_REQUEST:  //消息标识显示出这事处理客户端的元数据请求</span><br><span class="line">      server-&gt;dispatch(m);</span><br><span class="line">...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面可以看出对于client端传过来的请求：主要分为三类（就是三个case）：<br>（1）client的会话<br>（2）client的重连接<br>（3）客户端的元数据请求，这三种都是客户端的请求，都要Server模块进行处理，具体看如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"> void Server::dispatch(Message *m)</span><br><span class="line">&#123;</span><br><span class="line">   ....</span><br><span class="line">   switch (m-&gt;get_type()) &#123;</span><br><span class="line">  case CEPH_MSG_CLIENT_SESSION:</span><br><span class="line">    handle_client_session(static_cast&lt;MClientSession*&gt;(m));</span><br><span class="line">    return;</span><br><span class="line">  case CEPH_MSG_CLIENT_REQUEST:    //这主要是处理client的元数据请求</span><br><span class="line">    handle_client_request(static_cast&lt;MClientRequest*&gt;(m));</span><br><span class="line">    return;</span><br><span class="line">  case MSG_MDS_SLAVE_REQUEST:</span><br><span class="line">    handle_slave_request(static_cast&lt;MMDSSlaveRequest*&gt;(m));</span><br><span class="line">    return;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于上面Server主要处理三种client端发过来的消息，而对于客户端的元数据请求主要是handle_client_request()函数。代码流程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">server-&gt;dispatch(m) --&gt; Server::handle_client_request(MClientRequest *req)</span><br></pre></td></tr></table></figure>
+<p>handle_client_request（）主要是做对元数据请求消息的注册和缓存，就是在MDS中缓存处理过的元数据请求消息，然后对client的元数据请求消息的具体处理交给Server::dispatch_client_request(MDRequestRef&amp; mdr)函数处理；代码流程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Server::handle_client_request(MClientRequest *req) --&gt; Server::dispatch_client_request(MDRequestRef&amp; mdr)</span><br></pre></td></tr></table></figure>
+<p>dispatch_client_request函数可以从函数的名字可以看出是分发client端的消息，因为client的元数据请求操作有好多，比如打开文件，删除文件，修改文件属性等等，所以这个函数就是用来分发具体的消息。</p>
+<p>我们看一下大致有哪些元数据请求？ 一共有27中元数据请求,分别如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">CEPH_MDS_OP_LOOKUPHASH</span><br><span class="line">CEPH_MDS_OP_LOOKUPINO</span><br><span class="line">CEPH_MDS_OP_LOOKUPPARENT</span><br><span class="line">CEPH_MDS_OP_LOOKUPNAME</span><br><span class="line">CEPH_MDS_OP_LOOKUP</span><br><span class="line">CEPH_MDS_OP_LOOKUPSNAP</span><br><span class="line">CEPH_MDS_OP_GETATTR</span><br><span class="line">CEPH_MDS_OP_SETATTR</span><br><span class="line">CEPH_MDS_OP_SETLAYOUT</span><br><span class="line">CEPH_MDS_OP_SETDIRLAYOUT</span><br><span class="line">CEPH_MDS_OP_SETXATTR</span><br><span class="line">CEPH_MDS_OP_RMXATTR</span><br><span class="line">CEPH_MDS_OP_READDIR</span><br><span class="line">CEPH_MDS_OP_SETFILELOCK</span><br><span class="line">CEPH_MDS_OP_GETFILELOCK</span><br><span class="line">CEPH_MDS_OP_CREATE</span><br><span class="line">CEPH_MDS_OP_OPEN</span><br><span class="line">CEPH_MDS_OP_MKNOD</span><br><span class="line">CEPH_MDS_OP_LINK</span><br><span class="line">CEPH_MDS_OP_UNLINK</span><br><span class="line">CEPH_MDS_OP_RMDIR</span><br><span class="line">CEPH_MDS_OP_RENAME</span><br><span class="line">CEPH_MDS_OP_MKDIR</span><br><span class="line">CEPH_MDS_OP_SYMLINK</span><br><span class="line">CEPH_MDS_OP_LSSNAP</span><br><span class="line">CEPH_MDS_OP_MKSNAP</span><br><span class="line">CEPH_MDS_OP_RMSNAP</span><br></pre></td></tr></table></figure>
+<p>这就是27个元数据请求，具体哪个请求是对目录操作，哪个是对文件操作，可以通过名字看出，这里也使用了一种状态机的原理，每一种请求就是一种状态，但是这些状态时有限的，状态之间是不能转化的。</p>
+</li>
+<li><p>2.元数据请求处理<br>分为需不需要修改元数据主要是需要修改元数据的请求会生成日志，没有修改的元数据请求不需生成日志</p>
+</li>
+<li><p>2.1不需修改元数据的请求处理<br>这里我们以open元数据操作为例就是打开一个文件，这个操作是不需要进行元数据的修改的，相应的元数据请求类型为CEPH_MDS_OP_OPEN，处理函数为handle_client_open()。下面看一下其关键代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">void Server::handle_client_open(MDRequestRef&amp; mdr)</span><br><span class="line">&#123;</span><br><span class="line">MClientRequest *req = mdr-&gt;client_request;//从函数操作中取出client的元数据请求</span><br><span class="line">...</span><br><span class="line">CInode *cur = rdlock_path_pin_ref(mdr, 0, rdlocks, need_auth);//这个是从MDCache中查找相关元数据</span><br><span class="line">...</span><br><span class="line">reply_request(mdr, 0, cur, dn);//返回回复给client</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看出这里最重要的是从MDCache中查找相关的元数据。我们来看一下rdlock_path_pin_ref()函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Server::rdlock_path_pin_ref() --&gt; MDCache::path_traverse()</span><br></pre></td></tr></table></figure></p>
+<p>Path_traverse()函数才是最终查找元数据函数。对于元数据的查找我之前跟你说过了，不记得我论文呢上也有图。就是按Cdir-&gt;CDentry-&gt;Cinode这个顺序查找元数据的。<br>由于open操作没有修改元数据所以没有产生日志，直接可以给client回复一个消息就可以，这就是reply_request()函数。这个函数会先生成一个回复消息，然后通过simplemessage发送到client上。</p>
+<ul>
+<li>2.2需修改元数据的请求处理<br>上面没有修改元数据请求的操作时比较简单的，而需要修改元数据的操作就比较复杂，因为会生成相应的日志事件，这样就增加了日志的管理。这里我们以CEPH_MDS_OP_SETATTR这种元数据请求类型的操作为例，它的处理函数为handle_client_setattr()，这个元数据请求主要是修改文件的属性，比如修改文件的大小，所属者等等，具体的相关代码如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">void Server::handle_client_setattr(MDRequestRef&amp; mdr)</span><br><span class="line">&#123;</span><br><span class="line">MClientRequest *req = mdr-&gt;client_request;//首先从函数操作中取出元数据请求</span><br><span class="line">...</span><br><span class="line">CInode *cur = rdlock_path_pin_ref(mdr, 0, rdlocks, true);//在MDCache中查找元数据</span><br><span class="line">...</span><br><span class="line">mdr-&gt;ls = mdlog-&gt;get_current_segment();</span><br><span class="line">EUpdate *le = new EUpdate(mdlog, &quot;setattr&quot;);//生成相关日志</span><br><span class="line">mdlog-&gt;start_entry(le);</span><br><span class="line">...</span><br><span class="line">pi = cur-&gt;project_inode(); //写时拷贝生成一个元数据的副本</span><br><span class="line">...</span><br><span class="line">if (mask &amp; CEPH_SETATTR_MODE)  //修改元数据副本的属性</span><br><span class="line">    pi-&gt;mode = (pi-&gt;mode &amp; ~07777) | (req-&gt;head.args.setattr.mode &amp; 07777);</span><br><span class="line"> if (mask &amp; CEPH_SETATTR_UID)</span><br><span class="line">    pi-&gt;uid = req-&gt;head.args.setattr.uid;</span><br><span class="line">if (mask &amp; CEPH_SETATTR_GID)</span><br><span class="line">    pi-&gt;gid = req-&gt;head.args.setattr.gid;</span><br><span class="line">if (mask &amp; CEPH_SETATTR_MTIME)</span><br><span class="line">    pi-&gt;mtime = req-&gt;head.args.setattr.mtime;</span><br><span class="line">if (mask &amp; CEPH_SETATTR_ATIME)</span><br><span class="line">    pi-&gt;atime = req-&gt;head.args.setattr.atime;</span><br><span class="line">if (mask &amp; (CEPH_SETATTR_ATIME | CEPH_SETATTR_MTIME))</span><br><span class="line">    pi-&gt;time_warp_seq++;  </span><br><span class="line">...//日志的处理并回复client</span><br><span class="line">journal_and_reply(,,new C_MDS_inode_update_finish(mds, mdr, cur,</span><br><span class="line">							truncating_smaller, changed_ranges))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>首先可以看出前面处理的部分跟不需修改元数据的请求时一样的，都要从MDCache中国把元数据查找出来。不同的就是后面生成相关的日志以及如何修改元数据。<br>这里对元数据的修改使用的是COW（写时拷贝技术），就是复制一个副本，然后再副本上面修改元数据，修改后的副本不会立即替换掉原来的元数据，也不会把原来的元数据标记为脏，这些修改的元数据副本会放在一个队列中。这个我们从副本元数据怎样生成的久可以看出，就是CInode::project_inode()函数。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">inode_t *CInode::project_inode(map&lt;string,bufferptr&gt; *px)</span><br><span class="line">&#123;//在projected_nodes最后面增加一个projected_nodes存的是指向同一个INOde 的多个脏版本</span><br><span class="line">  if (projected_nodes.empty()) &#123;  //空的时候增加一个本inode 的</span><br><span class="line">    projected_nodes.push_back(new projected_inode_t(new inode_t(inode)));</span><br><span class="line">    if (px)</span><br><span class="line">      *px = xattrs;</span><br><span class="line">  &#125; else &#123;  //不为空时把最后一个复制再插入到最后</span><br><span class="line">    projected_nodes.push_back(new projected_inode_t(</span><br><span class="line">        new inode_t(*projected_nodes.back()-&gt;inode))); //inode号是一样的</span><br><span class="line">    if (px)</span><br><span class="line">      *px = *get_projected_xattrs();  //赋值一个最新的脏数据版本信息</span><br><span class="line">  &#125;</span><br><span class="line">  projected_nodes.back()-&gt;xattrs = px;</span><br><span class="line">  dout(15) &lt;&lt; &quot;project_inode &quot; &lt;&lt; projected_nodes.back()-&gt;inode &lt;&lt; dendl;</span><br><span class="line">  return projected_nodes.back()-&gt;inode;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里我们首先要介绍一下副本元数据的数据结构类型projected_inode_t，代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">struct projected_inode_t &#123;//副本元数据数据版本信息</span><br><span class="line">    inode_t *inode;</span><br><span class="line">    map&lt;string,bufferptr&gt; *xattrs;//这里存的就是修改的数据</span><br><span class="line">    sr_t *snapnode;</span><br><span class="line"></span><br><span class="line">    projected_inode_t()</span><br><span class="line">      : inode(NULL), xattrs(NULL), snapnode(NULL) &#123;&#125;</span><br><span class="line">    projected_inode_t(inode_t *in, sr_t *sn)</span><br><span class="line">      : inode(in), xattrs(NULL), snapnode(sn) &#123;&#125;</span><br><span class="line">    projected_inode_t(inode_t *in, map&lt;string, bufferptr&gt; *xp = NULL, sr_t *sn = NULL)</span><br><span class="line">      : inode(in), xattrs(xp), snapnode(sn) &#123;&#125;</span><br><span class="line">  &#125;;</span><br></pre></td></tr></table></figure></p>
+<p>然后在Cinode类中一个projected_inode_t的链表，代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Class Cinode</span><br><span class="line">&#123;</span><br><span class="line">   list&lt;projected_inode_t*&gt; projected_nodes;//所有的副本元数据链表</span><br><span class="line">&#125;；</span><br></pre></td></tr></table></figure></p>
+<p>Cinode中使用链表来管理所有的副本元数据，并且这是有顺序的，链表从头到尾所管理的副本元数据越新，什么意识？就是越新生产的副本元数据越在链表尾。</p>
+<p>在修改了副本元数据之后，就会生成相关的日志事件，这里生成的日志事件为Eupdate，从名字可以看出这个是一个更新的日志事件，日志生成完之后就会把日志交给所管理的LogSegment，就是说这个日志事件交给哪个LogSegment管理，这个主要是通过下面这个函数实现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">void MDLog::start_entry(LogEvent *e)//这个日志时间要要写在哪个地方</span><br><span class="line">&#123;</span><br><span class="line">  assert(cur_event == NULL);</span><br><span class="line">  cur_event = e;//日志模块中一个指向当前日志事件 的指针</span><br><span class="line">  e-&gt;set_start_off(get_write_pos());  //从一个日志管理器journaler中得到下一个日志事件开始写的位置，并设置给当前的日志事件</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>为什么要LogSegment？首先说明一下，日志最终肯定是要写到OSD上的日志文件中，日志要顺序写，这些都是写到底层物理磁盘上。而我们这里的LogSegment是MDS中的，这个是逻辑上面管理日志文件，可以想象成日志文件由一个接一个LogSegment连接而成，每一个LogSegment长度为4M，而每一个LogSegment是有一个个日志事件组成。日志都是一个个在LogSegment中往后追加，就是后生成的日志在后面，等一个LogSegment满了一个4M大小之后，就生成一个新的空的LogSegment存放后面的日志。所以也可以看出日志是以LogSegment为单位写到OSD上去的。</p>
+<p>下面我们要介绍一下一个重要的关于日志写到OSD上之后，如何异步继续处理下一步，这里使用的是回调函数，但是ceph中使用类包装了回调函数，生成了一个回调类。至于回调类看以看具体的《Context回调类》文档。上面这个handle_client_setattr元数据请求函数就生成了一个回调类C_MDS_inode_update_finish，从这个类的名字可以看出实在日志写到OSD上之后需要进行update操作，具体就是使用修改后的副本元数据替换掉原来的元数据，并把元数据标记为脏。代码如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">journal_and_reply(,,new C_MDS_inode_update_finish(mds, mdr, cur,</span><br><span class="line">							truncating_smaller, changed_ranges))</span><br></pre></td></tr></table></figure></p>
+<p>蓝色字就是生成一个回调类对象，具体的操作就是进入这个journal_and_reply函数执行，从名字可以看出是要执行日志的处理和回复client两个部分。</p>
+<p>下面看一下journal_and_reply具体代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">void Server::journal_and_reply</span><br><span class="line">&#123;</span><br><span class="line">...</span><br><span class="line">early_reply(mdr, in, dn);  //对client端进行早期回复</span><br><span class="line">...</span><br><span class="line">mdlog-&gt;submit_entry(le, fin);//这个主要是把刚刚生成的日志写到日志写缓存中</span><br><span class="line">...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里要解释两个：<br>（1）    对client的早期回复：对client的早期回复，是尽量的回复给client，让client继续做后面的事，但是这时日志还没有写到OSD上，所以是不安全的，如果突然某一台MDS挂了，就不能进行回复。但是MDS挂了的概率还是比较少的，所以使用早期回复client，会大大较少元数据操作响应的延时。<br>（2）    把日志写到日志的写缓存中：日志生成之后，需要写到MDLog模块的一个日志写缓存中，你可以把这个缓存看成字符数组，就是把一个个日志对象序列化到这个字符数组中，至于什么是序列化操作？这个你自己上网百度一下。</p>
+<p>下面具体看一下如何把日志写到日志缓存中的，首先看一下代码流程：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MDLog::submit_entry()  Journaler::append_entry() write_buf.claim_append(bl)</span><br></pre></td></tr></table></figure></p>
+<p>其中write_buf就是日志的写缓存，你可以看成是一个字符数组。<br>下面具体看一下Journaler::append_entry函数。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">uint64_t Journaler::append_entry(bufferlist&amp; bl)</span><br><span class="line">&#123;</span><br><span class="line">...</span><br><span class="line">// append把日志写到日志写缓存中</span><br><span class="line">::encode(s, write_buf);//加入日志的长度值</span><br><span class="line">write_buf.claim_append(bl);//加入日志的内容</span><br><span class="line">write_pos += sizeof(s) + s;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">uint64_t su = get_layout_period();//OSD对象大小，一般为4M</span><br><span class="line">uint64_t write_off = write_pos % su; //计算日志是不是满一个4M大小</span><br><span class="line">uint64_t write_obj = write_pos / su;</span><br><span class="line">uint64_t flush_obj = flush_pos / su;</span><br><span class="line">...</span><br><span class="line">if (write_obj != flush_obj) //如果日志满足一个4M大小就要把日志写到OSD上</span><br><span class="line">&#123;</span><br><span class="line">    ldout(cct, 10) &lt;&lt; &quot; flushing completed object(s) (su &quot; &lt;&lt; su &lt;&lt; &quot; wro &quot; &lt;&lt; write_obj &lt;&lt; &quot; flo &quot; &lt;&lt; flush_obj &lt;&lt; &quot;)&quot; &lt;&lt; dendl;</span><br><span class="line">    _do_flush(write_buf.length() - write_off);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里有一个write_pos，从名字可以看出而是一个显示位置的标志，这个位置是一直往后增的，就像打开文件之后有一个文件的pos位置一样。<br>这里主要介绍一下如何判断日志有没有满一个4M对象大小，这里首先识别出OSD上对象的大小，这里使用的是get_layout_period函数。计算是不是满足一个4M大小，这里使用了两个位置标识，write_obj和flush_obj，其中write_obj标识的是现在write_pos属于哪一个4M对象，flush_pos表示的是前面已经写到OSD上的日志位置，flush_obj表示的是flush_pos在哪一个4M对象，如果这两个值不相等，就表示在flush_pos和write_pos之间存在一个满足4M大小的对象没有写到OSD上，那此时如果满了一个4M大小的对象，就需要写到OSD上。具体的写到OSD上调用_do_flush()。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Journaler::_do_flush() -&gt; Filer::write()</span><br></pre></td></tr></table></figure></p>
+<p>我们的流程先暂时到这里，其中Filer是OSDC模块中的一个文件管理模块。那OSDC是什么模块呢？OSDC就是OSD client的缩写，只要跟OSD交互的单元，比如client，MDS都需要这个OSDC模块，这个模块是CRUSH计算定位数据在OSD上的核心，比如client需要把文件的数据写到OSD上，这个是需要CRUSH算法分布文件的数据；MDS中的元数据和日志也都是存储在OSD上，所以也需要CRUSH算法分布这些数据。</p>
+<ul>
+<li>2.3回调类注册<br>下面我们讲一下回调类的注册，之前我们在《Context回调类》文档中已经介绍了回调函数，这里我们介绍一下我们的回调函数是怎么注册和启动的。我们从MDLog::submit_entry函数看起，代码如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">void MDLog::submit_entry(LogEvent *le, Context *c)</span><br><span class="line">&#123;</span><br><span class="line">   ...</span><br><span class="line">   if (c)  //如果有回调类就进行注册</span><br><span class="line">    journaler-&gt;wait_for_flush(c);</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这个回调类对象就是在处理元数据请求时生成的，这里通过journaler模块把日志进行注册，那问题来了，日志是怎么进行注册的？我们先看一下wait_for_flush(c)函数。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">void Journaler::wait_for_flush(Context *onsafe)</span><br><span class="line">&#123;</span><br><span class="line">   ...</span><br><span class="line">   // queue waiter</span><br><span class="line">  if (onsafe) //关键是这个</span><br><span class="line">    waitfor_safe[write_pos].push_back(onsafe);</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>首先介绍一下waitfor_safe是一个map，代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">std::map&lt;uint64_t, std::list&lt;Context*&gt; &gt; waitfor_safe;</span><br></pre></td></tr></table></figure></p>
+<p>建立一个位置对应一个链表的回调类，什么意识呢？就是说回调函数的注册注册在日志位置上，<br>              Flush_pos                write_pos<br>——————|————————|————————————————————-<br>前                                     List<context>                                    后<br>上面这个图是日志的逻辑位置，我们可以看出回调类是挂在日志所在逻辑位置的一个list中。</context></p>
+<ul>
+<li><p>2.4回调函数的启动<br>回调类注册了，那什么时候回调类启动呢？在我们把日志写到OSD上之后，OSD会发生一个回复消息给MDS，MDS会更新flush_pos位置标志，这个标志表示在这个位置之前的日志都已经写到OSD上了，在flush_pos位置往后更新的时候，在flush_pos位置之前的所有注册的回调类对象就可以启动了。启动回调类对象就是调用对象的complete函数，然后调用finish这个回调函数，具体代码为忘记在哪里了。</p>
+</li>
+<li><p>3.回调函数的后续操作<br>回调函数的后续操作主要做什么？主要是把修改的副本元数据替换掉原来的元数据，并标记为脏。我们来看一下handle_client_setattr操作生成的回调类C_MDS_inode_update_finish，直接看一下这个回调类对象的finish函数。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void finish(int r)</span><br><span class="line">&#123;</span><br><span class="line">   ...</span><br><span class="line">   in-&gt;pop_and_dirty_projected_inode(mdr-&gt;ls);//把修改的副本元数据替换原来的元数据</span><br><span class="line">   mdr-&gt;apply();//标记替换后的元数据为脏</span><br><span class="line">   ...</span><br><span class="line">   mds-&gt;server-&gt;reply_request(mdr, 0);//第二次向client回复消息</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里主要是介绍一下mdr-&gt;apply函数的调用流程:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mdr-&gt;apply() --&gt; MutationImpl::apply()</span><br></pre></td></tr></table></figure></p>
+<p>这个标记脏的过程是，Cinode为脏，然后CDentry为脏，然后所在的父文件夹为脏。</p>
+<ul>
+<li><p>3.1第二次回复client端<br>之前在处理日志之前，先回复了一次给client，不过那次回复是不安全的，日志还没有写到OSD上，这次的回复是安全的，日志已经写到OSD上。</p>
+</li>
+<li><p>4.定期清理日志<br>日志在写到OSD上之后，在MDS中的日志就会标记为过期的，这些过期的日志就可以删除了，以节省MDS中的内存。下面看一下MDS的定期清理函数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">void MDS::tick()</span><br><span class="line">&#123;</span><br><span class="line">   ...</span><br><span class="line">   mdcache-&gt;trim();//定期清理缓存中的元数据</span><br><span class="line">   ...</span><br><span class="line">   mdlog-&gt;trim();//定期清理过期的日志</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>(1)MDCache的清理主要是删除一些优先级比较低的元数据，腾出一些内存空间，存放新的元数据，我们知道元数据的CDentry是使用LRU管理的，这个MDCache的清理主要就是对这个LRU进行清理。这个是MDS系统定时进行主动的清理。其实还有一个被动的清理，比如我们从OSD上取出元数据要缓存在MDS中，发现LRU的空间不够了，这是就需要删除掉LRU中优先级比较低的元数据，这个就是被动清理。至于具体MDCache是怎么清理的，我们后面在元数据管理方面的文章中给予解释<br>(2)定期清理过期的日志：主要是在日志写到OSD上之后，MDS上面的那些日志就没有用了，我们需要删除以释放内存空间</p>
+<p>下面我们来看一下具体怎么删除过期日志的。还记得我之前说过的日志是以LogSegment为逻辑单位进行管理的吗。这里还是以LogSegment为管理单元，对于已经写到OSD的日志，我们就标记这个日志对应的LogSegment为过期的，看代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void MDLog::trim(int m)</span><br><span class="line">&#123;</span><br><span class="line">   ...</span><br><span class="line">   while (p != segments.end())//遍历LogSegment集合</span><br><span class="line">   &#123;</span><br><span class="line">      ...</span><br><span class="line">      try_expire(ls, op_prio);//把过期的LogSegment放到过期LogSegment集合中</span><br><span class="line">      ...</span><br><span class="line">   &#125;</span><br><span class="line">_trim_expired_segments();//删除过期LogSegment</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里主要是看上面两个函数:<br>(1)try_expire()是把LogSegment变成过期可以删除的，在这个过程中需要把这个LogSegment记录的脏的元数据更新到OSD上。<br>(2)_trim_expired_segments函数这个函数删除过期LogSegment的具体操作，就是把过期的LogSegment从LogSegment集合中删除。</p>
+<ul>
+<li>4.1更新元数据<br>更新脏元数据，每一个LogSegment中记录了脏的元数据，可以再回顾一下LogSegment的类内容：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">class LogSegment</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  // dirty items 这部分都是对应的dir</span><br><span class="line">  elist&lt;CDir*&gt;    dirty_dirfrags, new_dirfrags;</span><br><span class="line">  elist&lt;CInode*&gt;  dirty_inodes;</span><br><span class="line">  elist&lt;CDentry*&gt; dirty_dentries;</span><br><span class="line"></span><br><span class="line">  elist&lt;CInode*&gt;  open_files;</span><br><span class="line">  elist&lt;CInode*&gt;  dirty_parent_inodes;</span><br><span class="line">  elist&lt;CInode*&gt;  dirty_dirfrag_dir;</span><br><span class="line">  elist&lt;CInode*&gt;  dirty_dirfrag_nest;</span><br><span class="line">  elist&lt;CInode*&gt;  dirty_dirfrag_dirfragtree;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>我忘记代码是在哪里把脏的元数据加入到这个LogSegment的集合中了，后面想起来了再讲。<br>更新脏的元数据就是把这里的元数据根据他们所在的父目录，找到所有的父目录，再把这些父目录都更新到OSD上。注意，这里都是以目录为更新的基本单位。下面我们来看一下代码流程：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MDLog::try_expire() -&gt; LogSegment::try_to_expire() -&gt; CDir::commit() -&gt; CDir::_commit() -&gt; CDir::_omap_commit() -&gt; objecter::mutate()</span><br></pre></td></tr></table></figure></p>
+<p>(1) LogSegment::try_to_expire函数主要是找出LogSegment类中记录元数据的坐在的目录Cdir<br>(2) 然后对每一个Cdir，把它目录下的内容都更新到OSD上<br>(3) 最后还会调用Objecter模块，这个模块也是OSDC中的，要把数据写到OSD上都要经过这个OSDC</p>
+<ul>
+<li>4.2删除过期LogSegment<br>在脏元数据更新到OSD之后，就可以删除过期的LogSegment，这里还是删除的MDS中的Logsegment，主要就是从Logsegment的集合中删除过期的Logsegment。在MDS中的过期日志删除之后，还要删除OSD上的日志，为什么还要删除OSD上的日志，因为我们脏的元数据已经更新到OSD上了，所以OSD上的日志已经没有用了。<br>下面看一下函数调用：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MDLog::_trim_expired_segments() –&gt; Journaler::write_head()</span><br><span class="line">调用回调类  Journaler::C_WriteHead::finish() -&gt; Journaler::_finish_write_head() -&gt; Journaler::trim() -&gt; filer::purge_range()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在删除完MDS中的过期Logsegment之后，会向OSD写一个日志文件的头（write_head）,这个头告诉OSD日志文件那些可以删除了，也就是OSD哪些日志可以删除了，这里是用一个回调类进行的，这个回调类是在OSD写头完之后，回复给MDS之后启动的。最后是调用trim，接着是调用filer模块来清理OSD上的过期日志。</p>
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
       
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2020" class="archive-year">2020</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/26/rbd-iscsi-pit-mining/" class="archive-article-date">
-  	<time datetime="2020-02-26T08:16:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-26</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/26/rbd-iscsi-pit-mining/">rbd iscsi 采坑</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">rbd iscsi python</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/26/how-to-operate-configfs/" class="archive-article-date">
-  	<time datetime="2020-02-26T07:01:15.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-26</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/26/how-to-operate-configfs/">教你操作configfs</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">python iscsi kernel</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/24/setup-ceph-iscsi/" class="archive-article-date">
-  	<time datetime="2020-02-24T02:15:40.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-24</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/24/setup-ceph-iscsi/">ceph iscsi安装</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph iscsi rbd</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/15/ceph系列-一-rbd的生命周期/" class="archive-article-date">
-  	<time datetime="2020-02-15T15:39:45.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-15</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/15/ceph系列-一-rbd的生命周期/">ceph系列(一): rbd的生命周期</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph rbd</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
       
-        </div></section>
+
       
+
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2019" class="archive-year">2019</a>
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/" class="archive-article-date">
-  	<time datetime="2019-10-04T08:14:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-10-04</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/">卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？</a>
-    </h1>
-  
+      </div>
+    </span>
+  </div>
+</div>
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Openstack nova ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2021/03/11/MDS-metadata-op/" alt="微信分享二维码">
+    </div>
+</div>
 
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2019/09/26/how-to-debug-osd/" class="archive-article-date">
-  	<time datetime="2019-09-26T14:53:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2021/02/23/Ceph-pg-up-set-and-acting-set/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Ceph中up set和acting set的区别</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2019/09/26/how-to-debug-osd/">how-to-debug-osd</a>
-    </h1>
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="MDS-metadata-op" data-title="MDS元数据请求操作流程" data-url="http://yoursite.com/2021/03/11/MDS-metadata-op/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+  
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph osd</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2019/09/26/glance-backend-with-cinder/" class="archive-article-date">
-  	<time datetime="2019-09-26T11:37:16.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2019/09/26/glance-backend-with-cinder/">glance backend with cinder</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack cinder glance</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2019/04/15/cpu-100/" class="archive-article-date">
-  	<time datetime="2019-04-15T01:18:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-15</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2019/04/15/cpu-100/">cpu 100%</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">Linux 性能优化实践（5）</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2019/04/13/ceph-rwl-analysis/" class="archive-article-date">
-  	<time datetime="2019-04-13T07:17:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-13</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2019/04/13/ceph-rwl-analysis/">Intel Ceph rwl分析</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Ceph rwl</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2019/04/13/osdc-code-analysis/" class="archive-article-date">
-  	<time datetime="2019-04-13T03:19:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-13</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2019/04/13/osdc-code-analysis/">小甲师兄陪你一起看Ceph(osdc篇)</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Ceph Cephfs osdc</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
-
-    
-    <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/archives/page/2/">&laquo; Prev</a><a class="page-number" href="/archives/">1</a><a class="page-number" href="/archives/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/archives/page/4/">4</a><a class="page-number" href="/archives/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/archives/page/7/">7</a><a class="extend next" rel="next" href="/archives/page/4/">Next &raquo;</a>
-    </nav>
   
 
 
@@ -580,8 +440,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,

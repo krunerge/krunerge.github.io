@@ -150,6 +150,90 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-allow-other-lvm-in-lvmgroup" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/12/15/allow-other-lvm-in-lvmgroup/">allow other lvm in lvmgroup</a>
+    </h1>
+  
+
+        
+        <a href="/2018/12/15/allow-other-lvm-in-lvmgroup/" class="archive-article-date">
+  	<time datetime="2018-12-15T04:47:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题描述："><a href="#问题描述：" class="headerlink" title="问题描述："></a>问题描述：</h1><p>笔者有一套openstack环境，没有对接ceph，使用的lvm作为虚拟机的存储，虚拟机的系统卷都存放在一个叫做vms-group的lvmgroup中，不过其下有其他人创建了一个lvm的逻辑卷，但是不是给openstack的用的，导致OpenStack hypvisor中的local_gb_free不准确，导致虚拟机创建有问题</p>
+<h1 id="原理分析"><a href="#原理分析" class="headerlink" title="原理分析"></a>原理分析</h1><p>通过源码分析可以知道，nova compute会定时同步hypervisor的资源，包括存储，那按理来说，从宿主机上面获取lvmgroup的总量和使用量应该是没有问题的，那为什么会导致出现最后hypervisor上面的资源统计不正确呢？<br>我们来看一下代码，代码是不会说谎的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">def update_available_resource(self, context):</span><br><span class="line"></span><br><span class="line">    LOG.info(_LI(&quot;Auditing locally available compute resources for &quot;</span><br><span class="line">                 &quot;node %(node)s&quot;),</span><br><span class="line">             &#123;&apos;node&apos;: self.nodename&#125;)</span><br><span class="line">    resources = self.driver.get_available_resource(self.nodename)</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure></p>
+<p>在nova/compute/resource_tracker.py文件中的update_available_resource函数调用了get_available_resource函数，这个函数其实就是调用libvirt的接口，其实调用的是如下的命令<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vgs --noheadings --nosuffix --separator --units b -o vg_size,vg_free vg</span><br></pre></td></tr></table></figure></p>
+<p>就是取出vg这个逻辑组的总量和剩余量，而使用量是这样计算的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;&apos;total&apos;: int(info[0]),</span><br><span class="line">  &apos;free&apos;: int(info[1]),</span><br><span class="line">  &apos;used&apos;: int(info[0]) - int(info[1])&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看出这个使用量是包括这个lvmgroup中不是openstack创建使用的，那为什么最后的hypervisor统计不正确呢<br>我们继续往下看<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">def update_available_resource(self, context):</span><br><span class="line">    .....</span><br><span class="line">    self._update_available_resource(context, resources)</span><br></pre></td></tr></table></figure></p>
+<p>在update_available_resource函数中还调用了更新可用量的请求，_update_available_resource<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">def _update_available_resource(self, context, resources):</span><br><span class="line"></span><br><span class="line">    ....</span><br><span class="line">    self._update_usage_from_instances(context, resources, instances)</span><br><span class="line">    .....</span><br></pre></td></tr></table></figure></p>
+<p>这个函数调用_update_usage_from_instances函数，统计虚拟机的使用量，我们好像有点眉目了，我们可以猜测一下，通过统计数据库中虚拟机存盘的使用量（系统盘）来统计openstack的使用量，这就不包含了lvmgroup中其他用途创建的逻辑卷，是不是这样，我们看一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">def _update_usage_from_instances(self, context, resources, instances):</span><br><span class="line"></span><br><span class="line">        # set some initial values, reserve room for host/hypervisor:</span><br><span class="line">        resources[&apos;local_gb_used&apos;] = CONF.reserved_host_disk_mb / 1024</span><br><span class="line">        resources[&apos;memory_mb_used&apos;] = CONF.reserved_host_memory_mb</span><br><span class="line">        resources[&apos;free_ram_mb&apos;] = (resources[&apos;memory_mb&apos;] -</span><br><span class="line">                                    resources[&apos;memory_mb_used&apos;])</span><br><span class="line">        resources[&apos;free_disk_gb&apos;] = (resources[&apos;local_gb&apos;] -</span><br><span class="line">                                     resources[&apos;local_gb_used&apos;])</span><br><span class="line">        resources[&apos;current_workload&apos;] = 0</span><br><span class="line">        resources[&apos;running_vms&apos;] = 0</span><br><span class="line"></span><br><span class="line">        # Reset values for extended resources</span><br><span class="line">        self.ext_resources_handler.reset_resources(resources, self.driver)</span><br><span class="line"></span><br><span class="line">        for instance in instances:</span><br><span class="line">            if instance.vm_state != vm_states.DELETED:</span><br><span class="line">                self._update_usage_from_instance(context, resources, instance)</span><br></pre></td></tr></table></figure></p>
+<p>上面关键的是<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">resources[&apos;local_gb_used&apos;] = CONF.reserved_host_disk_mb / 1024</span><br></pre></td></tr></table></figure></p>
+<p>local_gb_used这个参数被重新赋值了，之前的值就是通过上面调用命令之后计算出来的也就是真实值，这里进行了重新赋值，赋予了保留值，然后通过遍历数据库中的所有虚拟机，根据它们的机型中定义的系统盘值统计使用量，就是下面这个函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_update_usage_from_instance</span><br></pre></td></tr></table></figure></p>
+<p>最后可以使用的free_gb，就是通过命令取出来的总值，减去预留值，减去虚拟机的使用量，这就导致没有包括其他用途使用的逻辑卷</p>
+<h1 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h1><p>通过修改小修改_update_usage_from_instances函数来解决，笔者通过取两个使用量统计的最大值最为使用量，<br>一个是通过命令行获取，一个是预留值加上所有虚拟机的总使用量<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">def _update_usage_from_instances(self, context, resources, instances):</span><br><span class="line">    &quot;&quot;&quot;Calculate resource usage based on instance utilization.  This is</span><br><span class="line">    different than the hypervisor&apos;s view as it will account for all</span><br><span class="line">    instances assigned to the local compute host, even if they are not</span><br><span class="line">    currently powered on.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    self.tracked_instances.clear()</span><br><span class="line"></span><br><span class="line">    # purge old stats and init with anything passed in by the driver</span><br><span class="line">    self.stats.clear()</span><br><span class="line">    self.stats.digest_stats(resources.get(&apos;stats&apos;))</span><br><span class="line"></span><br><span class="line">    # set some initial values, reserve room for host/hypervisor:</span><br><span class="line">    resources[&apos;local_gb_used_orig&apos;] = resources[&apos;local_gb_used&apos;]</span><br><span class="line">    resources[&apos;local_gb_used&apos;] = 0</span><br><span class="line">    resources[&apos;memory_mb_used&apos;] = CONF.reserved_host_memory_mb</span><br><span class="line">    resources[&apos;free_ram_mb&apos;] = (resources[&apos;memory_mb&apos;] -</span><br><span class="line">                                resources[&apos;memory_mb_used&apos;])</span><br><span class="line">    resources[&apos;free_disk_gb&apos;] = (resources[&apos;local_gb&apos;] -</span><br><span class="line">                                 resources[&apos;local_gb_used&apos;])</span><br><span class="line">    resources[&apos;current_workload&apos;] = 0</span><br><span class="line">    resources[&apos;running_vms&apos;] = 0</span><br><span class="line"></span><br><span class="line">    # Reset values for extended resources</span><br><span class="line">    self.ext_resources_handler.reset_resources(resources, self.driver)</span><br><span class="line"></span><br><span class="line">    for instance in instances:</span><br><span class="line">        if instance.vm_state != vm_states.DELETED:</span><br><span class="line">            self._update_usage_from_instance(context, resources, instance)</span><br><span class="line"></span><br><span class="line">    resources[&apos;local_gb_used&apos;] = max(resources[&apos;local_gb_used&apos;], resources[&apos;local_gb_used_orig&apos;]) + \</span><br><span class="line">                                 CONF.reserved_host_disk_mb / 1024</span><br><span class="line">    resources[&apos;free_disk_gb&apos;] = (resources[&apos;local_gb&apos;] -</span><br><span class="line">                                 resources[&apos;local_gb_used&apos;])</span><br></pre></td></tr></table></figure></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack lvm</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/12/15/allow-other-lvm-in-lvmgroup/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-linux-optimization-load-average" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -949,80 +1033,6 @@
 
 
   
-    <article id="post-virsh-domain" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/09/virsh-domain/">virsh-domain.c文件下命令分析</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/09/virsh-domain/" class="archive-article-date">
-  	<time datetime="2018-10-09T13:34:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-09</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="libvirt"><a href="#libvirt" class="headerlink" title="libvirt"></a>libvirt</h1><p>由于最近要做虚拟机在线快照，熟悉一下libvirt源码以及使用</p>
-<h2 id="virsh-attach-device-通过xml给虚拟机添加设备"><a href="#virsh-attach-device-通过xml给虚拟机添加设备" class="headerlink" title="virsh attach-device,通过xml给虚拟机添加设备"></a>virsh attach-device,通过xml给虚拟机添加设备</h2><h2 id="virsh-attach-disk，增加盘"><a href="#virsh-attach-disk，增加盘" class="headerlink" title="virsh attach-disk，增加盘"></a>virsh attach-disk，增加盘</h2><h2 id="virsh-attach-interface，增加网卡"><a href="#virsh-attach-interface，增加网卡" class="headerlink" title="virsh attach-interface，增加网卡"></a>virsh attach-interface，增加网卡</h2><h2 id="virsh-autostart，设置自动启动，当libvirtd重启的时候虚拟机重启"><a href="#virsh-autostart，设置自动启动，当libvirtd重启的时候虚拟机重启" class="headerlink" title="virsh autostart，设置自动启动，当libvirtd重启的时候虚拟机重启"></a>virsh autostart，设置自动启动，当libvirtd重启的时候虚拟机重启</h2><h2 id="virsh-blkdeviotune，设置磁盘I-O节流"><a href="#virsh-blkdeviotune，设置磁盘I-O节流" class="headerlink" title="virsh blkdeviotune，设置磁盘I/O节流"></a>virsh blkdeviotune，设置磁盘I/O节流</h2><h2 id="virsh-blkiotune-设置磁盘I-O节流"><a href="#virsh-blkiotune-设置磁盘I-O节流" class="headerlink" title="virsh blkiotune,设置磁盘I/O节流"></a>virsh blkiotune,设置磁盘I/O节流</h2>
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">libvirt</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/09/virsh-domain/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/4/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/6/">Next &raquo;</a>
@@ -1144,15 +1154,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1160,7 +1162,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1180,19 +1182,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1204,11 +1206,23 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1220,11 +1234,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1232,11 +1242,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1248,11 +1258,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
