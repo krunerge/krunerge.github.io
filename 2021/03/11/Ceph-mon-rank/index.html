@@ -6,15 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Archives: 2020/5 | 小甲师兄</title>
+  <title>Ceph mon rank由来 | 小甲师兄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="小甲师兄">
-<meta property="og:url" content="http://yoursite.com/archives/2020/05/index.html">
+  <meta name="description" content="目的本篇主要分析一下ceph mon rank的由来，比如我们一套3个mon的集群到底怎么对应rank的12ceph mon state1: 3 mons at &amp;#123;ceph-7=192.168.69.32:6789/0,ceph-8=192.168.69.57:6789/0,ceph-9=192.168.69.19:6789/0&amp;#125;, election epoch 242,cep">
+<meta name="keywords" content="Ceph">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ceph mon rank由来">
+<meta property="og:url" content="http://yoursite.com/2021/03/11/Ceph-mon-rank/index.html">
 <meta property="og:site_name" content="小甲师兄">
+<meta property="og:description" content="目的本篇主要分析一下ceph mon rank的由来，比如我们一套3个mon的集群到底怎么对应rank的12ceph mon state1: 3 mons at &amp;#123;ceph-7=192.168.69.32:6789/0,ceph-8=192.168.69.57:6789/0,ceph-9=192.168.69.19:6789/0&amp;#125;, election epoch 242,cep">
 <meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2021-03-11T14:30:50.201Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小甲师兄">
+<meta name="twitter:title" content="Ceph mon rank由来">
+<meta name="twitter:description" content="目的本篇主要分析一下ceph mon rank的由来，比如我们一套3个mon的集群到底怎么对应rank的12ceph mon state1: 3 mons at &amp;#123;ceph-7=192.168.69.32:6789/0,ceph-8=192.168.69.57:6789/0,ceph-9=192.168.69.19:6789/0&amp;#125;, election epoch 242,cep">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -148,49 +153,192 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-Ceph-mon-rank" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2020" class="archive-year">2020</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/05/13/debug-ceph/" class="archive-article-date">
-  	<time datetime="2020-05-13T12:10:48.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-13</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/05/13/debug-ceph/">debug ceph</a>
+    <h1 class="article-title" itemprop="name">
+      Ceph mon rank由来
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
-          
+        
+        <a href="/2021/03/11/Ceph-mon-rank/" class="archive-article-date">
+  	<time datetime="2021-03-11T14:25:43.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-03-11</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h1><p>本篇主要分析一下ceph mon rank的由来，比如我们一套3个mon的集群到底怎么对应rank的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ceph mon stat</span><br><span class="line">e1: 3 mons at &#123;ceph-7=192.168.69.32:6789/0,ceph-8=192.168.69.57:6789/0,ceph-9=192.168.69.19:6789/0&#125;, election epoch 242,ceph-8</span><br></pre></td></tr></table></figure></p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>在Monmap中的calc_ranks()函数中有解析<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">void MonMap::calc_ranks() &#123;</span><br><span class="line"></span><br><span class="line">  ranks.resize(mon_info.size());</span><br><span class="line">  addr_mons.clear();</span><br><span class="line"></span><br><span class="line">  set&lt;mon_info_t, rank_cmp&gt; tmp;</span><br><span class="line"></span><br><span class="line">  for (map&lt;string,mon_info_t&gt;::iterator p = mon_info.begin();</span><br><span class="line">      p != mon_info.end();</span><br><span class="line">      ++p) &#123;</span><br><span class="line">    mon_info_t &amp;m = p-&gt;second;</span><br><span class="line">    tmp.insert(m);</span><br><span class="line"></span><br><span class="line">    // populate addr_mons</span><br><span class="line">    assert(addr_mons.count(m.public_addr) == 0);</span><br><span class="line">    addr_mons[m.public_addr] = m.name;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  // map the set to the actual ranks etc</span><br><span class="line">  unsigned i = 0;</span><br><span class="line">  for (set&lt;mon_info_t&gt;::iterator p = tmp.begin();</span><br><span class="line">      p != tmp.end();</span><br><span class="line">      ++p, ++i) &#123;</span><br><span class="line">    ranks[i] = p-&gt;name;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>从上面可以看出，首先遍历mon_info这个map<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">map&lt;string, mon_info_t&gt; mon_info;</span><br></pre></td></tr></table></figure></p>
+<p>然后加入到临时的set&lt;mon_info_t, rank_cmp&gt; tmp;集合中从定义了比较方法<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">struct rank_cmp &#123;</span><br><span class="line">    bool operator()(const mon_info_t &amp;a, const mon_info_t &amp;b) const &#123;</span><br><span class="line">      if (a.public_addr == b.public_addr)</span><br><span class="line">        return a.name &lt; b.name;</span><br><span class="line">      return a.public_addr &lt; b.public_addr;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br></pre></td></tr></table></figure></p>
+<p>可以看出这个集合是首先按ip进行比较，然后在按名字进行比较，从小到大排序, 然后在然后ranks数组中<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vector&lt;string&gt; ranks;</span><br></pre></td></tr></table></figure></p>
+<p>数组的下标就是ranks的值，所以可以看到ip从小到大分别是rank 0，1，2。</p>
 
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
+        </div>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://yoursite.com/2021/03/11/Ceph-mon-rank/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
   
   
-    </div></section>
+    <a href="/2021/03/11/MDS-metadata-op/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">MDS元数据请求操作流程</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+  
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="Ceph-mon-rank" data-title="Ceph mon rank由来" data-url="http://yoursite.com/2021/03/11/Ceph-mon-rank/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+  
+  
   
 
-    
+  
+
+  
+
+  
 
 
           </div>
@@ -213,8 +361,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,
