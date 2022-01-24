@@ -150,6 +150,169 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-cpu-100" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/15/cpu-100/">cpu 100%</a>
+    </h1>
+  
+
+        
+        <a href="/2019/04/15/cpu-100/" class="archive-article-date">
+  	<time datetime="2019-04-15T01:18:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li>1./proc/stat和/proc/{pid}/stat的使用</li>
+<li>2.top默认每3s刷新一次</li>
+<li>3.top中显示的cpu时间包括用户态cpu和内核态cpu时间</li>
+<li>4.显示每个进程cpu时间可以使用pidstat</li>
+<li>5.早期性能分析使用perf，后期分析可以使用gdb</li>
+<li>6.使用perf top找出热点函数</li>
+<li>7.使用execsnoop观测短时进程</li>
+<li>8.dstat使用</li>
+<li>9.straces使用</li>
+<li>10.进程的状态</li>
+<li>11.sar</li>
+<li>12.hping3</li>
+<li>13.tcpdump</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">Linux 性能优化实践（5）</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/04/15/cpu-100/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-ceph-rwl-analysis" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/13/ceph-rwl-analysis/">Intel Ceph rwl分析</a>
+    </h1>
+  
+
+        
+        <a href="/2019/04/13/ceph-rwl-analysis/" class="archive-article-date">
+  	<time datetime="2019-04-13T07:17:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-04-13</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-Intel-Ceph-rwl"><a href="#1-Intel-Ceph-rwl" class="headerlink" title="1. Intel Ceph rwl"></a>1. Intel Ceph rwl</h1><p>Intel的rwl是对ceph的rbd进行优化，使用可持久化高速介质来缓存rbd的数据，比如SSD。rwl就是这个代码的实现，其简称就是ReplicatedWriteLog。</p>
+<h1 id="2-librbd使用"><a href="#2-librbd使用" class="headerlink" title="2. librbd使用"></a>2. librbd使用</h1><p>一般使用rbd都是通过调用librbd库实现，比如qemu。目前L版的代码里面有两个层次的缓存，一个是image层级的缓存，一个是object层级的缓存。Intel的rwl就是实现的image层级的缓存。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Ceph rwl</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/04/13/ceph-rwl-analysis/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-osdc-code-analysis" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1005,180 +1168,6 @@
 
 
   
-    <article id="post-dashboard-add-download-image-function" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/20/dashboard-add-download-image-function/">dashboard下载镜像</a>
-    </h1>
-  
-
-        
-        <a href="/2018/12/20/dashboard-add-download-image-function/" class="archive-article-date">
-  	<time datetime="2018-12-20T13:51:05.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-20</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>最近有一个功能，需要在dashboard增加下载镜像的功能，我们都知道，可以通过dashboard上传镜像，可以通过命令下载镜像，但是不能通过dashboard上传镜像</p>
-<h1 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h1><p>社区是有一个bp，传输门如下：<br><a href="https://review.openstack.org/#/c/74799/" target="_blank" rel="noopener">https://review.openstack.org/#/c/74799/</a><br>但是这个bp是基于很老的版本，笔者的openstack是pike版，所以需要做一些修改<br>修改如下：</p>
-<ul>
-<li><p>1./usr/share/openstack-dashboard/openstack_dashboard/settings.py文件330行修改</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&apos;images_panel&apos;: False,</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2./usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/images/images/views.py最后的download_image函数修改如下:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">def download_image(request, **kwargs):</span><br><span class="line">    try:</span><br><span class="line">        image_data = api.glance.image_data(request, kwargs[&apos;image_id&apos;])</span><br><span class="line">        image = api.glance.image_get(request, kwargs[&apos;image_id&apos;])</span><br><span class="line">        image_format = getattr(image, &apos;disk_format&apos;, &apos;data&apos;)</span><br><span class="line">        response = http.StreamingHttpResponse(</span><br><span class="line">            image_data,</span><br><span class="line">            content_type=&apos;application/octet-stream&apos;)</span><br><span class="line">        response[&apos;Content-Disposition&apos;] = (&apos;attachment; filename=&quot;%s.%s&quot;&apos; %</span><br><span class="line">                                           (kwargs[&apos;image_id&apos;], image_format))</span><br><span class="line">        response[&apos;Content-Length&apos;] = image.size</span><br><span class="line">        return response</span><br><span class="line">    except Exception:</span><br><span class="line">        msg = _(&apos;An error occured during download of image.&apos;)</span><br><span class="line">        url = reverse(&apos;horizon:project:images:index&apos;)</span><br><span class="line">        exceptions.handle(request, msg, redirect=url)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>3./usr/share/openstack-dashboard/openstack_dashboard/api/glance.py247行修改如下</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@profiler.trace</span><br><span class="line">def image_data(request, image_id):</span><br><span class="line">    &quot;&quot;&quot;Returns an Image object populated with metadata for a given image.&quot;&quot;&quot;</span><br><span class="line">    return glanceclient(request).images.data(image_id)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>4./usr/share/openstack-dashboard/openstack_dashboard/locale/zh_CN/LC_MESSAGES下面的mo对应的文件需要增加</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">msgid &quot;Edit Image&quot;</span><br><span class="line">msgstr &quot;编辑镜像&quot;</span><br><span class="line"></span><br><span class="line">msgid &quot;Download Image&quot;</span><br><span class="line">msgstr &quot;下载镜像&quot;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>ok,重启一下httpd或者apache2服务</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">openstack dashboard horizon</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/12/20/dashboard-add-download-image-function/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-k8s-configmap" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/16/k8s-configmap/">k8s:configmap</a>
-    </h1>
-  
-
-        
-        <a href="/2018/12/16/k8s-configmap/" class="archive-article-date">
-  	<time datetime="2018-12-16T15:21:00.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-16</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-configmap创建方式"><a href="#1-configmap创建方式" class="headerlink" title="1.configmap创建方式"></a>1.configmap创建方式</h1><ul>
-<li>从字符串创建</li>
-<li>从env文件创建</li>
-<li>从目录创建</li>
-<li>从json/yaml文件创建</li>
-</ul>
-<h1 id="2-configmap使用"><a href="#2-configmap使用" class="headerlink" title="2.configmap使用"></a>2.configmap使用</h1><ul>
-<li>用作pod的环境变量</li>
-<li>通过环境变量作为pod命令参数</li>
-<li>使用volume将configmap作为文件或者目录直接挂载</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">k8s configmap</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/12/16/k8s-configmap/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/3/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/5/">Next &raquo;</a>
@@ -1193,7 +1182,7 @@
   <div class="outer">
     <div id="footer-info">
     	<div class="footer-left">
-    		&copy; 2021 小甲师兄
+    		&copy; 2022 小甲师兄
     	</div>
       	<div class="footer-right">
       		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
@@ -1276,7 +1265,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">ceph 编译</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1284,11 +1281,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1300,15 +1297,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1316,11 +1305,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color1">Linux 性能优化实践（5）</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1328,23 +1317,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1356,15 +1333,31 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1376,11 +1369,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1388,11 +1377,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
               </li>
              
               <li class="article-tag-list-item">
