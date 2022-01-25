@@ -150,6 +150,101 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-analysis-vm-delete-procedure" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/16/analysis-vm-delete-procedure/">虚拟机删除流程分析</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/16/analysis-vm-delete-procedure/" class="archive-article-date">
+  	<time datetime="2018-10-16T13:30:59.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-16</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="虚拟机删除"><a href="#虚拟机删除" class="headerlink" title="虚拟机删除"></a>虚拟机删除</h1><p>虚拟机的删除笔者之前没怎么研究过，心想无非就是调用libvirt接口进行destroy，其实仔细一看还是挺复杂的，让我们来分析一下</p>
+<h1 id="代码流程解析"><a href="#代码流程解析" class="headerlink" title="代码流程解析"></a>代码流程解析</h1><p>nova-api那边就不用看了，重点在nova-compute那端，分析如下：<br>代码路径nova/comnpute/manager.py</p>
+<ul>
+<li>1.同步加锁调内部函数<br><img src="1.png" alt="aaa"></li>
+<li>2.重头戏<br>这里_delete_instance函数还增加了一个装饰器，用来增加一些钩子函数处理<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">@hooks.add_hook(&quot;delete_instance&quot;)</span><br><span class="line">def _delete_instance(self, context, instance, bdms, quotas):</span><br><span class="line">    ....</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>2.1 clear_events_for_instance<br>删除虚拟机的事件</p>
+<hr>
+<p>2.2 _shutdown_instance<br>主要是虚拟机关机，销毁网络设备，删除ceph系统盘，删除本地instance下目录，然后销毁虚拟机（undefine）<br>2.2.1 首先获取网络信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">compute_utils.get_nw_info_for_instance(instance)</span><br></pre></td></tr></table></figure></p>
+<p>2.2.2 获取磁盘信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_get_instance_block_device_info</span><br></pre></td></tr></table></figure></p>
+<hr>
+<p>2.2.3 调用driver的destroy信息<br>2.2.3.1 调用_destroy<br>强制关闭虚拟机，相关于拔电源，调用libvirt的destroy的接口，同步操作<br>2.2.3.2 调用cleanup进行清理<br>主要做一下四件事：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1.删除网络设备，包括linux bridge上面的qbr口，删除linux bridge以及删除br-int上面的port</span><br><span class="line">2.删除ceph vms池下面的系统盘</span><br><span class="line">3.删除计算节点本地的instances目录</span><br><span class="line">4.调用libvirt的undefineFlags接口，销毁虚拟机</span><br></pre></td></tr></table></figure></p>
+<hr>
+<p>2.2.4 调用neutron删除虚拟机网络信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self._try_deallocate_network(context, instance, requested_networks)</span><br></pre></td></tr></table></figure></p>
+<p>2.2.4.1 删除port<br>2.2.4.2 删除虚拟机nova数据库中的网络信息缓存</p>
+<hr>
+<p>2.2.5 对卷进行卸载操作<br>2.2.5.1 terminate_connection卸载掉宿主机与卷的联系<br>由于笔者使用的ceph rbd，所以这个函数是空</p>
+<h2 id="2-2-5-2-调用cinder的detach，主要是进行数据库操作"><a href="#2-2-5-2-调用cinder的detach，主要是进行数据库操作" class="headerlink" title="2.2.5.2 调用cinder的detach，主要是进行数据库操作"></a>2.2.5.2 调用cinder的detach，主要是进行数据库操作</h2><p>2.3 删除虚拟机缓存信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">instance.info_cache.delete()</span><br></pre></td></tr></table></figure></p>
+<p>2.4 删除设置为terminate时要删除的卷<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">self._cleanup_volumes(context, instance.uuid, bdms,</span><br><span class="line">                    raise_exc=False)</span><br></pre></td></tr></table></figure></p>
+<p>2.5 删除数据库中虚拟机instance实例<br>2.6 删除bdm数据库<br>2.7 删除console缓存token<br>2.7 在host manager内存dict中删除虚拟机信息</p>
+<p>分析完毕，还是做了很多事情的</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">openstack nova</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/16/analysis-vm-delete-procedure/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-go-learn-4" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1058,100 +1153,6 @@
 
 
   
-    <article id="post-k8s-learn-5" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/03/k8s-learn-5/">k8s learn(5) 从进程说起:容器到底是怎么一回事</a>
-    </h1>
-  
-
-        
-        <a href="/2018/10/03/k8s-learn-5/" class="archive-article-date">
-  	<time datetime="2018-10-03T06:38:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-03</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="1-程序跟进程"><a href="#1-程序跟进程" class="headerlink" title="1.程序跟进程"></a>1.程序跟进程</h1><ul>
-<li>程序是静态的</li>
-<li>进程是动态的</li>
-</ul>
-<h1 id="2-容器是一种进程"><a href="#2-容器是一种进程" class="headerlink" title="2.容器是一种进程"></a>2.容器是一种进程</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int pid = clone(main_function, stack_size, CLONE_NEWPID | SIGCHLD, NULL)</span><br></pre></td></tr></table></figure>
-<p>通过Cgroups 技术是用来制造约束的主要手段， 而Namespace 技术则是用来修改进程视图的主要方法<br>提供6种命令空间：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">PID</span><br><span class="line">Mount</span><br><span class="line">UTS</span><br><span class="line">IPC</span><br><span class="line">Network</span><br><span class="line">User</span><br></pre></td></tr></table></figure></p>
-<h1 id="3-容器中的进程跟宿主机中进程的对应关系"><a href="#3-容器中的进程跟宿主机中进程的对应关系" class="headerlink" title="3.容器中的进程跟宿主机中进程的对应关系"></a>3.容器中的进程跟宿主机中进程的对应关系</h1><ul>
-<li>在容器中，容器的启动进程在容器里面是1号进程（假init进程）<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># docker run -it busybox /bin/sh</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>容器中进程<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">PID   USER     TIME  COMMAND</span><br><span class="line">    1 root      0:00 /bin/sh</span><br><span class="line">   36 root      0:00 ps</span><br></pre></td></tr></table></figure></p>
-<ul>
-<li>在宿主机中，如何查看容器的进程呢，进程名其实就是容器的启动进程，比如上面的/bin/sh，通过docker inspect查看容器进程<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker inspect xxxx</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>从中找到status pid就是容器的进程id<br>我们可以在容器中运行一个top命令，看一下进程的关系</p>
-<h2 id="在容器中"><a href="#在容器中" class="headerlink" title="在容器中"></a>在容器中</h2><p>top命令是init的子进程</p>
-<h2 id="在宿主机上"><a href="#在宿主机上" class="headerlink" title="在宿主机上"></a>在宿主机上</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><span class="line"># pstree -p 2837</span><br><span class="line">dockerd-current(2837)─┬─docker-containe(105880)─┬─docker-containe(48506)─┬─sh(48521)───top(50346)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48507)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48508)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48509)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48510)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48511)</span><br><span class="line">                      │                         │                        ├─&#123;docker-containe&#125;(48513)</span><br><span class="line">                      │                         │                        └─&#123;docker-containe&#125;(48545)</span><br><span class="line">                      │                         ├─docker-containe(119459)─┬─pause(119475)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119460)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119461)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119462)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119463)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119464)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119465)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119466)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119509)</span><br><span class="line">                      │                         ├─docker-containe(119525)─┬─kube-dns(119546)─┬─&#123;kube-dns&#125;(119567)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119568)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119569)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119570)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119571)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119572)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119573)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(119583)</span><br><span class="line">                      │                         │                         │                  ├─&#123;kube-dns&#125;(11921)</span><br><span class="line">                      │                         │                         │                  └─&#123;kube-dns&#125;(14741)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119526)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119527)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119528)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119529)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119530)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119531)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119532)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119533)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119534)</span><br><span class="line">                      │                         ├─docker-containe(119585)─┬─dnsmasq-nanny(119602)─┬─dnsmasq(119638)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119623)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119624)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119625)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119626)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119634)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119636)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119788)</span><br><span class="line">                      │                         │                         │                       ├─&#123;dnsmasq-nanny&#125;(119787)</span><br><span class="line">                      │                         │                         │                       └─&#123;dnsmasq-nanny&#125;(49454)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119586)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119587)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119588)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119589)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119590)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119591)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119592)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119596)</span><br><span class="line">                      │                         ├─docker-containe(119639)─┬─sidecar(119656)─┬─&#123;sidecar&#125;(119676)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119677)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119678)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119679)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119689)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119690)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(119691)</span><br><span class="line">                      │                         │                         │                 ├─&#123;sidecar&#125;(125464)</span><br><span class="line">                      │                         │                         │                 └─&#123;sidecar&#125;(33842)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119640)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119641)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119642)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119643)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119644)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119645)</span><br><span class="line">                      │                         │                         ├─&#123;docker-containe&#125;(119646)</span><br><span class="line">                      │                         │                         └─&#123;docker-containe&#125;(119647)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105881)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105882)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105883)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105884)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105885)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105886)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105887)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(105895)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(106063)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112355)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112412)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112467)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(112987)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(113989)</span><br><span class="line">                      │                         ├─&#123;docker-containe&#125;(114932)</span><br><span class="line">                      │                         └─&#123;docker-containe&#125;(6250)</span><br><span class="line">                      ├─docker-proxy-cu(3090)─┬─&#123;docker-proxy-cu&#125;(3091)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3092)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3093)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3094)</span><br><span class="line">                      │                       ├─&#123;docker-proxy-cu&#125;(3095)</span><br><span class="line">                      │                       └─&#123;docker-proxy-cu&#125;(3619)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2839)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2840)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2841)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2845)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2850)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2851)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2860)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2861)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2864)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(2865)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3012)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3027)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3028)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3029)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3032)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3082)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3096)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3098)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3099)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3101)</span><br><span class="line">                      ├─&#123;dockerd-current&#125;(3102)</span><br><span class="line">                      └─&#123;dockerd-current&#125;(3107)</span><br></pre></td></tr></table></figure>
-<p>其中，笔者的容器进程关系是这条<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dockerd-current(2837)─┬─docker-containe(105880)─┬─docker-containe(48506)─┬─sh(48521)───top(50346)</span><br></pre></td></tr></table></figure></p>
-<p>其中2837是dockerd驻留进程，其父进程是1（真正的init进程）,进程105880和48506也是docker相关的进程，不是容器进程，<br>48521是容器进程，50346是top进程</p>
-<p>从这可以看出容器里和宿主机上面的进程关系</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">k8s 张磊</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/10/03/k8s-learn-5/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/5/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/7/">Next &raquo;</a>
@@ -1273,19 +1274,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1297,15 +1298,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1313,15 +1310,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1333,7 +1334,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1345,11 +1346,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1361,6 +1362,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
@@ -1369,11 +1374,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1402,10 +1411,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
               <li class="article-tag-list-item">

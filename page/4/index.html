@@ -150,6 +150,88 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-glance-backend-with-cinder" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/09/26/glance-backend-with-cinder/">glance backend with cinder</a>
+    </h1>
+  
+
+        
+        <a href="/2019/09/26/glance-backend-with-cinder/" class="archive-article-date">
+  	<time datetime="2019-09-26T11:37:16.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="glance对接cinder"><a href="#glance对接cinder" class="headerlink" title="glance对接cinder"></a>glance对接cinder</h1><p>————————————————————————————————————————————————————————————————————————————<br>glance-api.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">default_store = cinder</span><br><span class="line">stores = cinder</span><br></pre></td></tr></table></figure></p>
+<p>cinder.conf修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">glance_api_version = 2</span><br><span class="line">allowed_direct_url_schemes = cinder</span><br><span class="line">image_upload_use_cinder_backend = True</span><br><span class="line">image_upload_use_internal_tenant = True</span><br></pre></td></tr></table></figure></p>
+<h1 id="对接结果"><a href="#对接结果" class="headerlink" title="对接结果"></a>对接结果</h1><p>————————————————————————————————————————————————————————————————————————————</p>
+<ul>
+<li><p>glance 数据库<br><img src="1.png" alt="1"></p>
+</li>
+<li><p>ceph中的显示<br><img src="2.png" alt="2"></p>
+</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">openstack cinder glance</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/09/26/glance-backend-with-cinder/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-cpu-100" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1055,119 +1137,6 @@
 
 
   
-    <article id="post-cephfs-use" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/01/05/cephfs-use/">cephfs部署，创建和删除</a>
-    </h1>
-  
-
-        
-        <a href="/2019/01/05/cephfs-use/" class="archive-article-date">
-  	<time datetime="2019-01-05T05:34:58.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="cephfs部署"><a href="#cephfs部署" class="headerlink" title="cephfs部署"></a>cephfs部署</h1><p>——————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.ceph-deploy安装</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install ceph-deploy</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.ceph mds服务安装<br>进入到/etc/ceph目录</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ceph-deploy gatherkeys &#123;hostname&#125;</span><br><span class="line">ceph-deploy mds create &#123;hostmane&#125;:&#123;服务名字&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>注意可以在一个节点上面启动多个mds服务，一般推荐一个机器上面跑一个mds服务</p>
-<h1 id="cephfs创建"><a href="#cephfs创建" class="headerlink" title="cephfs创建"></a>cephfs创建</h1><p>—————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li>1.创建cephfs需要使用的池<br>创建数据池<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph osd pool create gkk_data 20 20</span><br><span class="line">pool &apos;gkk_data&apos; created</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>创建元数据池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph osd pool create gkk_metadata 20 20</span><br><span class="line">pool &apos;gkk_metadata&apos; created</span><br></pre></td></tr></table></figure></p>
-<p>创建cephfs文件系统<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph fs new gkk gkk_metadata gkk_data</span><br><span class="line">new fs with metadata pool 7 and data pool 8</span><br></pre></td></tr></table></figure></p>
-<ul>
-<li>2.开启多文件系统模式<br>默认情况ceph集群只允许创建一套cephfs文件系统，但是可以打开一个flag就可以开始多文件系统模式<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph fs flag set enable_multiple true --yes-i-really-mean-it</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>打开flag之后创建多个cephfs文件系统如下所示<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph -s</span><br><span class="line">    cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line">     health HEALTH_OK</span><br><span class="line">     monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">            election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">      fsmap e68: ceph-1/1/1 up gkk-1/1/1 up &#123;[ceph:0]=con03=up:active,[gkk:0]=con01=up:active&#125;, 1 up:standby</span><br><span class="line">     osdmap e255: 3 osds: 3 up, 3 in</span><br><span class="line">            flags sortbitwise,require_jewel_osds</span><br><span class="line">      pgmap v1934353: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">            182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">                4240 active+clean</span><br><span class="line">  client io 0 B/s rd, 5623 B/s wr, 0 op/s rd, 0 op/s wr</span><br></pre></td></tr></table></figure></p>
-<p>可以看到笔者的集群中有三个mds，有两个cephfs文件系统，名字分别叫ceph和gkk，其中他们分别占用一台mds用来管理元数据服务，分别为con03和con01</p>
-<ul>
-<li>3.配置一个文件系统使用多个mds服务，实现使用集群来管理文件系统的元数据<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ceph fs set ceph allow_multimds true --yes-i-really-mean-it</span><br><span class="line">ceph fs set ceph max_mds 3</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>此时集群如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line"> health HEALTH_OK</span><br><span class="line"> monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">        election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">  fsmap e74: ceph-2/2/2 up gkk-1/1/1 up &#123;[ceph:0]=con03=up:active,[ceph:1]=con02=up:active,[gkk:0]=con01=up:active&#125;</span><br><span class="line"> osdmap e255: 3 osds: 3 up, 3 in</span><br><span class="line">        flags sortbitwise,require_jewel_osds</span><br><span class="line">  pgmap v1934434: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">        182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">            4240 active+clean</span><br><span class="line">client io 10459 B/s rd, 2324 B/s wr, 12 op/s rd, 0 op/s wr</span><br></pre></td></tr></table></figure></p>
-<p>可以看到集群没有standby的元数据服务了</p>
-<h1 id="cephfs删除"><a href="#cephfs删除" class="headerlink" title="cephfs删除"></a>cephfs删除</h1><p>—————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.stop 所有的mds服务</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop ceph-mds@&#123;hostname&#125;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.删除文件系统</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ceph fs rm ceph --yes-i-really-mean-it</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>此时看一下集群状态<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ceph(keystone_admin)]# ceph -s</span><br><span class="line">    cluster 8bb2dc2f-e7f0-400e-952b-842d20e3cc1e</span><br><span class="line">     health HEALTH_OK</span><br><span class="line">     monmap e1: 3 mons at &#123;con01=10.85.46.87:6789/0,con02=10.85.46.93:6789/0,con03=10.85.46.97:6789/0&#125;</span><br><span class="line">            election epoch 12, quorum 0,1,2 con01,con02,con03</span><br><span class="line">     osdmap e264: 3 osds: 3 up, 3 in</span><br><span class="line">            flags sortbitwise,require_jewel_osds</span><br><span class="line">      pgmap v1934517: 4240 pgs, 9 pools, 182 GB data, 104 kobjects</span><br><span class="line">            182 GB used, 3607 GB / 3993 GB avail</span><br><span class="line">                4240 active+clean</span><br><span class="line">  client io 0 B/s rd, 9829 B/s wr, 0 op/s rd, 1 op/s wr</span><br></pre></td></tr></table></figure></p>
-<p>之前fsmap已经没有了</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">cephfs</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/01/05/cephfs-use/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/3/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/5/">Next &raquo;</a>
@@ -1289,19 +1258,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1313,15 +1282,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1329,15 +1294,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1349,7 +1318,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1361,11 +1330,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1377,6 +1346,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
@@ -1385,11 +1358,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1418,10 +1395,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
               <li class="article-tag-list-item">

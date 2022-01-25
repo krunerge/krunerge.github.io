@@ -150,6 +150,151 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-ceph-auth" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/01/25/ceph-auth/">ceph auth</a>
+    </h1>
+  
+
+        
+        <a href="/2022/01/25/ceph-auth/" class="archive-article-date">
+  	<time datetime="2022-01-25T08:15:26.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-01-25</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-keyring篇"><a href="#1-keyring篇" class="headerlink" title="1. keyring篇"></a>1. keyring篇</h1><p>我们如果开启了cephx，在使用ceph的时候需要创建一个用户，每个用户有一个keyring，可以用ceph auth list查看，类似如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">client.admin</span><br><span class="line">	key: AQBPWeZhTnH6FhAAd6hoo1oMkw3/G4teWXwKAA==</span><br><span class="line">	caps: [mds] allow *</span><br><span class="line">	caps: [mgr] allow *</span><br><span class="line">	caps: [mon] allow *</span><br><span class="line">	caps: [osd] allow *</span><br></pre></td></tr></table></figure></p>
+<p>这是一个admin用户的keyring，可以看到keyring分为两类，一类是key，一类是caps，其中的key是一个secret，主要用来加密，caps是用户对于各个服务的访问权限。</p>
+<ul>
+<li><p>when（何时生成）<br>当我们运行如下类似命令的时候生成</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># ceph auth add xxx xxx</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>where （生成在哪里）<br>生成的命令其实是通过网络发给mon，keyring最后保存在mon的kv中</p>
+</li>
+<li><p>who（谁会使用）<br>这个keyring谁会使用，主要大致有以下两类：<br>（1）客户端：radosclient， ceph-fuse<br>（2）集群服务：osd，mgr，mds<br>可以看出mon自己启动是不需要keyring的。</p>
+</li>
+<li>how（怎么使用）<br>一般是在上面各who启动的时候使用，主要用来回去各自的secret。</li>
+</ul>
+<h1 id="2-who启动"><a href="#2-who启动" class="headerlink" title="2. who启动"></a>2. who启动</h1><p>这里我们从who里面分别用radosclient和osd来做例子分析两类who是怎么使用keyring启动的。</p>
+<h2 id="2-1-rados-client启动"><a href="#2-1-rados-client启动" class="headerlink" title="2.1 rados client启动"></a>2.1 rados client启动</h2><h3 id="2-1-1-monc认证前夕"><a href="#2-1-1-monc认证前夕" class="headerlink" title="2.1.1 monc认证前夕"></a>2.1.1 monc认证前夕</h3><p>我们一般使用rados client的时候，先构造一个radosclient实例，然后进行connect连接ceph集群<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">rados_t cluster</span><br><span class="line">rados_create</span><br><span class="line">rados_connect</span><br></pre></td></tr></table></figure></p>
+<p>rados client包含一个monc（mon client），在rados_connect的时候会对monc进行init初始化以及authenticate认证，在发起认证之前的流程图大致如下：</p>
+<p><img src="1.png" alt="1"></p>
+<h3 id="2-1-2-monc选择对象连接"><a href="#2-1-2-monc选择对象连接" class="headerlink" title="2.1.2 monc选择对象连接"></a>2.1.2 monc选择对象连接</h3><p>monc也就是我们说的mon client，通过名字可以看出它要操作的对象是monitor，那monc的认证就发生在与monitor集群建立连接的过程中，这里认证过程在细分几个过程：连接对象monitor的选择，创建连接。</p>
+<ul>
+<li><p>monitor选择<br>一般我们mon集群都有奇数个monitor，那monc在建立连接的时候跟哪个或者哪几个建立连接呢？monc是这样做的<br>（1）从monmap中获取所有的mon信息<br>（2）对mon进行随机排序<br>（3）默认取排序之后的前三个<br>也就是说如果我们三个mon，那monc就会向三个mon都发连接。</p>
+</li>
+<li><p>创建连接<br>在上面选择好要连接的monitor对象之后，就会创建连接</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">MonConnection&amp; MonClient::_add_conn(unsigned rank, uint64_t global_id)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  auto conn = messenger-&gt;connect_to_mon(peer);</span><br><span class="line">  MonConnection mc(cct, conn, global_id, &amp;auth_registry);</span><br><span class="line">  auto inserted = pending_cons.insert(make_pair(peer, move(mc)));</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>连接创建之后会有一系列状态的变化，这些状态其实是在tcp三次握手之上，ceph在tcp之上又加了一层自定义的网络连接协议，主要用来确认一些信息，比如banner，客户端的ip和端口，auth认证等，如下示意<br><img src="2.png" alt="2"></p>
+<h3 id="2-1-3-auth认证"><a href="#2-1-3-auth认证" class="headerlink" title="2.1.3. auth认证"></a>2.1.3. auth认证</h3><p>认证比较多，单独作为一篇<br>认证的开头我们从monc消息层async的ProtocolV2.cc的send_auth_request函数开始<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">CtPtr ProtocolV2::send_auth_request(std::vector&lt;uint32_t&gt; &amp;allowed_methods) &#123;</span><br><span class="line">  ...</span><br><span class="line">  int r = messenger-&gt;auth_client-&gt;get_auth_request(...);</span><br><span class="line">  ...</span><br><span class="line">  auto frame = AuthRequestFrame::Encode(auth_meta-&gt;auth_method, preferred_modes,</span><br><span class="line">                                        bl);</span><br><span class="line">  return WRITE(frame, &quot;auth request&quot;, read_frame);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后分析monc和monitor多次网络交互中发了些什么信息，获取到了些什么信息</p>
+<h4 id="2-1-3-1-发送monc基本信息"><a href="#2-1-3-1-发送monc基本信息" class="headerlink" title="2.1.3.1 发送monc基本信息"></a>2.1.3.1 发送monc基本信息</h4><p>上面messenger-&gt;auth_client就是mon client，get_auth_request最后是通过MonConnection构建<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">int MonConnection::get_auth_request()</span><br><span class="line">&#123;</span><br><span class="line">   ...</span><br><span class="line">   int r = _init_auth(*method, entity_name, want_keys, keyring, true);</span><br><span class="line">   encode((char)AUTH_MODE_MON, *bl);</span><br><span class="line">   encode(entity_name, *bl);</span><br><span class="line">   encode(global_id, *bl);</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li><p>发送消息初始化<br>首先init一个CephxClienthandler,然后encode “auth_mode_mon”, “entity_name”, “global_id”到bufferlist，发送给monitor，<br>entity_name和global_id能唯一确定一个monc客户端，entity_name会包括类型和编号，比如client.0, global_id是所有连monitor服务的唯一id，这里monc刚开始的时候gloabl_id是0，需要由mon统一分配。</p>
+</li>
+<li><p>auth初始化<br>初始化的CephxClientHandler是包含在MonConnection中，每一个跟mon的连接都包含一个CephxClientHandler,此外CephxClientHandler还包含一个want_keys，这个key是客户端想要访问集群其他服务的时候需要的key，比如我们的服务有Mgr，Mds，OSD，如果想要访问OSD，那就需要有OSD的key。那什么时候设置需要哪些key的呢？这里以radosclient、ceph-fuse和osd为例看一下在哪里设置的。<br>（1）radosclient：在connection的时候会设置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">int librados::RadosClient::connect() &#123;</span><br><span class="line"> ...</span><br><span class="line"> monclient.set_want_keys(</span><br><span class="line">      CEPH_ENTITY_TYPE_MON | CEPH_ENTITY_TYPE_OSD | CEPH_ENTITY_TYPE_MGR);</span><br><span class="line"> ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>（2）ceph-fuse：在init的时候设置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">int StandaloneClient::init() &#123;</span><br><span class="line">...</span><br><span class="line">monclient-&gt;set_want_keys(CEPH_ENTITY_TYPE_MDS | CEPH_ENTITY_TYPE_OSD);</span><br><span class="line">...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>（3）OSD：在init的时候设置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">int OSD::init() &#123;</span><br><span class="line"> ...</span><br><span class="line"> monc-&gt;set_want_keys(CEPH_ENTITY_TYPE_MON | CEPH_ENTITY_TYPE_OSD</span><br><span class="line">                      | CEPH_ENTITY_TYPE_MGR);</span><br><span class="line"> ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看出不同的客户端要访问的服务是不一样的。</p>
+<h4 id="2-1-3-2-monitor第一次接受处理"><a href="#2-1-3-2-monitor第一次接受处理" class="headerlink" title="2.1.3.2 monitor第一次接受处理"></a>2.1.3.2 monitor第一次接受处理</h4><p>monitor对于请求的认证有好几次处理，这里先讲对上面发送的monc基本信息的处理，这里从handle_auth_request开始分析<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">CtPtr ProtocolV2::handle_auth_request(ceph::bufferlist &amp;payload) &#123;</span><br><span class="line"> ...</span><br><span class="line"> auto request = AuthRequestFrame::Decode(payload);</span><br><span class="line"> ...</span><br><span class="line"> return _handle_auth_request(request.auth_payload(), false);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">CtPtr ProtocolV2::_handle_auth_request(bufferlist&amp; auth_payload, bool more) &#123;</span><br><span class="line">...</span><br><span class="line">int r = messenger-&gt;auth_server-&gt;handle_auth_request();</span><br><span class="line"></span><br><span class="line">state = AUTH_ACCEPTING_MORE;</span><br><span class="line"></span><br><span class="line">auto more = AuthReplyMoreFrame::Encode(reply);</span><br><span class="line">return WRITE(more, &quot;auth reply more&quot;, read_frame);</span><br><span class="line">...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里messenger-&gt;auth_server指的就是monitor，也就是调用monitor的handle_auth_request<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">int Monitor::handle_auth_request()&#123;</span><br><span class="line">  ...</span><br><span class="line">  if (!more) &#123;</span><br><span class="line">     ...</span><br><span class="line">     get_auth_service_handler();</span><br><span class="line">	     ...</span><br><span class="line">		 authmon()-&gt;_assign_global_id();</span><br><span class="line">		 ...</span><br><span class="line">		 auth_handler-&gt;start_session();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>首先初始化auth_handler，这里指的就是CephxServiceHandler，然后mon分配一个全局的global_id，然后start_session<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">int CephxServiceHandler::start_session() &#123;</span><br><span class="line">   ...</span><br><span class="line">    server_challenge = ceph::util::generate_random_number&lt;uint64_t&gt;(min, max);</span><br><span class="line">    ...</span><br><span class="line">    CephXServerChallenge ch;</span><br><span class="line">    ch.server_challenge = server_challenge;</span><br><span class="line">    encode(ch, *result_bl);</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>start_session主要生成一个server challenge，类似私钥。这里把CephXServerChallenge放入bufferlist中发送回monc。</p>
+<h4 id="2-1-3-3-monc接受ServerChallenge"><a href="#2-1-3-3-monc接受ServerChallenge" class="headerlink" title="2.1.3.3 monc接受ServerChallenge"></a>2.1.3.3 monc接受ServerChallenge</h4><p>monc接受server challenge从handle_auth_reply_more开始处理<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">CtPtr ProtocolV2::handle_auth_reply_more(ceph::bufferlist &amp;payload) &#123;</span><br><span class="line">   ...</span><br><span class="line">   auto auth_more = AuthReplyMoreFrame::Decode(payload);</span><br><span class="line">   ...</span><br><span class="line">   int r = messenger-&gt;auth_client-&gt;handle_auth_reply_more();</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int MonClient::handle_auth_reply_more() &#123;</span><br><span class="line">   ...</span><br><span class="line">   if (con-&gt;get_peer_type() == CEPH_ENTITY_TYPE_MON) &#123;</span><br><span class="line">    for (auto&amp; i : pending_cons) &#123;</span><br><span class="line">      if (i.second.is_con(con)) &#123;</span><br><span class="line">	return i.second.handle_auth_reply_more(auth_meta, bl, reply);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return -ENOENT;</span><br><span class="line">  &#125;</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int MonConnection::handle_auth_reply_more() &#123;</span><br><span class="line">   ...</span><br><span class="line">   int r = auth-&gt;handle_response();</span><br><span class="line">  if (r == -EAGAIN) &#123;</span><br><span class="line">    auth-&gt;prepare_build_request();</span><br><span class="line">    auth-&gt;build_request(*reply);</span><br><span class="line">    ...</span><br><span class="line">   &#125;</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>最后是调用CephxClientHandler的handle_response.<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">int CephxClientHandler::handle_response() &#123;</span><br><span class="line">   ...</span><br><span class="line">   CephXServerChallenge ch;</span><br><span class="line">   decode(ch, indata);</span><br><span class="line">   return -EAGAIN;</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里解析出server challenge，然后返回EAGAIN，EAGAIN会执行prepare_build_request，这个主要是设置需要哪些服务的key，比如osd的key。然后执行build_request<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">int CephxClientHandler::build_request(bufferlist&amp; bl) const &#123;</span><br><span class="line">    ...</span><br><span class="line">    header.request_type = CEPHX_GET_AUTH_SESSION_KEY; // 设置请求类型</span><br><span class="line">	   keyring-&gt;get_secret(cct-&gt;_conf-&gt;name, secret);   // 获取keyring中的secret</span><br><span class="line">	   req.client_challenge = ceph::util::generate_random_number&lt;uint64_t&gt;(); // 随机生成一个client challenge</span><br><span class="line">	   cephx_calc_client_server_challenge(cct, secret, server_challenge,</span><br><span class="line">				       req.client_challenge, &amp;req.key, error);  // 利用client ch， server ch 和secret计算一个key</span><br><span class="line">	   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这样就把信息encode到bufferlist中发送给monitor</p>
+<h4 id="2-1-3-4-monitor第二次接受处理"><a href="#2-1-3-4-monitor第二次接受处理" class="headerlink" title="2.1.3.4 monitor第二次接受处理"></a>2.1.3.4 monitor第二次接受处理</h4><p>monitor这边通过handle_auth_request_more第二次接受处理<br><img src="3.png" alt="3"><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">int CephxServiceHandler::handle_request() &#123;</span><br><span class="line">  ...</span><br><span class="line">  case CEPHX_GET_AUTH_SESSION_KEY:</span><br><span class="line">  key_server-&gt;get_secret(entity_name, secret); // 获取entity_name对应keyring中的secret</span><br><span class="line">  cephx_calc_client_server_challenge(cct, secret, server_challenge,</span><br><span class="line">					 req.client_challenge, &amp;expected_key, error); // 利用secret、server ch、client ch计算一个key</span><br><span class="line">	if (req.key != expected_key) &#123; ... &#125; //跟monc传过来的key进行对比</span><br><span class="line">	key_server-&gt;generate_secret(session_key); //生成session_key</span><br><span class="line">	cephx_build_service_ticket_reply(); //获取auth的ticket</span><br><span class="line">	key_server-&gt;get_service_caps(entity_name, CEPH_ENTITY_TYPE_MON,*caps) //获取mon caps</span><br><span class="line"></span><br><span class="line">	if (req.other_keys) &#123;</span><br><span class="line">	  // 获取其他servier的ticket</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里主要是通过challenge进行计算确认，然后返回monc所需service的ticket。这里所得ticket就是后面monc需要访问各个服务所需的认证信息，那认证信息包含哪些内容呢？<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">struct CephXSessionAuthInfo &#123;</span><br><span class="line">  uint32_t service_id;</span><br><span class="line">  uint64_t secret_id;</span><br><span class="line">  AuthTicket ticket;</span><br><span class="line">  CryptoKey session_key;</span><br><span class="line">  CryptoKey service_secret;</span><br><span class="line">  ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>其中service_id就是服务编号，比如OSD，MDS，MGR等，而secret_id是service_secret的编号，每个service_secret还有过期时间，过期了重新从mon获取，那到底从哪里获取的？答案就是rotating secrets。</p>
+<h5 id="2-1-3-4-1-rotating-secrets"><a href="#2-1-3-4-1-rotating-secrets" class="headerlink" title="2.1.3.4.1 rotating secrets"></a>2.1.3.4.1 rotating secrets</h5><p>rotating secrets顾名思义就是可以轮询的，这个是由monitor的authmonitor负责，我们看一下他是如何存储、创建、更新以及反馈给monc</p>
+<ul>
+<li>存储形式<br><img src="4.png" alt="4"><br>每一行代表一个service的secret，一个时刻只存在三个secret，如红虚线框中的</li>
+<li><p>创建<br>rotating secrets是在monitorc启动的时候authmonitor通过start_server创建<br><img src="5.png" alt="5"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">bool KeyServer::_check_rotating_secrets() &#123;</span><br><span class="line"> ...</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_AUTH);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MON);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_OSD);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MDS);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MGR);</span><br><span class="line"> ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出authmonitor会为auth、mon、osd、mds、mgr生成rotate secret，secret_id从1开始，其中auth service的过期时间是12小时，其他service的过期时间是1小时，刚开始的时候会生成三个时刻secret，previous、current、next分别代表过去一个小时、当前一个小时，下一个小时，如下所示<br><img src="6.png" alt="6"></p>
+</li>
+<li><p>更新<br>authmonitor在tick的时候会周期检查rotate secret有没有过期，过期就进行相应的调整<br><img src="7.png" alt="7"><br>如果current rotate secret超时时间比当前时间小，就过期了，需要创建一个新的rotate secret，原来的current变成pre，原来的next变成current，新生成的就是next，而且一个server的rotate secret永远只保留三个，如下图<br><img src="8.png" alt="8"></p>
+</li>
+<li><p>回复monc<br>monc会根据service id到monitor来请求service secret，monitor会根据service id从rotate secrets中找到属于这个service的所有rotate secret，然后根据当前的时间返回目前没有过期的一个service secret。<br>这样把service secret返回给monc，这里返回的service secret是这样的，这里以rados client为例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">返回auth service secret，这里以keyring的key进行加密</span><br><span class="line">返回mon service secret，这里以monitor生成的session key进行加密</span><br><span class="line">返回osd service secret，这里以monitor生成的session key进行加密</span><br><span class="line">返回mgr service secret，这里以monitor生成的session key进行加密</span><br><span class="line">返回auth service secret，这里以monitor生成session key进行加密</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里可以看到auth返回了两次，但是使用的加密key不一样，第一个auth是monitor自动加上的，第二个auth才是monc要求要的。</p>
+<h4 id="2-1-3-5-monc-接受rotate-secret返回"><a href="#2-1-3-5-monc-接受rotate-secret返回" class="headerlink" title="2.1.3.5 monc 接受rotate secret返回"></a>2.1.3.5 monc 接受rotate secret返回</h4><p><img src="9.png" alt="9"><br>对收到的service secret用相应的key进行解密，如果不能解密就表示认证失败，从这里我们可以看出ceph的认证其实就是用key对rotate secret进行加密传输，看monc能不能进行解密。</p>
+<p>这里我们就完成了认证，我们用图再来总结一下<br><img src="10.png" alt="10"></p>
+<h2 id="2-2-OSD启动"><a href="#2-2-OSD启动" class="headerlink" title="2.2 OSD启动"></a>2.2 OSD启动</h2><p>上面2.2是rados client的启动，OSD内部也是包含了一个monc，如果把OSD启动分两部分，第一部分跟rados client的monc一样，第二部分是rados client这类客户端所没有，就是在finish auth之后需要从monitor把属于自己的service secret获取回来，用于后面类似rados client和ceph-fuse进行访问。<br><img src="11.png" alt="11"><br>这里就是类似OSD、MDS等service服务启动的流程。</p>
+<h1 id="3-service服务访问篇"><a href="#3-service服务访问篇" class="headerlink" title="3. service服务访问篇"></a>3. service服务访问篇</h1><p>客户端rados client在通过monc认证之后，获取到了各个service secret，那如果我们要访问osd这个server怎么使用这个获取的service secret。我们知道如果要跟osd进行连接，需要osd的客户端，rados client中除了包含monc之外，还包括mgrc、objecter，这里的objecter模块就是跟osd交互的客户端。如果要跟osd进行交互肯定也是要先创建连接。跟之前monc和monitor之间的连接一样，都是在tcp三次握手之上再增加了自己的协议，如下<br><img src="12.png" alt="12"><br>这里跟monc和monitor连接一样也有auth认证，而且认证的处理流程也是一样的，只是处理的内容不太一样，monc和monitor之间只要要获取各个service secret，而objecter和osd之间主要是用之前获取到的OSD service secret来进行验证。objecter在op发送给osd的时候会进行连接创建<br><img src="13.png" alt="13"><br><img src="14.png" alt="14"><br>认证通过完等连接建立之后就可以发送op到osd了。</p>
+<h1 id="4-rados-client、monitor和osd通信篇"><a href="#4-rados-client、monitor和osd通信篇" class="headerlink" title="4. rados client、monitor和osd通信篇"></a>4. rados client、monitor和osd通信篇</h1><p>通过上面之后我们总结一下rados client、monitor和osd之间的交互<br><img src="15.png" alt="15"></p>
+<ul>
+<li>获取的service secret更新<br>我们前面讲过service secret是从mon的authmonitor的rotate secrets获取，authmonitor通过ticket定时更新，而radosclient和osd在连接建立的时候通过向mon获取，那rados client和OSD的service secret何时更新呢，都在他们的tick中<br>（1）rados client更新<br><img src="16.png" alt="16"><br>过期了就向monitor发送消息获取新的service secret<br>（2）osd更新<br><img src="17.png" alt="17"><br>过期了就向monitor发送消息获取新的service secret</li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="https://hackerain.me/2019/12/15/ceph/cephx.html" target="_blank" rel="noopener">深度解析CephX原理—调节NTP时钟的困境</a></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph auth</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/01/25/ceph-auth/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-Ceph-complier-not-with-ninja" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -976,85 +1121,6 @@
 
 
   
-    <article id="post-bluestore-nonde-decode" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/02/22/bluestore-nonde-decode/">解析bluestore onode</a>
-    </h1>
-  
-
-        
-        <a href="/2021/02/22/bluestore-nonde-decode/" class="archive-article-date">
-  	<time datetime="2021-02-22T14:42:38.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-22</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>解析bluestore模式下面的Onode</p>
-<h1 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h1><h2 id="1-首先通过ceph-kv-tool获取对应的元数据"><a href="#1-首先通过ceph-kv-tool获取对应的元数据" class="headerlink" title="1. 首先通过ceph-kv-tool获取对应的元数据"></a>1. 首先通过ceph-kv-tool获取对应的元数据</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bin/ceph-kvstore-tool   bluestore-kv dev/osd0 get O %7f%80%00%00%00%00%00%00%02%eaE%e1F%21tangmi%21%3d%ff%ff%ff%ff%ff%ff%ff%fe%ff%ff%ff%ff%ff%ff%ff%ffo  out /home/krunerge/onode</span><br></pre></td></tr></table></figure>
-<h2 id="2-这个获取的数据不止包括Onode，我们可以通过写时候的osd日志可以看出"><a href="#2-这个获取的数据不止包括Onode，我们可以通过写时候的osd日志可以看出" class="headerlink" title="2. 这个获取的数据不止包括Onode，我们可以通过写时候的osd日志可以看出"></a>2. 这个获取的数据不止包括Onode，我们可以通过写时候的osd日志可以看出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2021-02-08 14:55:21.519947 7f5b11c7d700 20 bluestore(/data/ceph/ceph-aduit-log/Ceph/build/dev/osd0)   onode #2:ea45e146:::tangmi:head# is 506 (344 bytes onode + 2 bytes spanning blobs + 160 bytes inline extents)</span><br></pre></td></tr></table></figure>
-<p>这个里面有344个字节是Onode结构</p>
-<h2 id="3-dd获取"><a href="#3-dd获取" class="headerlink" title="3. dd获取"></a>3. dd获取</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dd if=/home/krunerge/onode of=/home/krunerge/onode_tmp bs=1 count=344</span><br></pre></td></tr></table></figure>
-<h2 id="4-ceph-dencoder解析"><a href="#4-ceph-dencoder解析" class="headerlink" title="4. ceph-dencoder解析"></a>4. ceph-dencoder解析</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">./bin/ceph-dencoder type bluestore_onode_t import  /home/krunerge/onode_tmp decode dump_json</span><br><span class="line">&#123;</span><br><span class="line">    &quot;nid&quot;: 53306,</span><br><span class="line">    &quot;size&quot;: 131072,</span><br><span class="line">    &quot;attrs&quot;: &#123;</span><br><span class="line">        &quot;attr&quot;: &#123;</span><br><span class="line">            &quot;name&quot;: &quot;_&quot;,</span><br><span class="line">            &quot;len&quot;: 261</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;attr&quot;: &#123;</span><br><span class="line">            &quot;name&quot;: &quot;snapset&quot;,</span><br><span class="line">            &quot;len&quot;: 35</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;flags&quot;: &quot;&quot;,</span><br><span class="line">    &quot;extent_map_shards&quot;: [],</span><br><span class="line">    &quot;expected_object_size&quot;: 0,</span><br><span class="line">    &quot;expected_write_size&quot;: 0,</span><br><span class="line">    &quot;alloc_hint_flags&quot;: 0</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2021/02/22/bluestore-nonde-decode/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
@@ -1176,19 +1242,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1200,15 +1266,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1216,15 +1278,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1236,7 +1302,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1248,11 +1314,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1264,6 +1330,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
@@ -1272,11 +1342,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">nova periodic</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1305,10 +1379,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
               <li class="article-tag-list-item">
