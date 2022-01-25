@@ -395,7 +395,7 @@
 <p>例子二：如下情景<br><img src="a6.png" alt="a6"><br>可以看出我们的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x_offset = 64k</span><br><span class="line">x_len=128k</span><br><span class="line">然后生成一个objectextent，里面的offset=x_offset = 64k，length=x_len=128k</span><br></pre></td></tr></table></figure></p>
 <p>例子三：如下情景<br><img src="a7.png" alt="a7"><br>虽然我们知道在我们假设的su为1M，fuse一次读分片是128K的情况下是不会出现这种情况的，当时我们可以调整su的大小，调整对象的大小，这样的情况就可以达到了。<br>这里我们假设去掉fuse读分片128k的限制，我们假设读了1M的数据，并且我们su为1M，现在我们要读上面所有绿色的部分。对于前面三个分片，我们可以知道，第一个分片在object1的第一个su中，不是一个整的分片，第二个分片是在object2中的第一个su中，完整的一个分片，第三个分片是在object0中的第二个su，是一个完整的分片，最后一个分片是在object1的第二个su中，我们可以知道，对于前三个分片在，分片结果集map&lt;object_t,vector<objectextent> &gt; object_extent会存放三个对象，假设我们还没有映射最后一个分片我们只是映射了三个分片，此时，object_extent下的状态是如下：<br><img src="a8.png" alt="a8"><br>那对于第四个分片呢，会在object1下面在生成一个objectextent，这个里面的分片是不全的，现在有一个问题来了是不是一个su对应一个objectextent？<br>答案是的，一个su对应一个objectextent，可能这个objectextent没有su那么大的范围，即len(objectextent)&lt;=len(su)，而且在objectextent结构中有一个vector&lt;pair&lt;uint64_t,uint64_t&gt; &gt;buffer_extents，这个是用来记录此分片相对于我们要读的偏移位置的偏移量，我们画个图解释一下。<br><img src="a9.png" alt="a9"><br>buffer_extents里面的key是指的蓝色小格相对于offset的偏移，不过小甲在撸完代码之后，感觉基本上一个objectextent里面的buffer_extents只会存在一个pair，不会存在多个pair，一般要么就是一个su或者就是小于su。</objectextent></p>
 <h2 id="3-5-对象分片之后跟objectcacher中的缓存关联"><a href="#3-5-对象分片之后跟objectcacher中的缓存关联" class="headerlink" title="3.5 对象分片之后跟objectcacher中的缓存关联"></a>3.5 对象分片之后跟objectcacher中的缓存关联</h2><p>从上面的file_to_extent中得到映射后的结果集object_extent，这个是一个map，首先遍历取出所有的objectextent放在一个vector中。然后下面的在readx函数中去读每一个映射后分片objectextent上面的内容，因为objectextent结构中包含了要读对象的名字和要读内容在这个对象中的迁移位置，所以就可以对每一个objectextent进行并发读取。但是在读的时候由于使用objectcacher缓存，我们可以现从缓存中查找看看我们要找的objectextent范围的内容是不是在缓存中，缓存命中在直接取出，不命中就需要去rados读。</p>
-<h3 id="映射关系"><a href="#映射关系" class="headerlink" title="映射关系"></a>映射关系</h3><p>这里就有一个问题，就是objectextent如何跟bufferhead映射起来？接下来我们分析一下。<br> 这主要是一个函数map_read，这个函数就是做对一个objectextent进行映射，这里面的映射也很有趣，我们来看一下，首先说明一下bufferhead是一个对象内部的片段，毫无规律的。<br> object和bufferhead之间的关系如下，这里的object严格说不是rados的object，是osdc缓存中的对象，其实可以说是内存中与磁盘对应的数据结构。<br> <img src="a10.png" alt="a10"><br>上图中一个object中有三个bufferhead<br>下面分析几种情景来说明object、bufferhead和objectextent之间的关系</p>
+<h3 id="映射关系"><a href="#映射关系" class="headerlink" title="映射关系"></a>映射关系</h3><p>这里就有一个问题，就是objectextent如何跟bufferhead映射起来？接下来我们分析一下。<br> 这主要是一个函数map_read，这个函数就是做对一个objectextent进行映射，这里面的映射也很有趣，我们来看一下，首先说明一下bufferhead是一个对象内部的片段，毫无规律的。<br> object和bufferhead之间的关系如下，这里的object严格说不是rados的object，是osdc缓存中的对象，其实可以说是内存中与磁盘对应的数据结构。<br><img src="a10.png" alt="a10"><br>上图中一个object中有三个bufferhead<br>下面分析几种情景来说明object、bufferhead和objectextent之间的关系</p>
 <ul>
 <li><p>（1）objectextent的范围在现有的bufferhead之后<br><img src="a11.png" alt="a11"><br>这种情况下，会生成一个bufferhead，包含objectextent的范围，加入一个bufferhead之后变成这样:<br><img src="a12.png" alt="a12"></p>
 </li>
@@ -1273,15 +1273,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack nova cinder</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1293,15 +1285,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1309,7 +1297,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1321,30 +1321,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
@@ -1353,7 +1329,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+                <a href="javascript:void(0)" class="js-tag color2">k8s 张磊</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1361,19 +1337,31 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1381,7 +1369,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">mysql</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1389,7 +1385,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack</a>
+                <a href="javascript:void(0)" class="js-tag color5">Openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1409,11 +1409,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
               </li>
              
               <li class="article-tag-list-item">
