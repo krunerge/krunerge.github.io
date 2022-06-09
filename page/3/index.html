@@ -150,6 +150,271 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-openstack-vm-block-IO-when-create-rbd-snap" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/15/openstack-vm-block-IO-when-create-rbd-snap/">你有遇到在创建rbd快照的时候虚拟机block io挂掉</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/15/openstack-vm-block-IO-when-create-rbd-snap/" class="archive-article-date">
+  	<time datetime="2020-03-15T11:28:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>最近遇到一个问题，我们平台有定时快照功能，快照的个数是有限制的，比如一个虚拟机同一时刻最多有5个快照，如果要创建第六个快照，需要先把时间最久的第一个快照删除，然后再创建新快照，我们使用的是Openstack+Ceph的标准云平台，其中ceph的版本是10.2.7的J版。在创建快照的时候出现虚拟机挂掉，虚拟机qemu日志如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">block i/o error in device &apos;drive-virtio-disk0&apos;: Cannot send after transport endpoint shutdown (108)</span><br></pre></td></tr></table></figure></p>
+<p>而且出现了大概一分多钟的慢请求告警</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><ul>
+<li>1.我们的猜想</li>
+<li><p>（1）删除快照的压力<br>首先我们知道rbd的快照创建的时候是秒级的，因为只是创建了一些元数据，不会对ceph集群产生很多的压力，但是删除快照不一样，删除的快照虽然是异步操作，但是会产生数据的删除操作，而且是删除最老的快照，所以快照的数据很多已经经过cow拷贝了数据，所以删除快照会产生很大的存储压力</p>
+</li>
+<li><p>（2）osd所在磁盘性能比较差<br>我们也注意到了这套出问题的ceph集群在使用ceph osd perf发现这套集群osd磁盘的性能参差不齐，有些延迟有1000-2000ms，可以这是个根源，那为什么会出现虚拟机挂掉呢？</p>
+</li>
+<li><p>2.审计日志的查找<br>因为我们没有开启rbd客户端的日志，所以看不到qemu在调librbd的时候出现了什么问题，于是去Ceph服务端查看，我们在虚拟机挂掉的时间周围在ceph的审计日志中找到了这条记录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">2020-03-12 23:53:11.646925 mon.0 127.0.0.1:6789/0 1565359 : audit [INF] from=&apos;client.? 127.0.0.1:0/3655019494&apos; entity=&apos;client.cinder&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/1548601709&quot;, &quot;blacklistop&quot;: &quot;add&quot;&#125;]&apos;: finished</span><br><span class="line">2020-03-13 00:11:20.690720 mon.0 127.0.0.1:6789/0 1566350 : audit [INF] from=&apos;client.? 127.0.0.1:0/2040474367&apos; entity=&apos;client.cinder&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/1548601709&quot;, &quot;blacklistop&quot;: &quot;rm&quot;&#125;]&apos;: finished</span><br><span class="line">2020-03-13 00:15:28.399958 mon.0 127.0.0.1:6789/0 1566589 : audit [INF] from=&apos;client.? 127.0.0.1:0/66127387&apos; entity=&apos;client.cinder&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/2546996510&quot;, &quot;blacklistop&quot;: &quot;add&quot;&#125;]&apos;: finished</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>触发了把客户端加入黑名单的命令，也就是说qemu虚拟机的客户端被加入到了osd的黑名单，想想加入黑名单确实会导致qemu虚拟机在继续发送数据的时候会被拒绝，后面代码分析也是正确的，具体代码在下面解释</p>
+<ul>
+<li>3.加入黑名单操作谁触发的<br>那到底谁触发了黑名单操作，就是找入口，看了一下大概有三个入口，分析如下：</li>
+<li><p>入口1：librbd有一个break_lock接口，这个接口中会有可以能触发add blocklist</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">int break_lock(ImageCtx *ictx, const string&amp; client,</span><br><span class="line">		 const string&amp; cookie)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  if (ictx-&gt;blacklist_on_break_lock) &#123;</span><br><span class="line">    ...</span><br><span class="line">    r = rados.blacklist_add(client_address,</span><br><span class="line">			      ictx-&gt;blacklist_expire_seconds);</span><br><span class="line">    ...</span><br><span class="line">  &#125;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>入口2：librados有add blocklist接口：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">int blacklist_add(const std::string&amp; client_address,</span><br><span class="line">                      uint32_t expire_seconds);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>入口3：在创建快照的请求一个回调函数中，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">struct C_BlacklistClient : public Context &#123;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  virtual void finish(int r) override &#123;</span><br><span class="line">    librados::Rados rados(image_ctx.md_ctx);</span><br><span class="line">    r = rados.blacklist_add(locker_address,</span><br><span class="line">                            image_ctx.blacklist_expire_seconds);</span><br><span class="line">    on_finish-&gt;complete(r);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>前面两个入口只能是openstack或者qemu代码进行调用，查了一下代码没有，那就是第三个入口，而且我们确实是在创建快照的时候出现问题,而且我们从升级日志中也可以看出我们的请求是来自client.cinder用户，也即是来自外部调ceph，而不是ceph内部产生的，如果内部产生或者有谁命令行调用那用户应该是client.admin</p>
+<ul>
+<li>4.创建快照的时候会什么会有这个回调函数<br>我们首先看一下这个回调类是在哪里创建的<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void BreakRequest&lt;I&gt;::send_blacklist() &#123;</span><br><span class="line">  ...</span><br><span class="line">  m_image_ctx.op_work_queue-&gt;queue(new C_BlacklistClient&lt;I&gt;(m_image_ctx,</span><br><span class="line">                                                            m_locker.address,</span><br><span class="line">                                                            ctx), 0);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看到是在send_blacklist函数中创建的回调类，那这个函数是谁调用的呢？<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void BreakRequest&lt;I&gt;::handle_get_watchers(int r) &#123;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  for (auto &amp;watcher : m_watchers) &#123;</span><br><span class="line">    if ((strncmp(m_locker.address.c_str(),</span><br><span class="line">                 watcher.addr, sizeof(watcher.addr)) == 0) &amp;&amp;</span><br><span class="line">        (m_locker.handle == watcher.cookie)) &#123;</span><br><span class="line">      ldout(cct, 10) &lt;&lt; &quot;lock owner is still alive&quot; &lt;&lt; dendl;</span><br><span class="line"></span><br><span class="line">      if (m_force_break_lock) &#123;</span><br><span class="line">        break;</span><br><span class="line">      &#125; else &#123;</span><br><span class="line">        finish(-EAGAIN);</span><br><span class="line">        return;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  send_blacklist();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在这个handle_get_watchers函数中掉了，这个函数主要是用来获取一个rbd上面的所有watcher，那watcher是什么呢？没跟rbd创建一个新的连接都会有一个watcher，也就是要获取这个rbd的所有客户端，我们可以通过分析创建快照的代码知道，创建快照要获取exclusive_lock锁，并且要知道这个锁现在被哪个watcher，也就是客户端给拥有这个，这样活把创建快照的请求分为local request和remote request交个锁的拥有者去执行创建快照元数据操作，而请求的所有者已经在创建连接refresh的时候已经保存到了m_locker中了，现在在获取watcher只是确认一下这个locker的owner是不是还存在。这里先等一下，我们想一下，在既有qemu客户端又有nova-compute客户端创建快照的操作的时候，因为虚拟机qemu是第一个操作这个rbd的，所以exclusive_lock的owner就是qemu进程。上面的代码的正常流程是nova-compute在创建rbd快照的时候，watcher会返回两个值，一个是qemu虚拟机客户端，一个nova-compute发起创建快照的这个自身客户端，而m_locker这个应该是qemu虚拟机这个客户端，在if判断的时候应该能匹配到qemu的客户端这个watcher，如过匹配到就是走下面的if和else，而m_force_break_lock是写死false<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void AcquireRequest&lt;I&gt;::send_break_lock() &#123;</span><br><span class="line">  ...</span><br><span class="line">  auto req = BreakRequest&lt;I&gt;::create(</span><br><span class="line">    m_image_ctx, m_locker, m_image_ctx.blacklist_on_break_lock, false, ctx);</span><br><span class="line">  req-&gt;send();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>就是上面创建的第四个参数，现在既然能走到send_blacklist，那就有两种可能，一种就是从osd那边返回的watcher是空的，没有进入for循环，一种就是没有匹配进入if也就是qemu虚拟机的watcher没了，猜想是第二种，那watcher为什么会没了呢？首先我们看一下watcher在osd那边是怎么存储的？</p>
+<ul>
+<li><ol start="5">
+<li>watcher持久化<br>watch持久化在前面的文章中我已经分析过是存储在rbd_header的文件对象的扩展属性中，如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@con02 0.ee_head]# attr -q -g &quot;ceph._&quot; rbd\\uheader.301027238e1f29__head_A5BD3CEE__0   &gt; /root/object_info_t.txt</span><br><span class="line">[root@con02 0.ee_head]# attr -q -g &quot;ceph._@1&quot; rbd\\uheader.301027238e1f29__head_A5BD3CEE__0   &gt;&gt; /root/object_info_t.txt</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+</ul>
+<p>内容类似如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;oid&quot;: &#123;</span><br><span class="line">        &quot;oid&quot;: &quot;rbd_header.301027238e1f29&quot;,</span><br><span class="line">        &quot;key&quot;: &quot;&quot;,</span><br><span class="line">        &quot;snapid&quot;: -2,</span><br><span class="line">        &quot;hash&quot;: 2780642542,</span><br><span class="line">        &quot;max&quot;: 0,</span><br><span class="line">        &quot;pool&quot;: 0,</span><br><span class="line">        &quot;namespace&quot;: &quot;&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    &quot;watchers&quot;: &#123;</span><br><span class="line">        &quot;client.8079633&quot;: &#123;</span><br><span class="line">            &quot;cookie&quot;: 139996606507840,</span><br><span class="line">            &quot;timeout_seconds&quot;: 30,</span><br><span class="line">            &quot;addr&quot;: &#123;</span><br><span class="line">                &quot;nonce&quot;: 3613298630,</span><br><span class="line">                &quot;addr&quot;: &quot;127.0.0.1:0&quot;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们看到watchers是一个字典，当前只是示例，可以看到在watcher中有一个timeout_seconds字段，默认是30s，那这个字段是干嘛的呢，看名字就是超过30s删除，那是怎么删除</p>
+<ul>
+<li>6.watcher的timeout<br>watcher就是客户端，其实客户端为了保活，会通过心跳ping来更新超时，如何做的呢，首先心跳在objecter的tick函数中每个5s调用<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">void Objecter::tick()&#123;</span><br><span class="line">  ...</span><br><span class="line">  for (map&lt;uint64_t,LingerOp*&gt;::iterator p = s-&gt;linger_ops.begin();</span><br><span class="line">	p != s-&gt;linger_ops.end();</span><br><span class="line">	++p) &#123;</span><br><span class="line">      LingerOp *op = p-&gt;second;</span><br><span class="line">      LingerOp::unique_lock wl(op-&gt;watch_lock);</span><br><span class="line">      assert(op-&gt;session);</span><br><span class="line">      ldout(cct, 10) &lt;&lt; &quot; pinging osd that serves lingering tid &quot; &lt;&lt; p-&gt;first</span><br><span class="line">		     &lt;&lt; &quot; (osd.&quot; &lt;&lt; op-&gt;session-&gt;osd &lt;&lt; &quot;)&quot; &lt;&lt; dendl;</span><br><span class="line">      found = true;</span><br><span class="line">      if (op-&gt;is_watch &amp;&amp; op-&gt;registered &amp;&amp; !op-&gt;last_error)</span><br><span class="line">	_send_linger_ping(op);</span><br><span class="line">    &#125;</span><br><span class="line">  ...    </span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>通过_send_linger_ping就向osd发送心跳，以更新watcher的超时<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void Objecter::_send_linger_ping(LingerOp *info)&#123;</span><br><span class="line">  ...</span><br><span class="line">	opv[0].op.op = CEPH_OSD_OP_WATCH;</span><br><span class="line">  opv[0].op.watch.cookie = info-&gt;get_cookie();</span><br><span class="line">  opv[0].op.watch.op = CEPH_OSD_WATCH_OP_PING;</span><br><span class="line">  opv[0].op.watch.gen = info-&gt;register_gen;</span><br><span class="line">	...</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看到请求操作码是CEPH_OSD_OP_WATCH，这里还有一个watcher的操作码CEPH_OSD_WATCH_OP_PING，在osd端查看处理流程<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">int ReplicatedPG::do_osd_ops(OpContext *ctx, vector&lt;OSDOp&gt;&amp; ops)&#123;</span><br><span class="line">   ...</span><br><span class="line">	 case CEPH_OSD_OP_WATCH:&#123;</span><br><span class="line">		 ...</span><br><span class="line">		 else if (op.watch.op == CEPH_OSD_WATCH_OP_PING) &#123;</span><br><span class="line">	  ...</span><br><span class="line">	  dout(10) &lt;&lt; &quot; found existing watch &quot; &lt;&lt; w &lt;&lt; &quot; by &quot; &lt;&lt; entity &lt;&lt; dendl;</span><br><span class="line">	  p-&gt;second-&gt;got_ping(ceph_clock_now(NULL));</span><br><span class="line">	  result = 0;</span><br><span class="line">        &#125;</span><br><span class="line">		 ...</span><br><span class="line"></span><br><span class="line">	 &#125;</span><br><span class="line">	 ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过两个操作吗的匹配可以看到是got_ping进行处理，函数如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">void Watch::got_ping(utime_t t)</span><br><span class="line">&#123;</span><br><span class="line">  last_ping = t;</span><br><span class="line">  if (conn) &#123;</span><br><span class="line">    register_cb();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里看到有注册回调<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">void Watch::register_cb()</span><br><span class="line">&#123;</span><br><span class="line">  Mutex::Locker l(osd-&gt;watch_lock);</span><br><span class="line">  if (cb) &#123;</span><br><span class="line">    dout(15) &lt;&lt; &quot;re-registering callback, timeout: &quot; &lt;&lt; timeout &lt;&lt; dendl;</span><br><span class="line">    cb-&gt;cancel();</span><br><span class="line">    osd-&gt;watch_timer.cancel_event(cb);</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    dout(15) &lt;&lt; &quot;registering callback, timeout: &quot; &lt;&lt; timeout &lt;&lt; dendl;</span><br><span class="line">  &#125;</span><br><span class="line">  cb = new HandleWatchTimeout(self.lock());</span><br><span class="line">  osd-&gt;watch_timer.add_event_after(</span><br><span class="line">    timeout,</span><br><span class="line">    cb);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面就是watcher超时更新，大概意思就是如果有收到ping请求，就把原来的超时回调给删了，注册新的30s超时回调，通俗讲就是续命保活，好了到这里我们分析完了watcher超时更新，我们上面说过，加入加黑名单流程是因为没有匹配qemu的watcher，可以就是osd端没有收到ping心跳导致没有更细watcher的超时，然后watcher被删除了。而objecter的tick是每隔5s会调用一次，那为什么osd没有收到呢，那就回想一下我们开头的说的几个条件，osd磁盘性能很差，删除快照的时候产生大量的io，而tick发的心跳也是作为op请求网络发送到osd进行处理，那很有可能会出现osd在磁盘性能很差的情况下出现ping心跳请求被block，这也跟我们收到一分多钟的慢请求告警一致。好我们继续跟踪在触发了add blacklist之后，虚拟机的qemu进程是如何io block挂掉的</p>
+<ul>
+<li><p>7.add blacklist流程<br>创建快照时的回调类在触发add blacklist时，请求是发现mon的，mon在收到请求之后通过paxos，修改osdmap，把黑名单记录在了osdmap里面，由于osdmap的改变，osdmap的版本会加1，从而扩散到各个osd,下面是版本加1的osdmap</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	...</span><br><span class="line">	&quot;pg_temp&quot;: [],</span><br><span class="line">  &quot;blacklist&quot;: &#123;</span><br><span class="line">		&quot;127.0.0.1:0/147234759&quot;: &quot;2020-03-15 22:20:44.052504&quot;</span><br><span class="line">  &#125;,</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>7.qemu读写请求继续操作<br>qemu虚拟机根本不知道自己被加入了黑名单，还是会调用librbd继续发送读写请求，那我们看看osd那边是怎么处理</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void ReplicatedPG::do_op(OpRequestRef&amp; op)</span><br><span class="line">&#123;</span><br><span class="line">	...</span><br><span class="line">	// blacklisted?</span><br><span class="line">  if (get_osdmap()-&gt;is_blacklisted(m-&gt;get_source_addr())) &#123;</span><br><span class="line">    dout(10) &lt;&lt; &quot;do_op &quot; &lt;&lt; m-&gt;get_source_addr() &lt;&lt; &quot; is blacklisted&quot; &lt;&lt; dendl;</span><br><span class="line">    osd-&gt;reply_op_error(op, -EBLACKLISTED);</span><br><span class="line">    return;</span><br><span class="line">  &#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在osd的do_op函数中检查请求来的客户端是不是在黑名单中，是则返回EBLACKLISTED错误码，而这个错误码是108，也即是shutdown错误，所以我们看到qemu虚拟机日志中出现的108错误。<br>至此我们我们就分析完了</p>
+<h1 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h1><p>那有什么可以避免在watcher失效之后，不执行add blacklist，可以修改一个参数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename I&gt;</span><br><span class="line">void BreakRequest&lt;I&gt;::send_blacklist() &#123;</span><br><span class="line">  if (!m_blacklist_locker) &#123;</span><br><span class="line">    send_break_lock();</span><br><span class="line">    return;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  CephContext *cct = m_image_ctx.cct;</span><br><span class="line">  ldout(cct, 10) &lt;&lt; dendl;</span><br><span class="line"></span><br><span class="line">  // TODO: need async version of RadosClient::blacklist_add</span><br><span class="line">  using klass = BreakRequest&lt;I&gt;;</span><br><span class="line">  Context *ctx = create_context_callback&lt;klass, &amp;klass::handle_blacklist&gt;(</span><br><span class="line">    this);</span><br><span class="line">  m_image_ctx.op_work_queue-&gt;queue(new C_BlacklistClient&lt;I&gt;(m_image_ctx,</span><br><span class="line">                                                            m_locker.address,</span><br><span class="line">                                                            ctx), 0);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到在生成加黑名单的回调类之前，如果m_blacklist_locker为false，则可以跳过，这个参数是通过配置rbd_blacklist_on_break_lock赋予的，这个配置默认是True，所以修改配置为false，则可以避免add blacklist操作</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">rbd openstack</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/15/openstack-vm-block-IO-when-create-rbd-snap/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-ceph-aduit-log" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/15/ceph-aduit-log/">ceph审计日志知多少</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/15/ceph-aduit-log/" class="archive-article-date">
+  	<time datetime="2020-03-15T07:23:50.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>我们知道一般系统都会有审计日志，这个审计日志是用来记录系统的一些操作，这样可以方便后面排查问题以及观察集群状态。ceph作为一个分布式存储系统毫无例外，也有这个审计日志，我们先来看看ceph的审计日志内容：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">2020-03-12 23:53:11.646925 mon.0 127.0.0.1:6789/0 1565359 : audit [INF] from=&apos;client.? 127.0.0.1:0/3655019494&apos; entity=&apos;client.admin&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/1548601709&quot;, &quot;blacklistop&quot;: &quot;add&quot;&#125;]&apos;: finished</span><br><span class="line">2020-03-13 00:11:20.690720 mon.0 127.0.0.1:6789/0 1566350 : audit [INF] from=&apos;client.? 127.0.0.1:0/2040474367&apos; entity=&apos;client.admin&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/1548601709&quot;, &quot;blacklistop&quot;: &quot;rm&quot;&#125;]&apos;: finished</span><br><span class="line">2020-03-13 00:15:28.399958 mon.0 127.0.0.1:6789/0 1566589 : audit [INF] from=&apos;client.? 127.0.0.1:0/66127387&apos; entity=&apos;client.admin&apos; cmd=&apos;[&#123;&quot;prefix&quot;: &quot;osd blacklist&quot;, &quot;addr&quot;: &quot;127.0.0.1:0/2546996510&quot;, &quot;blacklistop&quot;: &quot;add&quot;&#125;]&apos;: finished</span><br></pre></td></tr></table></figure></p>
+<p>可以看到这是一条把某一客户端加黑名单的命令，下面就来分析一下，这条命令是怎么纪律到ceph的审计日志中的</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>上面的命令我们是使用ceph osd blacklist add命令执行生成的，ceph是一个python脚本，这里不做过多的分析，直接告诉你这个命令是发送到了mon，下面我们来分析一下mon那端的处理</p>
+<ul>
+<li>1.mon接受请求<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">else if (prefix == &quot;osd blacklist&quot;) &#123;</span><br><span class="line">    string addrstr;</span><br><span class="line">    cmd_getval(g_ceph_context, cmdmap, &quot;addr&quot;, addrstr);</span><br><span class="line">    entity_addr_t addr;</span><br><span class="line">    if (!addr.parse(addrstr.c_str(), 0)) &#123;</span><br><span class="line">      ss &lt;&lt; &quot;unable to parse address &quot; &lt;&lt; addrstr;</span><br><span class="line">      err = -EINVAL;</span><br><span class="line">      goto reply;</span><br><span class="line">    &#125;</span><br><span class="line">    else &#123;</span><br><span class="line">      string blacklistop;</span><br><span class="line">      cmd_getval(g_ceph_context, cmdmap, &quot;blacklistop&quot;, blacklistop);</span><br><span class="line">      if (blacklistop == &quot;add&quot;) &#123;</span><br><span class="line">	utime_t expires = ceph_clock_now();</span><br><span class="line">	double d;</span><br><span class="line">	// default one hour</span><br><span class="line">	cmd_getval(g_ceph_context, cmdmap, &quot;expire&quot;, d,</span><br><span class="line">          g_conf-&gt;mon_osd_blacklist_default_expire);</span><br><span class="line">	expires += d;</span><br><span class="line"></span><br><span class="line">	pending_inc.new_blacklist[addr] = expires;</span><br><span class="line"></span><br><span class="line">        &#123;</span><br><span class="line">          // cancel any pending un-blacklisting request too</span><br><span class="line">          auto it = std::find(pending_inc.old_blacklist.begin(),</span><br><span class="line">            pending_inc.old_blacklist.end(), addr);</span><br><span class="line">          if (it != pending_inc.old_blacklist.end()) &#123;</span><br><span class="line">            pending_inc.old_blacklist.erase(it);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">	ss &lt;&lt; &quot;blacklisting &quot; &lt;&lt; addr &lt;&lt; &quot; until &quot; &lt;&lt; expires &lt;&lt; &quot; (&quot; &lt;&lt; d &lt;&lt; &quot; sec)&quot;;</span><br><span class="line">	getline(ss, rs);</span><br><span class="line">	wait_for_finished_proposal(op, new Monitor::C_Command(mon, op, 0, rs,</span><br><span class="line">						  get_last_committed() + 1));</span><br><span class="line">	return true;</span><br><span class="line">      &#125; else if (blacklistop == &quot;rm&quot;) &#123;</span><br><span class="line">	if (osdmap.is_blacklisted(addr) ||</span><br><span class="line">	    pending_inc.new_blacklist.count(addr)) &#123;</span><br><span class="line">	  if (osdmap.is_blacklisted(addr))</span><br><span class="line">	    pending_inc.old_blacklist.push_back(addr);</span><br><span class="line">	  else</span><br><span class="line">	    pending_inc.new_blacklist.erase(addr);</span><br><span class="line">	  ss &lt;&lt; &quot;un-blacklisting &quot; &lt;&lt; addr;</span><br><span class="line">	  getline(ss, rs);</span><br><span class="line">	  wait_for_finished_proposal(op, new Monitor::C_Command(mon, op, 0, rs,</span><br><span class="line">						    get_last_committed() + 1));</span><br><span class="line">	  return true;</span><br><span class="line">	&#125;</span><br><span class="line">	ss &lt;&lt; addr &lt;&lt; &quot; isn&apos;t blacklisted&quot;;</span><br><span class="line">	err = 0;</span><br><span class="line">	goto reply;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在osdmonitor具体处理请求这块，在osdmap中增加黑名单这块没有啥审计日志记录，如果是我我也会觉得审计日志应该在所有请求的总入口，然后对请求进行审计记录。在monitor类的handle_command中找到了大致代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void Monitor::handle_command(MonOpRequestRef op)</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line"> ...</span><br><span class="line">(cmd_is_rw ? audit_clog-&gt;info() : audit_clog-&gt;debug())</span><br><span class="line">    &lt;&lt; &quot;from=&apos;&quot; &lt;&lt; session-&gt;inst &lt;&lt; &quot;&apos; &quot;</span><br><span class="line">    &lt;&lt; &quot;entity=&apos;&quot; &lt;&lt; session-&gt;entity_name &lt;&lt; &quot;&apos; &quot;</span><br><span class="line">    &lt;&lt; &quot;cmd=&quot; &lt;&lt; m-&gt;cmd &lt;&lt; &quot;: dispatch&quot;;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面的audit_clog就是升级日志模块客户端。</p>
+<ul>
+<li>2.audit_clog初始化<br>首先我们看一下audit_clog是什么时候初始化的<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mon = new Monitor(g_ceph_context, g_conf-&gt;name.get_id(), store,</span><br><span class="line">		    msgr, mgr_msgr, &amp;monmap);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在ceph-mon的main函数中，会生成monitor类对象，在这个类的构造函数中会初始化audit_clog<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  clog = log_client.create_channel(CLOG_CHANNEL_CLUSTER);</span><br><span class="line">  audit_clog = log_client.create_channel(CLOG_CHANNEL_AUDIT);</span><br><span class="line"></span><br><span class="line">  update_log_clients();</span><br><span class="line"></span><br><span class="line">  paxos = new Paxos(this, &quot;paxos&quot;);</span><br></pre></td></tr></table></figure></p>
+<p>可以看出这里除了创建audit_clog外还创建了clog，可以看出他们是一样的只是名字不一样，clog是集群日志。通过log_client我们可以猜出来这个这mon是定义了一个日志的客户端，那既然有客户端，也肯定有服务端，那服务端是什么呢？先说一下是monitor中的logmonitor，后面会详细讲解，这里看出来对于系统日志和审计日志使用了C/S模式，主要了为了一个目的日志的统一收集，以及一致性。<br>西面我们继续看audit_clog的初始化，看log_client是创建了一个通道channel，如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">LogChannelRef create_channel(const std::string&amp; name) &#123;</span><br><span class="line">    LogChannelRef c;</span><br><span class="line">    if (channels.count(name))</span><br><span class="line">      c = channels[name];</span><br><span class="line">    else &#123;</span><br><span class="line">      c = std::make_shared&lt;LogChannel&gt;(cct, this, name);</span><br><span class="line">      channels[name] = c;</span><br><span class="line">    &#125;</span><br><span class="line">    return c;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>创建了一个LogChannel对象，并缓存在log_client的channels这个map中。LogChannel对象主要是定了日志各种日志等级的操作，如下所示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">LogClientTemp info() &#123;</span><br><span class="line">    return LogClientTemp(CLOG_INFO, *this);</span><br><span class="line">  &#125;</span><br><span class="line">  void info(std::stringstream &amp;s) &#123;</span><br><span class="line">    do_log(CLOG_INFO, s);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个是输出info基本的日志，也就是我们在审计日志中看到的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[INF]</span><br></pre></td></tr></table></figure></p>
+<p>上面便是初始化，我们也发现审计日志的客户端只在mon有，osd和mds都没有log_client，所以审计日志收集的日志mon那边的请求命令记录</p>
+<ul>
+<li>3.审计日志记录流程</li>
+<li>（1）.日志级别<br>前面讲完了升级日志客户端的初始化，现在下面跟一下审计日志记录流程，首先看命令入口处的日志记录<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(cmd_is_rw ? audit_clog-&gt;info() : audit_clog-&gt;debug())</span><br><span class="line">    &lt;&lt; &quot;from=&apos;&quot; &lt;&lt; session-&gt;inst &lt;&lt; &quot;&apos; &quot;</span><br><span class="line">    &lt;&lt; &quot;entity=&apos;&quot; &lt;&lt; session-&gt;entity_name &lt;&lt; &quot;&apos; &quot;</span><br><span class="line">    &lt;&lt; &quot;cmd=&quot; &lt;&lt; m-&gt;cmd &lt;&lt; &quot;: dispatch&quot;;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里便是一条升级日志的记录，从上面可以看出，对于审计日志的info和debug的日志级别是根据cmd_is_rw这个是否为true进行选择的，从字面上看是这个命令是读写的吗,难道命令含有读写属性？不错是的，我们具体看一个命令<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">COMMAND(&quot;osd blacklist &quot; \</span><br><span class="line">	&quot;name=blacklistop,type=CephChoices,strings=add|rm &quot; \</span><br><span class="line">	&quot;name=addr,type=CephEntityAddr &quot; \</span><br><span class="line">	&quot;name=expire,type=CephFloat,range=0.0,req=false&quot;, \</span><br><span class="line">	&quot;add (optionally until &lt;expire&gt; seconds from now) or remove &lt;addr&gt; from blacklist&quot;, \</span><br><span class="line">	&quot;osd&quot;, &quot;rw&quot;, &quot;cli,rest&quot;)</span><br></pre></td></tr></table></figure></p>
+<p>这是mon那边定义的osd blacklist的命令，可以看到第四个参数”rw”，这边是命令的读写属性，搞明白了日志级别之后，我们这里是rw，所以使用audit_clog-&gt;info（）函数来输出后面的字符串日志记录，看一下info函数</p>
+<ul>
+<li>(2)日志打印<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LogClientTemp info() &#123;</span><br><span class="line">    return LogClientTemp(CLOG_INFO, *this);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>info函数返回LogClientTemp类对象，看看构造函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">LogClientTemp::LogClientTemp(clog_type type_, LogChannel &amp;parent_)</span><br><span class="line">  : type(type_), parent(parent_)</span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>没做啥，只是记录了日志级别，难道就这样完了？日志怎么写入的呢，这里使用了一个技巧，利用了作用域加析构函数，我们看到info函数结束return会触发LogClientTemp调用自己的析构函数，我们看看他的析构函数做了啥<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LogClientTemp::~LogClientTemp()</span><br><span class="line">&#123;</span><br><span class="line">  if (ss.peek() != EOF)</span><br><span class="line">    parent.do_log(type, ss);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>调用了parent的do_log,这个parent就是audit这个channel，看一下他的do_log函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">void LogChannel::do_log(clog_type prio, std::stringstream&amp; ss)</span><br><span class="line">&#123;</span><br><span class="line">  while (!ss.eof()) &#123;</span><br><span class="line">    string s;</span><br><span class="line">    getline(ss, s);</span><br><span class="line">    if (!s.empty())</span><br><span class="line">      do_log(prio, s);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void LogChannel::do_log(clog_type prio, const std::string&amp; s)</span><br><span class="line">&#123;</span><br><span class="line">  Mutex::Locker l(channel_lock);</span><br><span class="line">  int lvl = (prio == CLOG_ERROR ? -1 : 0);</span><br><span class="line">  ldout(cct,lvl) &lt;&lt; &quot;log &quot; &lt;&lt; prio &lt;&lt; &quot; : &quot; &lt;&lt; s &lt;&lt; dendl;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  // log to monitor?</span><br><span class="line">  if (log_to_monitors) &#123;</span><br><span class="line">    e.seq = parent-&gt;queue(e);</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    e.seq = parent-&gt;get_next_seq();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>第一个do_log函数调用了第二个do_log重载函数，为什么是第一个调用二个，因为LogChannel重载了&lt;&lt;运算符，如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">std::ostream&amp; operator&lt;&lt;(const T&amp; rhs)</span><br><span class="line">  &#123;</span><br><span class="line">    return ss &lt;&lt; rhs;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">stringstream ss;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>（3）do_log<br>继续看一下do_log<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">void LogChannel::do_log(clog_type prio, const std::string&amp; s)</span><br><span class="line">&#123;</span><br><span class="line">  Mutex::Locker l(channel_lock);</span><br><span class="line">  int lvl = (prio == CLOG_ERROR ? -1 : 0);</span><br><span class="line">  ldout(cct,lvl) &lt;&lt; &quot;log &quot; &lt;&lt; prio &lt;&lt; &quot; : &quot; &lt;&lt; s &lt;&lt; dendl;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  // log to monitor?</span><br><span class="line">  if (log_to_monitors) &#123;</span><br><span class="line">    e.seq = parent-&gt;queue(e);</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    e.seq = parent-&gt;get_next_seq();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里有两个关注点第一个mon本地的日志的打印<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ldout(cct,lvl) &lt;&lt; &quot;log &quot; &lt;&lt; prio &lt;&lt; &quot; : &quot; &lt;&lt; s &lt;&lt; dendl;</span><br></pre></td></tr></table></figure></p>
+<p>这个日志是记录到mon的本地日志中,也就是我们的mon.{host-name}.log<br>第二个是<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// log to monitor?</span><br><span class="line">if (log_to_monitors) &#123;</span><br><span class="line">  e.seq = parent-&gt;queue(e);</span><br><span class="line">&#125; else &#123;</span><br><span class="line">  e.seq = parent-&gt;get_next_seq();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>默认log_to_monitors是true，所以会发送到mon也就是我们上面的说的服务端logmonitor,看一下审计日志是如何发送的</p>
+<ul>
+<li>（4）审计日志发送到mon<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">version_t LogClient::queue(LogEntry &amp;entry)</span><br><span class="line">&#123;</span><br><span class="line">  Mutex::Locker l(log_lock);</span><br><span class="line">  entry.seq = ++last_log;</span><br><span class="line">  log_queue.push_back(entry);</span><br><span class="line"></span><br><span class="line">  if (is_mon) &#123;</span><br><span class="line">    _send_to_mon();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  return entry.seq;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>首先进去queue，然后判断是不是is_mon，因为审计日志是在mon上初始化的所以这个是true，然后使用_send_to_mon发送给mon<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void LogClient::_send_to_mon()</span><br><span class="line">&#123;</span><br><span class="line">  assert(log_lock.is_locked());</span><br><span class="line">  assert(is_mon);</span><br><span class="line">  assert(messenger-&gt;get_myname().is_mon());</span><br><span class="line">  ldout(cct,10) &lt;&lt; __func__ &lt;&lt; &quot;log to self&quot; &lt;&lt; dendl;</span><br><span class="line">  Message *log = _get_mon_log_message();</span><br><span class="line">  messenger-&gt;get_loopback_connection()-&gt;send_message(log);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看到生成了一个日志消息，这个消息的类型是MSG_LOG，我们直接略过消息的发送和接受，直接通过消息类型定位mon的处理函数</p>
+<ul>
+<li>（5）logmonitor处理<br>logmonitor处理经历LogMonitor::preprocess_query和LogMonitor::prepare_update，前面一个没做啥处理，看一下prepare_update<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">bool LogMonitor::prepare_update(MonOpRequestRef op)</span><br><span class="line">&#123;</span><br><span class="line">  op-&gt;mark_logmon_event(&quot;prepare_update&quot;);</span><br><span class="line">  PaxosServiceMessage *m = static_cast&lt;PaxosServiceMessage*&gt;(op-&gt;get_req());</span><br><span class="line">  dout(10) &lt;&lt; &quot;prepare_update &quot; &lt;&lt; *m &lt;&lt; &quot; from &quot; &lt;&lt; m-&gt;get_orig_source_inst() &lt;&lt; dendl;</span><br><span class="line">  switch (m-&gt;get_type()) &#123;</span><br><span class="line">  case MSG_MON_COMMAND:</span><br><span class="line">    return prepare_command(op);</span><br><span class="line">  case MSG_LOG:</span><br><span class="line">    return prepare_log(op);</span><br><span class="line">  default:</span><br><span class="line">    ceph_abort();</span><br><span class="line">    return false;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>通过消息类型又调用prepare_log<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">bool LogMonitor::prepare_log(MonOpRequestRef op)</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  for (deque&lt;LogEntry&gt;::iterator p = m-&gt;entries.begin();</span><br><span class="line">       p != m-&gt;entries.end();</span><br><span class="line">       ++p) &#123;</span><br><span class="line">    dout(10) &lt;&lt; &quot; logging &quot; &lt;&lt; *p &lt;&lt; dendl;</span><br><span class="line">    if (!pending_summary.contains(p-&gt;key())) &#123;</span><br><span class="line">      pending_summary.add(*p);</span><br><span class="line">      pending_log.insert(pair&lt;utime_t,LogEntry&gt;(p-&gt;stamp, *p));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  pending_summary.prune(g_conf-&gt;mon_log_max_summary);</span><br><span class="line">  wait_for_finished_proposal(op, new C_Log(this, op));</span><br><span class="line">  return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里加入到了pending_summary，和pending_log，logmonitor继承了paxos，经过决策来最终确定审计日志数据的一致性，这类不过多解释paxos，我们直接看写入部分</p>
+<ul>
+<li>（6）审计日志写入审计日志文件<br>根据paxos框架最终会调用update_from_paxos<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">void LogMonitor::update_from_paxos(bool *need_bootstrap)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  map&lt;string,bufferlist&gt; channel_blog;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  for(map&lt;string,bufferlist&gt;::iterator p = channel_blog.begin();</span><br><span class="line">      p != channel_blog.end(); ++p) &#123;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  int fd = ::open(log_file.c_str(), O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC, 0600);</span><br><span class="line">  ...</span><br><span class="line">  int err = p-&gt;second.write_fd(fd);</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>channel_blog收集要写入的日志，open打开审计日志文件名，然后write_fd写入。<br>对于审计日志的文件名默认是ceph.audit.log，对于集群日志clog也是类似的分析</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph log</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/15/ceph-aduit-log/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-rbd-exclusive-lock" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -884,162 +1149,9 @@
 
 
   
-    <article id="post-volume-boot-vm-can-delete-rebuild-resize-Why" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/">卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？</a>
-    </h1>
-  
-
-        
-        <a href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/" class="archive-article-date">
-  	<time datetime="2019-10-04T08:14:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-10-04</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>————————————————————————————————————————————————————————————————————————————<br>最近在使用卷启动虚拟机，比如配秒起，glance接cinder，这个过程遇到一个很奇怪的问题，秒起之后卷启动的虚拟机可以delete，resize，rebuild？<br>为什么？镜像秒起的虚拟机就不行，在秒起之后，如果后端接的ceph，秒起其实就是snap和clone。<br>首先我们使用卷启动一个虚拟机，然后创建一个镜像，然后通过这个size为0的镜像在创建一个虚拟机，这里其实是从第一个虚拟机的卷的快照创建第二个虚拟机的卷，这个时候第二个虚拟机的卷就依赖于第一个虚拟机。此时如果要删除第一个虚拟机的卷应该是删除不掉的，那为什么虚拟机操作可以呢？</p>
-<h1 id="根源"><a href="#根源" class="headerlink" title="根源"></a>根源</h1><p>————————————————————————————————————————————————————————————————————————————<br>看了一下代码，上面的delete，rebuild，resize都会涉及到删除操作，但是nova在删除虚拟机的时候会根据需求destroy调磁盘，代码在nova/virt/libvirt/driver.py下面<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">if destroy_disks:</span><br><span class="line">    # NOTE(haomai): destroy volumes if needed</span><br><span class="line">    if CONF.libvirt.images_type == &apos;lvm&apos;:</span><br><span class="line">        self._cleanup_lvm(instance, block_device_info)</span><br><span class="line">    if CONF.libvirt.images_type == &apos;rbd&apos;:</span><br><span class="line">        self._cleanup_rbd(instance)</span><br></pre></td></tr></table></figure></p>
-<p>在看一下_cleanup_rbd函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">def _cleanup_rbd(self, instance):</span><br><span class="line">    # NOTE(nic): On revert_resize, the cleanup steps for the root</span><br><span class="line">    # volume are handled with an &quot;rbd snap rollback&quot; command,</span><br><span class="line">    # and none of this is needed (and is, in fact, harmful) so</span><br><span class="line">    # filter out non-ephemerals from the list</span><br><span class="line">    if instance.task_state == task_states.RESIZE_REVERTING:</span><br><span class="line">        filter_fn = lambda disk: (disk.startswith(instance.uuid) and</span><br><span class="line">                                  disk.endswith(&apos;disk.local&apos;))</span><br><span class="line">    else:</span><br><span class="line">        filter_fn = lambda disk: disk.startswith(instance.uuid)</span><br><span class="line">    LibvirtDriver._get_rbd_driver().cleanup_volumes(filter_fn)</span><br></pre></td></tr></table></figure></p>
-<p>会走else分支，关键就在这个cleanup_volumes函数，一看就是清理卷，但是前面的rbd_driver<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">def _get_rbd_driver():</span><br><span class="line">    return rbd_utils.RBDDriver(</span><br><span class="line">            pool=CONF.libvirt.images_rbd_pool,</span><br><span class="line">            ceph_conf=CONF.libvirt.images_rbd_ceph_conf,</span><br><span class="line">            rbd_user=CONF.libvirt.rbd_user)</span><br></pre></td></tr></table></figure></p>
-<p>哦，其实是在nova对接的ceph池vms中去查找虚拟机id开头的rbd卷，然后删除，其实这个是对镜像启动的操作，也就是说nova没有处理卷启动情况的删除操作</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Openstack nova ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-how-to-debug-osd" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/09/26/how-to-debug-osd/">how-to-debug-osd</a>
-    </h1>
-  
-
-        
-        <a href="/2019/09/26/how-to-debug-osd/" class="archive-article-date">
-  	<time datetime="2019-09-26T14:53:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="OSD是驻留进程怎么调试"><a href="#OSD是驻留进程怎么调试" class="headerlink" title="OSD是驻留进程怎么调试"></a>OSD是驻留进程怎么调试</h1><p>OSD使用的驻留进程，在启动会断开进程连接<br>在global section下面增加这个配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">daemonize = false</span><br></pre></td></tr></table></figure></p>
-<p>可以取消驻留进程调试</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph osd</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/09/26/how-to-debug-osd/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/2/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/4/">Next &raquo;</a>
+      <a class="extend prev" rel="prev" href="/page/2/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><a class="extend next" rel="next" href="/page/4/">Next &raquo;</a>
     </nav>
   
 
@@ -1146,11 +1258,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1162,15 +1274,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1178,7 +1282,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1190,15 +1302,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1210,11 +1318,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1226,15 +1342,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1254,10 +1370,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
@@ -1266,11 +1378,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1290,11 +1402,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rbd</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">

@@ -150,6 +150,473 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-Ceph-auth-service-secret" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/06/03/Ceph-auth-service-secret/">Ceph认证之service secret</a>
+    </h1>
+  
+
+        
+        <a href="/2022/06/03/Ceph-auth-service-secret/" class="archive-article-date">
+  	<time datetime="2022-06-03T13:54:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-06-03</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-Ceph认证回顾"><a href="#1-Ceph认证回顾" class="headerlink" title="1. Ceph认证回顾"></a>1. Ceph认证回顾</h1><p>上一篇ceph认证文章讲到客户端从monitor获取service ticket，然后使用tick访问service组件服务，service组件从monitor获取属于自己的service secret对ticket进行解密认证.</p>
+<p><img src="markdown-img-paste-20220604141336971.png" alt="1"></p>
+<p>service secret内容比较多，值得我们用一篇文章详细介绍。</p>
+<h1 id="2-service-secret"><a href="#2-service-secret" class="headerlink" title="2. service secret"></a>2. service secret</h1><p>service secret是用来加解密service ticket的，由monitor生成，monitor会为每个service组件维护一个id和service secret的对应关系。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">id     service secret</span><br><span class="line">1      key1</span><br><span class="line">2      key2</span><br><span class="line">3      key3</span><br></pre></td></tr></table></figure></p>
+<p>这表示一个service服务所拥有的的service secret列表，每个service服务都会有这样一个列表。返回给客户端的ticket包含有id，这样客户端在和service组件进行连接认证时根据id来确定使用哪个service secret对ticket进行解密。<br>之所以会有列表主要是针对时间进行更新，所以也称service secret为rotate secrets。rotate顾名思义就是可以轮转，由monitor的authmonitor负责，我们看一下它是如何存储、创建、更新以及反馈更新。</p>
+<h2 id="2-1-存储形式"><a href="#2-1-存储形式" class="headerlink" title="2.1 存储形式"></a>2.1 存储形式</h2><p><img src="markdown-img-paste-20220602215343305.png" alt="2"></p>
+<p>每一行代表一个servic服务组件的secret，任意时刻只存在三个secret，如红虚线框中。每个service的rotate secrets是由一个数组维护，同时每一个rotating secret都会包含一个过期时间。</p>
+<h2 id="2-2-创建"><a href="#2-2-创建" class="headerlink" title="2.2 创建"></a>2.2 创建</h2><p>rotating secrets是在monitor启动时，由authmonitor通过start_server创建<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">bool KeyServer::_check_rotating_secrets() &#123;</span><br><span class="line"> ...</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_AUTH);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MON);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_OSD);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MDS);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MGR);</span><br><span class="line"> ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看出authmonitor会为auth、mon、osd、mds、mgr生成rotate secret，secret_id从1开始，其中auth service的过期时间是12小时，其他service的过期时间是1小时，其中auth service主要是用来对monclient请求更新其他service ticket时进行认证，刚开始的时候会生成三个时刻secret，previous、current、next分别代表过去、当前、未来可用于加密的secret。</p>
+<p><img src="markdown-img-paste-20220602220258759.png" alt="3"></p>
+<h2 id="2-3-更新"><a href="#2-3-更新" class="headerlink" title="2.3 更新"></a>2.3 更新</h2><p>authmonitor在tick的时候会周期检查rotate secret有没有过期，过期就进行相应的调整，如果current rotate secret过期时间比当前时间小就表示已经过期，需要创建一个新的rotate secret，并将原来的current变成pre，原来的next变成current，新生成的作为next，以维持只保留三个secret。</p>
+<p><img src="markdown-img-paste-20220602220718678.png" alt="4"></p>
+<p>这里的过期时间由下面两个配置决定<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">auth_mon_ticket_ttl // auth 过期时长12小时</span><br><span class="line">auth_service_ticket_ttl // osd,mon,mds,mgr service服务过期时长1小时</span><br></pre></td></tr></table></figure></p>
+<p>假设monitor中osd rotate secret开始如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">id=1 expire_time=2022-05-25 11:36:26  // pre</span><br><span class="line">id=2 expire_time=2022-05-25 12:36:26  // current</span><br><span class="line">id=3 expire_time=2022-05-25 13:36:26  // next</span><br></pre></td></tr></table></figure></p>
+<p>上面的时间就是对应rotate secret的过期时间，当monitor的时间超过’2022-05-25 12:36:26’时，就会启动轮转更新<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">id=2 expire_time=2022-05-25 12:36:26  // pre</span><br><span class="line">id=3 expire_time=2022-05-25 13:36:26  // current</span><br><span class="line">id=4 expire_time=2022-05-25 14:36:26  // next</span><br></pre></td></tr></table></figure></p>
+<p>此便是更新后的rotate secret。</p>
+<h2 id="2-4-客户端反馈更新"><a href="#2-4-客户端反馈更新" class="headerlink" title="2.4 客户端反馈更新"></a>2.4 客户端反馈更新</h2><p>客户端需要rotate secret id来告知service组件服务使用的rotate secret，随着monitor更新rotate secret，客户端的rotate secret id也需要更新，也即需要更新ticket。客户端包含的monc模块有一个周期性的tick，通过检查所持有的service ticket是否过期来确认更新。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MonClient::tick --&gt; MonClient::_check_auth_tickets --&gt; auth-&gt;need_tickets</span><br></pre></td></tr></table></figure></p>
+<p>这里的判断过期比较有意思。ticket里面包含有此ticket的过期时长，这是由monitor的这两个配置决定.<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">auth_mon_ticket_ttl // auth 过期时长12小时</span><br><span class="line">auth_service_ticket_ttl // osd,mon,mds,mgr service服务过期时长1小时</span><br></pre></td></tr></table></figure></p>
+<p>利用此过期时长，然后基于客户端节点本机时间，计算出过期时间点。判断过期用的客户端时间和此过期时间点。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">客户端本机当前时间 + 过期时长 = 客户端过期时间点</span><br></pre></td></tr></table></figure></p>
+<p>可以看出客户端service ticket的过期时间和客户端本机时间紧密相关。如果和monitor时间不一致，则可能存在问题。</p>
+<p>前面’auth_mon_ticket_ttl’是用于一个auth的rotate secret，客户端更新rotate service id就是用auth的ticket跟monitor进行认证。</p>
+<h2 id="2-5-service组件服务反馈更新"><a href="#2-5-service组件服务反馈更新" class="headerlink" title="2.5 service组件服务反馈更新"></a>2.5 service组件服务反馈更新</h2><p>service组件服务也是通过包含的monc模块里面的周期性tick进行检测过期时间是否要更新<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MonClient::tick --&gt; MonClient::_check_auth_tickets --&gt; MonClient::_check_auth_rotating</span><br></pre></td></tr></table></figure></p>
+<p>service服务判断过期跟客户端不一样，因为service服务是从monitor获取的rotate secret，这里面包含有在rotate secret的过期时间点，这个时间点是在monitor按monitor节点时间计算的。所以service服务判断过期用的是service服务节点时间跟monitor计算出来的过期时间点。</p>
+<h1 id="3-时间不一致"><a href="#3-时间不一致" class="headerlink" title="3. 时间不一致"></a>3. 时间不一致</h1><p>客户端和service服务如果跟monitor时间存在不一致，会有什么影响。</p>
+<h2 id="3-1-客户端时间比monitor时间慢"><a href="#3-1-客户端时间比monitor时间慢" class="headerlink" title="3.1 客户端时间比monitor时间慢"></a>3.1 客户端时间比monitor时间慢</h2><p>把客户端时间调慢2个小时，比如从14点调到12点，原来ticket有效时间是14点到15点（默认一个小时），此时把本机时间调慢到12点，在本机时间达到13点的时候（其实真实时间是15点），此时本应向mon发送更新ticket，但是本机时间判断为未过期，而osd已经获取了新的rotate secret，如果客户端和osd连接断开，重建连接时，客户端用的老的secret id访问osd，会出现我们经常看到的错误<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cephx: verify_authorizer could not get service secret for service mds secret_id=17408</span><br></pre></td></tr></table></figure></p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>客户端</th>
+<th>mon</th>
+<th>osd</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>14点</td>
+<td>2（本地12点）</td>
+<td>1,2,3</td>
+<td>1,2,3</td>
+</tr>
+<tr>
+<td>15点</td>
+<td>2（本地13点）</td>
+<td>2,3,4</td>
+<td>2,3,4</td>
+</tr>
+<tr>
+<td>16点</td>
+<td>2（本地14点）</td>
+<td>3,4,5</td>
+<td>3,4,5</td>
+</tr>
+<tr>
+<td>17点</td>
+<td>5（本地15点）</td>
+<td>4,5,6</td>
+<td>4,5,6</td>
+</tr>
+<tr>
+<td>18点</td>
+<td>6（本地16点）</td>
+<td>5,6,7</td>
+<td>5,6,7</td>
+</tr>
+<tr>
+<td>19点</td>
+<td>7（本地15点）</td>
+<td>6,7,8</td>
+<td>6,7,8</td>
+</tr>
+<tr>
+<td>20点</td>
+<td>8（本地15点）</td>
+<td>7,8,9</td>
+<td>7,8,9</td>
+</tr>
+</tbody>
+</table>
+<p>1、2、3等代表service secret id，可以看出在刚开始调整的时候比如在16点到17点，osd会认证报错，因为客户端拿了老的secret id。在17点之后，客户端开始更新，后面不会出现osd认证报错，客户端会以本地时间不同更新。</p>
+<h2 id="3-2-客户端时间比monitor时间快"><a href="#3-2-客户端时间比monitor时间快" class="headerlink" title="3.2 客户端时间比monitor时间快"></a>3.2 客户端时间比monitor时间快</h2><p>把客户端时间调快2个小时，比如从14点调到16点，时间调快，没有影响，客户端会提前去mon更新。</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>客户端</th>
+<th>mon</th>
+<th>osd</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>14点</td>
+<td>2（本地16点）</td>
+<td>1,2,3</td>
+<td>1,2,3</td>
+</tr>
+<tr>
+<td>15点</td>
+<td>3（本地17点）</td>
+<td>2,3,4</td>
+<td>2,3,4</td>
+</tr>
+<tr>
+<td>16点</td>
+<td>4（本地18点）</td>
+<td>3,4,5</td>
+<td>3,4,5</td>
+</tr>
+<tr>
+<td>17点</td>
+<td>5（本地19点）</td>
+<td>4,5,6</td>
+<td>4,5,6</td>
+</tr>
+<tr>
+<td>18点</td>
+<td>6（本地20点）</td>
+<td>5,6,7</td>
+<td>5,6,7</td>
+</tr>
+<tr>
+<td>19点</td>
+<td>7（本地21点）</td>
+<td>6,7,8</td>
+<td>6,7,8</td>
+</tr>
+<tr>
+<td>20点</td>
+<td>8（本地22点）</td>
+<td>7,8,9</td>
+<td>7,8,9</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-3-serivce服务比monitor时间慢"><a href="#3-3-serivce服务比monitor时间慢" class="headerlink" title="3.3 serivce服务比monitor时间慢"></a>3.3 serivce服务比monitor时间慢</h2><p>这里service服务以osd为例，mds、mgr类似，service服务侧是接受整个rotate secret，所以它里面的过期时间是rotate secret生成服务器mon的时间，跟客户端使用本机时间不同，那如果时间调后两个小时，比如从原来的14点，调整到12点。</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>客户端</th>
+<th>mon</th>
+<th>osd</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>14点</td>
+<td>2</td>
+<td>1,2,3</td>
+<td>1,2,3 （本地12点）</td>
+</tr>
+<tr>
+<td>15点</td>
+<td>3</td>
+<td>2,3,4</td>
+<td>1,2,3  （本地13点）</td>
+</tr>
+<tr>
+<td>16点</td>
+<td>4</td>
+<td>3,4,5</td>
+<td>1,2,3（本地14点）</td>
+</tr>
+<tr>
+<td>17点</td>
+<td>5</td>
+<td>4,5,6</td>
+<td>4,5,6 （本地15点）</td>
+</tr>
+<tr>
+<td>18点</td>
+<td>6</td>
+<td>5,6,7</td>
+<td>4,5,6 （本地16点）</td>
+</tr>
+<tr>
+<td>19点</td>
+<td>7</td>
+<td>6,7,8</td>
+<td>4,5,6 （本地17点）</td>
+</tr>
+<tr>
+<td>20点</td>
+<td>8</td>
+<td>7,8,9</td>
+<td>7,8,9 （本地18点）</td>
+</tr>
+</tbody>
+</table>
+<p>可以看出16点到17点，19点到20点，osd拥有的rotate secret偏旧，导致客户端认证失败。</p>
+<h2 id="3-4-service服务比monitor时间快"><a href="#3-4-service服务比monitor时间快" class="headerlink" title="3.4 service服务比monitor时间快"></a>3.4 service服务比monitor时间快</h2><p>把service服务调快2个小时，比如从14点调到16点，时间调快，没有影响，service服务会提前去mon更新，</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>客户端</th>
+<th>mon</th>
+<th>osd</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>14点</td>
+<td>2</td>
+<td>1,2,3</td>
+<td>1,2,3 （本地16点）</td>
+</tr>
+<tr>
+<td>15点</td>
+<td>3</td>
+<td>2,3,4</td>
+<td>2,3,4  （本地17点）</td>
+</tr>
+<tr>
+<td>16点</td>
+<td>4</td>
+<td>3,4,5</td>
+<td>3,4,5（本地18点）</td>
+</tr>
+<tr>
+<td>17点</td>
+<td>5</td>
+<td>4,5,6</td>
+<td>4,5,6 （本地19点）</td>
+</tr>
+<tr>
+<td>18点</td>
+<td>6</td>
+<td>5,6,7</td>
+<td>5,6,7 （本地20点）</td>
+</tr>
+<tr>
+<td>19点</td>
+<td>7</td>
+<td>6,7,8</td>
+<td>6,7,8 （本地21点）</td>
+</tr>
+<tr>
+<td>20点</td>
+<td>8</td>
+<td>7,8,9</td>
+<td>7,8,9 （本地22点）</td>
+</tr>
+</tbody>
+</table>
+<p>虽然提前更新但是还是按mon的节奏来更新。</p>
+<h1 id="4-‘部分关闭’Cephx"><a href="#4-‘部分关闭’Cephx" class="headerlink" title="4. ‘部分关闭’Cephx"></a>4. ‘部分关闭’Cephx</h1><p>有时候由于时间偏差或者其他原因导致客户端和service组件的连接认证失败问题，经常想关闭cephx，但又想使用用户认证，那能否部分关闭cephx。这里有两种想法：部分关auth三配置、延长过期时间</p>
+<h2 id="4-1-部分关auth三配置"><a href="#4-1-部分关auth三配置" class="headerlink" title="4.1 部分关auth三配置"></a>4.1 部分关auth三配置</h2><p>Ceph认证可以部分关闭吗，我们配置文件中经常会配这三个<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">auth_cluster_required = cephx</span><br><span class="line">auth_service_required = cephx</span><br><span class="line">auth_client_required = cephx</span><br></pre></td></tr></table></figure></p>
+<p>比如把auth_cluster_required设置成none，答案是绝对不能，这三个配置要么都设置为none，要么有设置为cephx。这三个配置总结一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">auth_client_requested主要用于client和osd、mds、mgr组件连接认证发送端。</span><br><span class="line">auth_service_requested主要用于client和osd、mds、mgr组件连接认证接收端。</span><br><span class="line">auth_cluster_requester主要用于mon、mds、mgr、osd组件连接认证发送端和接收端。</span><br></pre></td></tr></table></figure></p>
+<p><img src="markdown-img-paste-20220604161711491.png" alt="5"></p>
+<p>这三个相互依赖，如果开启了auth_client_required，就需要auth_service_required，service组件更新rotate secret就需要auth_cluster_required。</p>
+<h2 id="4-2-延长过期时间"><a href="#4-2-延长过期时间" class="headerlink" title="4.2 延长过期时间"></a>4.2 延长过期时间</h2><p>客户端和service组件的连接认证失败往往是客户端的ticket包含的rotate secret id比较老，或者service服务的rotate secret没有更新比较老，那如果把service secret过期时间延迟，比如一个rotate secret过期时长设置个1年，那1年内客户端和service组件都不需要更新。</p>
+<h3 id="4-2-1-配置调整"><a href="#4-2-1-配置调整" class="headerlink" title="4.2.1 配置调整"></a>4.2.1 配置调整</h3><p>配置主要更超时时长相关的ttl配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">auth_service_ticket_ttl = 31536000 // 1年</span><br></pre></td></tr></table></figure></p>
+<p>这个配置需要对所有monitor进行修改，而客户端和service服务不需要修改，因为客户端的ticket只返回过期时长，这个时长就是从monitor的auth_service_ticket_ttl获取。而service组件服务在判断需要是否过期时，最多超过current rotate secret过期时间30s就更新，对auth_service_ticket_ttl大于120s都一样。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">int MonClient::_check_auth_rotating()</span><br><span class="line">&#123;</span><br><span class="line">   ...</span><br><span class="line">   utime_t now = ceph_clock_now();</span><br><span class="line">  utime_t cutoff = now;</span><br><span class="line">  cutoff -= MIN(30.0, cct-&gt;_conf-&gt;auth_service_ticket_ttl / 4.0); // 这里使用ttl的四分之一和30s取min</span><br><span class="line">  ...</span><br><span class="line">  if (!rotating_secrets-&gt;need_new_secrets(cutoff)) &#123;</span><br><span class="line">    ...</span><br><span class="line">  &#125;</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="4-2-2-过期时间跳变"><a href="#4-2-2-过期时间跳变" class="headerlink" title="4.2.2 过期时间跳变"></a>4.2.2 过期时间跳变</h3><p>rotate secret过期时间可能存在跳变，比如原来rotate secret过期时间有跳变<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">2022-05-25 11:36:26  // pre</span><br><span class="line">2022-05-25 12:36:26  // current</span><br><span class="line">2022-05-25 13:36:26  // next</span><br></pre></td></tr></table></figure></p>
+<p>默认一个小时，如果过期修改成1年，则会在当前时间超过current时修改成如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">2022-05-25 12:36:26    // pre</span><br><span class="line">2022-05-25 13:36:26    // current</span><br><span class="line">2024-05-24 13:36:26    // next</span><br></pre></td></tr></table></figure></p>
+<p>next是新增的rotate secret，这里过期增加了2年, 主要是如下导致<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">int KeyServer::_rotate_secret(uint32_t service_id)</span><br><span class="line">&#123;</span><br><span class="line">   ...</span><br><span class="line">    while (r.need_new_secrets(now)) &#123;</span><br><span class="line">    ...</span><br><span class="line">    if (r.empty()) &#123;</span><br><span class="line">      ek.expiration = now;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">      utime_t next_ttl = now;</span><br><span class="line">      next_ttl += ttl;  //增加第一个1年</span><br><span class="line">      ek.expiration = MAX(next_ttl, r.next().expiration);</span><br><span class="line">    &#125;</span><br><span class="line">    ek.expiration += ttl; //增加第二个1年</span><br><span class="line">    uint64_t secret_id = r.add(ek);</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="4-2-3-auth-mon-ticket-ttl可配"><a href="#4-2-3-auth-mon-ticket-ttl可配" class="headerlink" title="4.2.3 auth_mon_ticket_ttl可配"></a>4.2.3 auth_mon_ticket_ttl可配</h3><p>除了auth_service_ticket_ttl，过期配置之前还有auth_mon_ticket_ttl，默认配置是auth_mon_ticket_ttl比auth_service_ticket_ttl大，但是其实可以保持不变，它主要用于auth rotate secret的过期更新。<br>这里实验如下设置auth rotate secret过期时间5s，service rotate secret过期时间20s，而monc的tick是10s一次，在tick检测是不是要更新rotate secret id，观察日志如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">2022-05-25 16:21:43.039333 7f03d93c7700 10 monclient: tick</span><br><span class="line">2022-05-25 16:21:43.039362 7f03d93c7700 10 cephx: validate_tickets want 38 have 6 need 32</span><br><span class="line">2022-05-25 16:21:43.039379 7f03d93c7700 10 cephx: validate_tickets want 38 have 6 need 32</span><br><span class="line">2022-05-25 16:21:43.040284 7f03da3c9700 10 cephx: validate_tickets want 38 have 38 need 0</span><br><span class="line">2022-05-25 16:21:43.040288 7f03da3c9700 10 cephx: validate_tickets want 38 have 38 need 0</span><br><span class="line">2022-05-25 16:21:53.039616 7f03d93c7700 10 monclient: tick</span><br><span class="line">2022-05-25 16:21:53.039645 7f03d93c7700 10 cephx: validate_tickets want 38 have 6 need 38</span><br><span class="line">2022-05-25 16:21:53.039665 7f03d93c7700 10 cephx: validate_tickets want 38 have 6 need 38</span><br><span class="line">2022-05-25 16:21:53.040435 7f03da3c9700 10 cephx: validate_tickets want 38 have 38 need 6</span><br><span class="line">2022-05-25 16:21:53.040439 7f03da3c9700 10 cephx: validate_tickets want 38 have 38 need 6</span><br><span class="line">2022-05-25 16:21:53.040914 7f03da3c9700 10 cephx: validate_tickets want 38 have 38 need 0</span><br><span class="line">2022-05-25 16:21:53.040917 7f03da3c9700 10 cephx: validate_tickets want 38 have 38 need 0</span><br></pre></td></tr></table></figure></p>
+<p>一共进行了2次tick<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">第一个tick发现auth的rotate过期了，发送到mon获取新的auth rotate secret id</span><br><span class="line">第二个tick发现auth 、osd 、mds的rotate过期了，先发送mon获取新的auth rotate secret id，然后发送mon获取新的service rotate secret id（带上获取的新的auth rotate secret id）</span><br></pre></td></tr></table></figure></p>
+<p>auth rotate secret过期小于service rotate secret的情况下，当service rotate secret过期时，auth也过期了，所以会先获取新的auth rotate secret id，因此auth rotate secret的过期时间可以改，也可以不改。</p>
+<p>以上Ceph认证讨论告一段落。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/06/03/Ceph-auth-service-secret/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Ceph-Auth-0" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/06/01/Ceph-Auth-0/">Ceph认证的三层含义</a>
+    </h1>
+  
+
+        
+        <a href="/2022/06/01/Ceph-Auth-0/" class="archive-article-date">
+  	<time datetime="2022-06-01T12:57:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-06-01</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-背景"><a href="#1-背景" class="headerlink" title="1. 背景"></a>1. 背景</h1><p>Ceph是分布式存储系统，允许多用户同时访问，为了保证访问的安全性，需要提供一套认证系统来对用户进行认证。Ceph采用了Kerberos认证设计思想。</p>
+<h1 id="2-Kerberos"><a href="#2-Kerberos" class="headerlink" title="2. Kerberos"></a>2. Kerberos</h1><p>Kerberos是一种计算机网络认证协议，它允许某实体在非安全网络环境下通信，向另一个实体以一种安全的方式证明自己的身份。</p>
+<p>这个协议主要分为三部分</p>
+<ul>
+<li>Key Distribution Center（KDC）：认证中心以及分发ticket</li>
+<li>Client：客户端</li>
+<li>Service：客户端想要访问的服务</li>
+</ul>
+<p><img src="markdown-img-paste-20220601210208833.png" alt="1"></p>
+<p>理论很复杂，简单的讲就是</p>
+<ul>
+<li>Client带着认证信息去KDC进行认证</li>
+<li>认证通过，从ticket server获取service X服务的ticket-x</li>
+<li>Client使用ticket-x去访问service X服务</li>
+</ul>
+<p>tips: Kerberos用户认证的一个核心就是客户端用一个secret加密，服务端能解密出来就算认证成功。</p>
+<h1 id="3-从Kerberos到Ceph"><a href="#3-从Kerberos到Ceph" class="headerlink" title="3. 从Kerberos到Ceph"></a>3. 从Kerberos到Ceph</h1><p>Ceph认证就是实现了Kerberos，首先把Ceph组件也进行三种组件分类</p>
+<ul>
+<li>KDC：monitor</li>
+<li>Client：radosclient、ceph-fuse</li>
+<li>Service：MDS、OSD、MGR</li>
+</ul>
+<p><img src="markdown-img-paste-20220602203349550.png" alt="2"></p>
+<p>大体流程跟上面Kerberos一样，多了service服务到monitor获取service secret，这个是从Kerberos依葫芦画瓢想到的，其实Ceph里面“Client”是一个范指，主要包含monclient模块的都可以称为“client”，比如OSD、MDS、MGR都包含monclient，从这个角度讲它们也属于“Client”，比如以OSD作为“Client”如下示意</p>
+<p><img src="markdown-img-paste-20220602203414666.png" alt="3"></p>
+<p>下面来细说一下Ceph</p>
+<h1 id="4-Ceph的实现"><a href="#4-Ceph的实现" class="headerlink" title="4. Ceph的实现"></a>4. Ceph的实现</h1><p>为了方便理解我把Ceph认证分成三层含义（非kerberos原理）：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(1) 组件和monitor的连接认证</span><br><span class="line">(2) 用户认证</span><br><span class="line">(3) 除monitor之外其他组件的连接认证</span><br></pre></td></tr></table></figure></p>
+<h2 id="4-1-组件和monitor之间的连接认证"><a href="#4-1-组件和monitor之间的连接认证" class="headerlink" title="4.1 组件和monitor之间的连接认证"></a>4.1 组件和monitor之间的连接认证</h2><p>Ceph在tcp三次握手之上又加了一层自定义的网络连接协议，主要用来确认一些信息，比如banner，客户端的ip和端口，auth认证等</p>
+<p><img src="markdown-img-paste-20220602203444190.png" alt="4"></p>
+<p>只有auth认证通过之后，Ceph连接才算建立完成，后面就可以用于消息发送。然而不同组件之间连接的auth认证行为不一样。这里先讨论组件和monitor之间的连接认证。client和其他组件跟monitor通信都是无条件通过。</p>
+<p><img src="markdown-img-paste-20220602203457931.png" alt="5"></p>
+<p>我们可能好奇为什么这边会无条件认证，按理认证不应该进行用户身份的认证吗，而需要用户认证则需要在建立好的Ceph连接上发送MAuth消息，而现在Ceph连接都还没建立，根本无从认证，如果这里不设置无条件通过，就会出现鸡和蛋问题。</p>
+<h2 id="4-2-用户认证"><a href="#4-2-用户认证" class="headerlink" title="4.2 用户认证"></a>4.2 用户认证</h2><p>用户认证是包含monclient模块的“Client”跟mon建立连接之后通过authenticate发送MAuth消息来认证用户</p>
+<p><img src="markdown-img-paste-20220601225428464.png" alt="6"></p>
+<p>从kerberos可以看出用户认证的时候分为两个阶段发了两次请求，Ceph也确实是这么实现的。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">第一阶段：认证用户</span><br><span class="line">第二阶段：获取service服务的ticket</span><br></pre></td></tr></table></figure></p>
+<h3 id="4-2-1-第一阶段–认证用户"><a href="#4-2-1-第一阶段–认证用户" class="headerlink" title="4.2.1 第一阶段–认证用户"></a>4.2.1 第一阶段–认证用户</h3><p>说到认证用户，第一个想到的就是keyring，先简单聊一下keyring</p>
+<h4 id="4-2-1-1-访问钥匙"><a href="#4-2-1-1-访问钥匙" class="headerlink" title="4.2.1.1 访问钥匙"></a>4.2.1.1 访问钥匙</h4><p>Ceph在使用中，如果我们开启了Cephx会有很多keyring，一个keyring类似如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">client.admin</span><br><span class="line">	key: AQBPWeZhTnH6FhAAd6hoo1oMkw3/G4teWXwKAA==</span><br><span class="line">	caps: [mds] allow *</span><br><span class="line">	caps: [mgr] allow *</span><br><span class="line">	caps: [mon] allow *</span><br><span class="line">	caps: [osd] allow *</span><br></pre></td></tr></table></figure></p>
+<p>这是一个admin用户的keyring，可以看到keyring内容主要包含两类: 一类是key，一类是caps，其中的key是一个secret，主要用来加密，caps是用户对于各个服务的访问权限。来一个灵魂四拷问：when、where、who、how</p>
+<ul>
+<li>何时生成(when)</li>
+</ul>
+<p>当我们运行如下类似命令的时候生成<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># ceph auth add xxx xxx</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>存在哪里(where)</li>
+</ul>
+<p>ceph auth命令最后发给mon，存在了mon的rocksdb中。</p>
+<ul>
+<li>谁会使用(who)</li>
+</ul>
+<p>这个keyring谁会使用，主要大致有以下两类：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">客户端：radosclient、ceph-fuse</span><br><span class="line">组件服务：osd、mgr、mds</span><br></pre></td></tr></table></figure></p>
+<p>这些都会包含一个monclient</p>
+<ul>
+<li>怎么使用(how)</li>
+</ul>
+<p>在客户端或者组件服务启动时，通过包含的monclient进行认证。</p>
+<p>Kerberos认证的核心就是客户端使用秘钥对消息进行加密，如果KDC能通过秘钥进行解密成功就认证通过。Ceph有点不一样，Ceph使用keyring中的key以及其他的东西（challenge）在monclient和monitor分别算出一个key，进行匹配是不是相同，相同则认证通过，反正。</p>
+<h4 id="4-2-1-2-计算匹配"><a href="#4-2-1-2-计算匹配" class="headerlink" title="4.2.1.2 计算匹配"></a>4.2.1.2 计算匹配</h4><p><img src="markdown-img-paste-20220602201843226.png" alt="7"></p>
+<p>匹配通过就算认证用户ok</p>
+<h3 id="4-2-2-第二阶段–获取service-Ticket"><a href="#4-2-2-第二阶段–获取service-Ticket" class="headerlink" title="4.2.2 第二阶段–获取service Ticket"></a>4.2.2 第二阶段–获取service Ticket</h3><p>在发送client challenge请求的时候，也会把客户端想要访问组件以bit的方式（want_key）传过来，比特位代表如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">#define CEPH_ENTITY_TYPE_MON    0x01</span><br><span class="line">#define CEPH_ENTITY_TYPE_MDS    0x02</span><br><span class="line">#define CEPH_ENTITY_TYPE_OSD    0x04</span><br><span class="line">#define CEPH_ENTITY_TYPE_CLIENT 0x08</span><br><span class="line">#define CEPH_ENTITY_TYPE_MGR    0x10</span><br><span class="line">#define CEPH_ENTITY_TYPE_AUTH   0x20</span><br></pre></td></tr></table></figure></p>
+<p>比如客户端会和MDS和OSD访问，则需要设置want_keys为6</p>
+<p><img src="markdown-img-paste-2022060220294420.png" alt="8"></p>
+<h2 id="4-3-除monitor之外其他组件的连接认证"><a href="#4-3-除monitor之外其他组件的连接认证" class="headerlink" title="4.3 除monitor之外其他组件的连接认证"></a>4.3 除monitor之外其他组件的连接认证</h2><p>有了service ticket，除montior之外其他组件就可以进行连接认证，如下</p>
+<p><img src="markdown-img-paste-20220602211837958.png" alt="9"></p>
+<p><img src="markdown-img-paste-2022060221184980.png" alt="10"></p>
+<p>这里从monitor除了获取service ticket，还返回了session key，这个session key在下面验证的时候会用到。</p>
+<h3 id="4-3-1-验证方法"><a href="#4-3-1-验证方法" class="headerlink" title="4.3.1 验证方法"></a>4.3.1 验证方法</h3><p>这里的连接认证方法和用户认证不一样，不是通过计算key来比对，而是通过加密解密来完成，大致思路就是monitor发送给客户端的service ticket是用一个service_secret进行了加密，而客户端会在加上一些其他的信息（比如nonce）通过session key加密然后和ticket一起发送给连接的另一端。<br><img src="markdown-img-paste-20220602213511952.png" alt="11"></p>
+<p>认证的大体思路是这样，那这里recv端的service secret是哪里来的？</p>
+<h3 id="4-3-2-service-secret"><a href="#4-3-2-service-secret" class="headerlink" title="4.3.2 service secret"></a>4.3.2 service secret</h3><p>service secret是用来加密service ticket的，monitor发送给客户端的ticket就已经加密好，所以service secret是monitor那边生成的，service服务组件获取service secret是在所包含的monclient模块用户认证完成之后从monitor取回属于自己service服务的service secret。</p>
+<p><img src="markdown-img-paste-20220602221917783.png" alt="12"></p>
+<p>至此认证的大体流程框架介绍完，其他细节敬请期待~~</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/06/01/Ceph-Auth-0/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-ceph-auth" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -951,179 +1418,9 @@
 
 
   
-    <article id="post-Ceph-pg状态怎么标记为stale" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/02/23/Ceph-pg状态怎么标记为stale/">Ceph pg状态怎么标记为stale</a>
-    </h1>
-  
-
-        
-        <a href="/2021/02/23/Ceph-pg状态怎么标记为stale/" class="archive-article-date">
-  	<time datetime="2021-02-23T09:52:59.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-23</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>Ceph中的pg是合适标记为stale状态的</p>
-<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><h2 id="1-做了一个实验，把osd的beacan超时这是为5s（原来是900s）"><a href="#1-做了一个实验，把osd的beacan超时这是为5s（原来是900s）" class="headerlink" title="1.做了一个实验，把osd的beacan超时这是为5s（原来是900s）"></a>1.做了一个实验，把osd的beacan超时这是为5s（原来是900s）</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ceph daemon mon.a config set mon_osd_report_timeout 5</span><br></pre></td></tr></table></figure>
-<p>这个命令之后ceph 的osd都会标记为down状态，同时ceph 的pg（我的pg是单pool单pg，并且只在一个osd上面）状态按理来说应该是stale+active+clean,但是我ceph -s看状态一致都是active + clean,<br><img src="2.png" alt="2"><br>其他原因如下，我们这种把超时设置小了，其实osd的进程还在，没有挂掉，osd还是会定时向mgr上报pg的状态，而osd里面记录的状态还是active+clean（这里有peering过），ceph -s看到也是从mgr获取，也就是其实是mgr在一个时刻设置了stale，但是后来被osd上报的pg状态给刷掉了，日志如下<br><img src="1.png" alt="1"><br>那osd为什么会还是active+clean呢，其实刚开始设置超时的时候，osd被标记为 down，收到mon osdmap更新（mgr设置pg为stale也是收到mon的osdmap更新），经过peering，pg状态恢复到active+clean，后面osd状态没有变过，也就是osdmap没有变化，所以这个osd的pg状态会一直维护为active+clean</p>
-<h2 id="2-pg状态被标记为stale是mgr做的事情"><a href="#2-pg状态被标记为stale是mgr做的事情" class="headerlink" title="2.pg状态被标记为stale是mgr做的事情"></a>2.pg状态被标记为stale是mgr做的事情</h2><p>mon在osdmap变化之后，会发送osdmap给mgr，mgr通过notify_osdmap进行处理<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">void ClusterState::notify_osdmap(const OSDMap &amp;osd_map)</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  PGMapUpdater::check_down_pgs(osd_map, pg_map, true,</span><br><span class="line">			       need_check_down_pg_osds, &amp;pending_inc);</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>在这里会调用check_down_pgs检查<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void PGMapUpdater::check_down_pgs(</span><br><span class="line">    const OSDMap &amp;osdmap,</span><br><span class="line">    const PGMap &amp;pg_map,</span><br><span class="line">    bool check_all,</span><br><span class="line">    const set&lt;int&gt;&amp; need_check_down_pg_osds,</span><br><span class="line">    PGMap::Incremental *pending_inc)</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">	  _try_mark_pg_stale(osdmap, pgid, stat, pending_inc);</span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>_try_mark_pg_stale这个函数有修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">static void _try_mark_pg_stale(</span><br><span class="line">  const OSDMap&amp; osdmap,</span><br><span class="line">  pg_t pgid,</span><br><span class="line">  const pg_stat_t&amp; cur,</span><br><span class="line">  PGMap::Incremental *pending_inc)</span><br><span class="line">&#123;</span><br><span class="line">    ....</span><br><span class="line">    newstat-&gt;state |= PG_STATE_STALE;</span><br><span class="line">    newstat-&gt;last_unstale = ceph_clock_now();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>并在这里修改mgr内存的pg状态，然后向mon一直会报，因为我们kill调的osd已经不再像mgr会报pg状态了</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2021/02/23/Ceph-pg状态怎么标记为stale/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-Ceph-read-not-apply-data" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/02/23/Ceph-read-not-apply-data/">数据还没有apply前进行读</a>
-    </h1>
-  
-
-        
-        <a href="/2021/02/23/Ceph-read-not-apply-data/" class="archive-article-date">
-  	<time datetime="2021-02-23T09:41:32.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2021-02-23</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>ceph在写完日志之后就回调commit发送ack，write操作就完成了，这个时候表示数据写完成，但是<br>还是不能读的，只有apply回调完成才变成可读，那这个可读是哪里的控制的呢？</p>
-<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><h2 id="1-对象上面有读写锁"><a href="#1-对象上面有读写锁" class="headerlink" title="1. 对象上面有读写锁"></a>1. 对象上面有读写锁</h2><ul>
-<li>在写的时候会进行ondiskwritelock<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void ondisk_read_lock() &#123;</span><br><span class="line">   lock.Lock();</span><br><span class="line">   readers_waiting++;</span><br><span class="line">   while (unstable_writes)</span><br><span class="line">     cond.Wait(lock);</span><br><span class="line">   readers_waiting--;</span><br><span class="line">   readers++;</span><br><span class="line">   lock.Unlock();</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>unstable_writes增加，也就是对一个对象来写请求的时候会增加unstable_write在看一下读请求</p>
-<ul>
-<li>在execute_ctx里面有如下代码<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void PrimaryLogPG::execute_ctx(OpContext *ctx)</span><br><span class="line">&#123;</span><br><span class="line">  ....</span><br><span class="line">  if (op-&gt;may_read()) &#123;</span><br><span class="line">    dout(10) &lt;&lt; &quot; taking ondisk_read_lock&quot; &lt;&lt; dendl;</span><br><span class="line">    obc-&gt;ondisk_read_lock();</span><br><span class="line">  &#125;</span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>如果是读请求会申请ondisk_read_lock<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void ondisk_read_lock() &#123;</span><br><span class="line">   lock.Lock();</span><br><span class="line">   readers_waiting++;</span><br><span class="line">   while (unstable_writes)</span><br><span class="line">     cond.Wait(lock);</span><br><span class="line">   readers_waiting--;</span><br><span class="line">   readers++;</span><br><span class="line">   lock.Unlock();</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure></p>
-<p>这个ondisk_read_lock会在unstable_writes不为0的时候进行条件变量的阻塞，</p>
-<ul>
-<li>而unstable_writes减少是在issue_repop的这个回调中<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void PrimaryLogPG::issue_repop(RepGather *repop, OpContext *ctx)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">  Context *on_all_commit = new C_OSD_RepopCommit(this, repop);</span><br><span class="line"> Context *on_all_applied = new C_OSD_RepopApplied(this, repop);</span><br><span class="line"> Context *onapplied_sync = new C_OSD_OndiskWriteUnlock(</span><br><span class="line">   ctx-&gt;obc,</span><br><span class="line">   ctx-&gt;clone_obc,</span><br><span class="line">   unlock_snapset_obc ? ctx-&gt;snapset_obc : ObjectContextRef());</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>C_OSD_OndiskWriteUnlock中回调进行ondisk_write_unlock<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">class PrimaryLogPG::C_OSD_OndiskWriteUnlock : public Context &#123;</span><br><span class="line">  ObjectContextRef obc, obc2, obc3;</span><br><span class="line">  public:</span><br><span class="line">  C_OSD_OndiskWriteUnlock(</span><br><span class="line">    ObjectContextRef o,</span><br><span class="line">    ObjectContextRef o2 = ObjectContextRef(),</span><br><span class="line">    ObjectContextRef o3 = ObjectContextRef()) : obc(o), obc2(o2), obc3(o3) &#123;&#125;</span><br><span class="line">  void finish(int r) override &#123;</span><br><span class="line">    obc-&gt;ondisk_write_unlock();</span><br><span class="line">    if (obc2)</span><br><span class="line">      obc2-&gt;ondisk_write_unlock();</span><br><span class="line">    if (obc3)</span><br><span class="line">      obc3-&gt;ondisk_write_unlock();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">void ondisk_write_unlock() &#123;</span><br><span class="line">  lock.Lock();</span><br><span class="line">  assert(unstable_writes &gt; 0);</span><br><span class="line">  unstable_writes--;</span><br><span class="line">  if (!unstable_writes &amp;&amp; readers_waiting)</span><br><span class="line">    cond.Signal();</span><br><span class="line">  lock.Unlock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2021/02/23/Ceph-read-not-apply-data/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
     </nav>
   
 
@@ -1230,11 +1527,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1246,15 +1543,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1262,7 +1551,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1274,15 +1571,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1294,11 +1587,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1310,15 +1611,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1338,10 +1639,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
@@ -1350,11 +1647,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1374,11 +1671,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rbd</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">

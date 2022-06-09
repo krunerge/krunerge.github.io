@@ -150,6 +150,159 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-volume-boot-vm-can-delete-rebuild-resize-Why" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/">卷启动的虚拟机在秒起的时候可以rebuild，delete，resize操作，Why？</a>
+    </h1>
+  
+
+        
+        <a href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/" class="archive-article-date">
+  	<time datetime="2019-10-04T08:14:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-10-04</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>————————————————————————————————————————————————————————————————————————————<br>最近在使用卷启动虚拟机，比如配秒起，glance接cinder，这个过程遇到一个很奇怪的问题，秒起之后卷启动的虚拟机可以delete，resize，rebuild？<br>为什么？镜像秒起的虚拟机就不行，在秒起之后，如果后端接的ceph，秒起其实就是snap和clone。<br>首先我们使用卷启动一个虚拟机，然后创建一个镜像，然后通过这个size为0的镜像在创建一个虚拟机，这里其实是从第一个虚拟机的卷的快照创建第二个虚拟机的卷，这个时候第二个虚拟机的卷就依赖于第一个虚拟机。此时如果要删除第一个虚拟机的卷应该是删除不掉的，那为什么虚拟机操作可以呢？</p>
+<h1 id="根源"><a href="#根源" class="headerlink" title="根源"></a>根源</h1><p>————————————————————————————————————————————————————————————————————————————<br>看了一下代码，上面的delete，rebuild，resize都会涉及到删除操作，但是nova在删除虚拟机的时候会根据需求destroy调磁盘，代码在nova/virt/libvirt/driver.py下面<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">if destroy_disks:</span><br><span class="line">    # NOTE(haomai): destroy volumes if needed</span><br><span class="line">    if CONF.libvirt.images_type == &apos;lvm&apos;:</span><br><span class="line">        self._cleanup_lvm(instance, block_device_info)</span><br><span class="line">    if CONF.libvirt.images_type == &apos;rbd&apos;:</span><br><span class="line">        self._cleanup_rbd(instance)</span><br></pre></td></tr></table></figure></p>
+<p>在看一下_cleanup_rbd函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">def _cleanup_rbd(self, instance):</span><br><span class="line">    # NOTE(nic): On revert_resize, the cleanup steps for the root</span><br><span class="line">    # volume are handled with an &quot;rbd snap rollback&quot; command,</span><br><span class="line">    # and none of this is needed (and is, in fact, harmful) so</span><br><span class="line">    # filter out non-ephemerals from the list</span><br><span class="line">    if instance.task_state == task_states.RESIZE_REVERTING:</span><br><span class="line">        filter_fn = lambda disk: (disk.startswith(instance.uuid) and</span><br><span class="line">                                  disk.endswith(&apos;disk.local&apos;))</span><br><span class="line">    else:</span><br><span class="line">        filter_fn = lambda disk: disk.startswith(instance.uuid)</span><br><span class="line">    LibvirtDriver._get_rbd_driver().cleanup_volumes(filter_fn)</span><br></pre></td></tr></table></figure></p>
+<p>会走else分支，关键就在这个cleanup_volumes函数，一看就是清理卷，但是前面的rbd_driver<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">def _get_rbd_driver():</span><br><span class="line">    return rbd_utils.RBDDriver(</span><br><span class="line">            pool=CONF.libvirt.images_rbd_pool,</span><br><span class="line">            ceph_conf=CONF.libvirt.images_rbd_ceph_conf,</span><br><span class="line">            rbd_user=CONF.libvirt.rbd_user)</span><br></pre></td></tr></table></figure></p>
+<p>哦，其实是在nova对接的ceph池vms中去查找虚拟机id开头的rbd卷，然后删除，其实这个是对镜像启动的操作，也就是说nova没有处理卷启动情况的删除操作</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Openstack nova ceph</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/10/04/volume-boot-vm-can-delete-rebuild-resize-Why/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-how-to-debug-osd" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/09/26/how-to-debug-osd/">how-to-debug-osd</a>
+    </h1>
+  
+
+        
+        <a href="/2019/09/26/how-to-debug-osd/" class="archive-article-date">
+  	<time datetime="2019-09-26T14:53:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-09-26</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="OSD是驻留进程怎么调试"><a href="#OSD是驻留进程怎么调试" class="headerlink" title="OSD是驻留进程怎么调试"></a>OSD是驻留进程怎么调试</h1><p>OSD使用的驻留进程，在启动会断开进程连接<br>在global section下面增加这个配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">daemonize = false</span><br></pre></td></tr></table></figure></p>
+<p>可以取消驻留进程调试</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ceph osd</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2019/09/26/how-to-debug-osd/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-glance-backend-with-cinder" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -980,166 +1133,9 @@
 
 
   
-    <article id="post-cpu-context-switch" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/01/05/cpu-context-switch/">linux性能优化系列（2）cpu上下文切换</a>
-    </h1>
-  
-
-        
-        <a href="/2019/01/05/cpu-context-switch/" class="archive-article-date">
-  	<time datetime="2019-01-05T09:21:32.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="测试cpu上下文切换工具"><a href="#测试cpu上下文切换工具" class="headerlink" title="测试cpu上下文切换工具"></a>测试cpu上下文切换工具</h1><p>—————————————————————————————————————————————————————————————————————————————<br>使用sysbench这个工具，这个工具是线程基准测试工具，用来测试线程，这样可以测试调度和cpu上下文切换<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sysbench --num-threads=10 --max-time=300 --max-requests=10000000 --test=threads run</span><br></pre></td></tr></table></figure></p>
-<h1 id="如何查看系统cpu上下文切换情况"><a href="#如何查看系统cpu上下文切换情况" class="headerlink" title="如何查看系统cpu上下文切换情况"></a>如何查看系统cpu上下文切换情况</h1><p>—————————————————————————————————————————————————————————————————————————————</p>
-<ul>
-<li><p>1.vmstat工具可以查看系统的cpu上下文切换</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@con01 ~(keystone_admin)]# vmstat 1</span><br><span class="line">procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----</span><br><span class="line"> r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st</span><br><span class="line"> 8  0   2928 28614520 7066708 11676172    0    0     3    34    0    0  1  5 94  0  0</span><br><span class="line"> 4  0   2928 28616408 7066708 11676196    0    0     0    12 8510 19720  2 14 85  0  0</span><br><span class="line"> 2  0   2928 28615164 7066708 11676208    0    0     0   116 7205 7983  2 14 85  0  0</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2.pidstat加-w</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pidstat -wt -u 5</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">linux 性能</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/01/05/cpu-context-switch/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-ceph-osd-pg-sum" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/01/05/ceph-osd-pg-sum/">ceph osd pg统计</a>
-    </h1>
-  
-
-        
-        <a href="/2019/01/05/ceph-osd-pg-sum/" class="archive-article-date">
-  	<time datetime="2019-01-05T06:41:23.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-01-05</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="ceph-osd-pg统计脚本"><a href="#ceph-osd-pg统计脚本" class="headerlink" title="ceph osd pg统计脚本"></a>ceph osd pg统计脚本</h1><p>————————————————————————————————————————————————————————————————————<br>这里引用磨磨的一篇博客<br><a href="http://www.zphj1987.com/2015/10/04/%E6%9F%A5%E8%AF%A2osd%E4%B8%8A%E7%9A%84pg%E6%95%B0/" target="_blank" rel="noopener">http://www.zphj1987.com/2015/10/04/%E6%9F%A5%E8%AF%A2osd%E4%B8%8A%E7%9A%84pg%E6%95%B0/</a></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">ceph</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/01/05/ceph-osd-pg-sum/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/3/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/5/">Next &raquo;</a>
+      <a class="extend prev" rel="prev" href="/page/3/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><a class="extend next" rel="next" href="/page/5/">Next &raquo;</a>
     </nav>
   
 
@@ -1246,11 +1242,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1262,15 +1258,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1278,7 +1266,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1290,15 +1286,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+                <a href="javascript:void(0)" class="js-tag color4">linux 性能</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1310,11 +1302,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1326,15 +1326,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1354,10 +1354,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph coverage</a>
               </li>
              
@@ -1366,11 +1362,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1390,11 +1386,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Ceph rbd</a>
+                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">openstack nova glance</a>
+                <a href="javascript:void(0)" class="js-tag color4">Ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
