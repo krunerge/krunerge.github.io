@@ -502,7 +502,7 @@
 <li>Client：客户端</li>
 <li>Service：客户端想要访问的服务</li>
 </ul>
-<p><img src="markdown-img-paste-20220601210208833.png" alt="1"></p>
+<p><img src="图片1.png" alt="1"></p>
 <p>理论很复杂，简单的讲就是</p>
 <ul>
 <li>Client带着认证信息去KDC进行认证</li>
@@ -516,18 +516,18 @@
 <li>Client：radosclient、ceph-fuse</li>
 <li>Service：MDS、OSD、MGR</li>
 </ul>
-<p><img src="markdown-img-paste-20220602203349550.png" alt="2"></p>
+<p><img src="图片2.png" alt="2"></p>
 <p>大体流程跟上面Kerberos一样，多了service服务到monitor获取service secret，这个是从Kerberos依葫芦画瓢想到的，其实Ceph里面“Client”是一个范指，主要包含monclient模块的都可以称为“client”，比如OSD、MDS、MGR都包含monclient，从这个角度讲它们也属于“Client”，比如以OSD作为“Client”如下示意</p>
-<p><img src="markdown-img-paste-20220602203414666.png" alt="3"></p>
+<p><img src="图片3.png" alt="3"></p>
 <p>下面来细说一下Ceph</p>
 <h1 id="4-Ceph的实现"><a href="#4-Ceph的实现" class="headerlink" title="4. Ceph的实现"></a>4. Ceph的实现</h1><p>为了方便理解我把Ceph认证分成三层含义（非kerberos原理）：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(1) 组件和monitor的连接认证</span><br><span class="line">(2) 用户认证</span><br><span class="line">(3) 除monitor之外其他组件的连接认证</span><br></pre></td></tr></table></figure></p>
 <h2 id="4-1-组件和monitor之间的连接认证"><a href="#4-1-组件和monitor之间的连接认证" class="headerlink" title="4.1 组件和monitor之间的连接认证"></a>4.1 组件和monitor之间的连接认证</h2><p>Ceph在tcp三次握手之上又加了一层自定义的网络连接协议，主要用来确认一些信息，比如banner，客户端的ip和端口，auth认证等</p>
-<p><img src="markdown-img-paste-20220602203444190.png" alt="4"></p>
+<p><img src="图片4.png" alt="4"></p>
 <p>只有auth认证通过之后，Ceph连接才算建立完成，后面就可以用于消息发送。然而不同组件之间连接的auth认证行为不一样。这里先讨论组件和monitor之间的连接认证。client和其他组件跟monitor通信都是无条件通过。</p>
-<p><img src="markdown-img-paste-20220602203457931.png" alt="5"></p>
+<p><img src="图片5.png" alt="5"></p>
 <p>我们可能好奇为什么这边会无条件认证，按理认证不应该进行用户身份的认证吗，而需要用户认证则需要在建立好的Ceph连接上发送MAuth消息，而现在Ceph连接都还没建立，根本无从认证，如果这里不设置无条件通过，就会出现鸡和蛋问题。</p>
 <h2 id="4-2-用户认证"><a href="#4-2-用户认证" class="headerlink" title="4.2 用户认证"></a>4.2 用户认证</h2><p>用户认证是包含monclient模块的“Client”跟mon建立连接之后通过authenticate发送MAuth消息来认证用户</p>
-<p><img src="markdown-img-paste-20220601225428464.png" alt="6"></p>
+<p><img src="图片6.png" alt="6"></p>
 <p>从kerberos可以看出用户认证的时候分为两个阶段发了两次请求，Ceph也确实是这么实现的。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">第一阶段：认证用户</span><br><span class="line">第二阶段：获取service服务的ticket</span><br></pre></td></tr></table></figure></p>
 <h3 id="4-2-1-第一阶段–认证用户"><a href="#4-2-1-第一阶段–认证用户" class="headerlink" title="4.2.1 第一阶段–认证用户"></a>4.2.1 第一阶段–认证用户</h3><p>说到认证用户，第一个想到的就是keyring，先简单聊一下keyring</p>
 <h4 id="4-2-1-1-访问钥匙"><a href="#4-2-1-1-访问钥匙" class="headerlink" title="4.2.1.1 访问钥匙"></a>4.2.1.1 访问钥匙</h4><p>Ceph在使用中，如果我们开启了Cephx会有很多keyring，一个keyring类似如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">client.admin</span><br><span class="line">	key: AQBPWeZhTnH6FhAAd6hoo1oMkw3/G4teWXwKAA==</span><br><span class="line">	caps: [mds] allow *</span><br><span class="line">	caps: [mgr] allow *</span><br><span class="line">	caps: [mon] allow *</span><br><span class="line">	caps: [osd] allow *</span><br></pre></td></tr></table></figure></p>
@@ -550,19 +550,19 @@
 </ul>
 <p>在客户端或者组件服务启动时，通过包含的monclient进行认证。</p>
 <p>Kerberos认证的核心就是客户端使用秘钥对消息进行加密，如果KDC能通过秘钥进行解密成功就认证通过。Ceph有点不一样，Ceph使用keyring中的key以及其他的东西（challenge）在monclient和monitor分别算出一个key，进行匹配是不是相同，相同则认证通过，反正。</p>
-<h4 id="4-2-1-2-计算匹配"><a href="#4-2-1-2-计算匹配" class="headerlink" title="4.2.1.2 计算匹配"></a>4.2.1.2 计算匹配</h4><p><img src="markdown-img-paste-20220602201843226.png" alt="7"></p>
+<h4 id="4-2-1-2-计算匹配"><a href="#4-2-1-2-计算匹配" class="headerlink" title="4.2.1.2 计算匹配"></a>4.2.1.2 计算匹配</h4><p><img src="图片7.png" alt="7"></p>
 <p>匹配通过就算认证用户ok</p>
 <h3 id="4-2-2-第二阶段–获取service-Ticket"><a href="#4-2-2-第二阶段–获取service-Ticket" class="headerlink" title="4.2.2 第二阶段–获取service Ticket"></a>4.2.2 第二阶段–获取service Ticket</h3><p>在发送client challenge请求的时候，也会把客户端想要访问组件以bit的方式（want_key）传过来，比特位代表如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">#define CEPH_ENTITY_TYPE_MON    0x01</span><br><span class="line">#define CEPH_ENTITY_TYPE_MDS    0x02</span><br><span class="line">#define CEPH_ENTITY_TYPE_OSD    0x04</span><br><span class="line">#define CEPH_ENTITY_TYPE_CLIENT 0x08</span><br><span class="line">#define CEPH_ENTITY_TYPE_MGR    0x10</span><br><span class="line">#define CEPH_ENTITY_TYPE_AUTH   0x20</span><br></pre></td></tr></table></figure></p>
 <p>比如客户端会和MDS和OSD访问，则需要设置want_keys为6</p>
-<p><img src="markdown-img-paste-2022060220294420.png" alt="8"></p>
+<p><img src="图片8.png" alt="8"></p>
 <h2 id="4-3-除monitor之外其他组件的连接认证"><a href="#4-3-除monitor之外其他组件的连接认证" class="headerlink" title="4.3 除monitor之外其他组件的连接认证"></a>4.3 除monitor之外其他组件的连接认证</h2><p>有了service ticket，除montior之外其他组件就可以进行连接认证，如下</p>
-<p><img src="markdown-img-paste-20220602211837958.png" alt="9"></p>
-<p><img src="markdown-img-paste-2022060221184980.png" alt="10"></p>
+<p><img src="图片9.png" alt="9"></p>
+<p><img src="图片10.png" alt="10"></p>
 <p>这里从monitor除了获取service ticket，还返回了session key，这个session key在下面验证的时候会用到。</p>
-<h3 id="4-3-1-验证方法"><a href="#4-3-1-验证方法" class="headerlink" title="4.3.1 验证方法"></a>4.3.1 验证方法</h3><p>这里的连接认证方法和用户认证不一样，不是通过计算key来比对，而是通过加密解密来完成，大致思路就是monitor发送给客户端的service ticket是用一个service_secret进行了加密，而客户端会在加上一些其他的信息（比如nonce）通过session key加密然后和ticket一起发送给连接的另一端。<br><img src="markdown-img-paste-20220602213511952.png" alt="11"></p>
+<h3 id="4-3-1-验证方法"><a href="#4-3-1-验证方法" class="headerlink" title="4.3.1 验证方法"></a>4.3.1 验证方法</h3><p>这里的连接认证方法和用户认证不一样，不是通过计算key来比对，而是通过加密解密来完成，大致思路就是monitor发送给客户端的service ticket是用一个service_secret进行了加密，而客户端会在加上一些其他的信息（比如nonce）通过session key加密然后和ticket一起发送给连接的另一端。<br><img src="图片11.png" alt="11"></p>
 <p>认证的大体思路是这样，那这里recv端的service secret是哪里来的？</p>
 <h3 id="4-3-2-service-secret"><a href="#4-3-2-service-secret" class="headerlink" title="4.3.2 service secret"></a>4.3.2 service secret</h3><p>service secret是用来加密service ticket的，monitor发送给客户端的ticket就已经加密好，所以service secret是monitor那边生成的，service服务组件获取service secret是在所包含的monclient模块用户认证完成之后从monitor取回属于自己service服务的service secret。</p>
-<p><img src="markdown-img-paste-20220602221917783.png" alt="12"></p>
+<p><img src="图片12.png" alt="12"></p>
 <p>至此认证的大体流程框架介绍完，其他细节敬请期待~~</p>
 
       
@@ -1515,11 +1515,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">ceph 编译</a>
+                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">Ceph</a>
+                <a href="javascript:void(0)" class="js-tag color3">ceph 编译</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1547,11 +1547,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1559,15 +1563,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">go</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color3">go</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1583,6 +1583,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
@@ -1591,11 +1599,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">python iscsi kernel</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack dashboard horizon</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1603,7 +1611,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack neutron</a>
+                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1619,15 +1627,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1647,10 +1647,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ceph log</a>
               </li>
              
@@ -1663,11 +1659,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph auth</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
