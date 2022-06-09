@@ -15,16 +15,16 @@
 <meta property="og:site_name" content="小甲师兄">
 <meta property="og:description" content="1. Ceph认证回顾上一篇ceph认证文章讲到客户端从monitor获取service ticket，然后使用tick访问service组件服务，service组件从monitor获取属于自己的service secret对ticket进行解密认证.  service secret内容比较多，值得我们用一篇文章详细介绍。 2. service secretservice secret是用来加解密">
 <meta property="og:locale" content="default">
-<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/markdown-img-paste-20220604141336971.png">
-<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/markdown-img-paste-20220602215343305.png">
-<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/markdown-img-paste-20220602220258759.png">
-<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/markdown-img-paste-20220602220718678.png">
-<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/markdown-img-paste-20220604161711491.png">
-<meta property="og:updated_time" content="2022-06-04T09:26:03.446Z">
+<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片1.png">
+<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片2.png">
+<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片3png">
+<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片4.png">
+<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片5.png">
+<meta property="og:updated_time" content="2022-06-09T13:37:48.636Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Ceph认证之service secret">
 <meta name="twitter:description" content="1. Ceph认证回顾上一篇ceph认证文章讲到客户端从monitor获取service ticket，然后使用tick访问service组件服务，service组件从monitor获取属于自己的service secret对ticket进行解密认证.  service secret内容比较多，值得我们用一篇文章详细介绍。 2. service secretservice secret是用来加解密">
-<meta name="twitter:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/markdown-img-paste-20220604141336971.png">
+<meta name="twitter:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片1.png">
   
     <link rel="alternative" href="/atom.xml" title="小甲师兄" type="application/atom+xml">
   
@@ -179,17 +179,17 @@
     <div class="article-entry" itemprop="articleBody">
       
         <h1 id="1-Ceph认证回顾"><a href="#1-Ceph认证回顾" class="headerlink" title="1. Ceph认证回顾"></a>1. Ceph认证回顾</h1><p>上一篇ceph认证文章讲到客户端从monitor获取service ticket，然后使用tick访问service组件服务，service组件从monitor获取属于自己的service secret对ticket进行解密认证.</p>
-<p><img src="markdown-img-paste-20220604141336971.png" alt="1"></p>
+<p><img src="图片1.png" alt="1"></p>
 <p>service secret内容比较多，值得我们用一篇文章详细介绍。</p>
 <h1 id="2-service-secret"><a href="#2-service-secret" class="headerlink" title="2. service secret"></a>2. service secret</h1><p>service secret是用来加解密service ticket的，由monitor生成，monitor会为每个service组件维护一个id和service secret的对应关系。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">id     service secret</span><br><span class="line">1      key1</span><br><span class="line">2      key2</span><br><span class="line">3      key3</span><br></pre></td></tr></table></figure></p>
 <p>这表示一个service服务所拥有的的service secret列表，每个service服务都会有这样一个列表。返回给客户端的ticket包含有id，这样客户端在和service组件进行连接认证时根据id来确定使用哪个service secret对ticket进行解密。<br>之所以会有列表主要是针对时间进行更新，所以也称service secret为rotate secrets。rotate顾名思义就是可以轮转，由monitor的authmonitor负责，我们看一下它是如何存储、创建、更新以及反馈更新。</p>
-<h2 id="2-1-存储形式"><a href="#2-1-存储形式" class="headerlink" title="2.1 存储形式"></a>2.1 存储形式</h2><p><img src="markdown-img-paste-20220602215343305.png" alt="2"></p>
+<h2 id="2-1-存储形式"><a href="#2-1-存储形式" class="headerlink" title="2.1 存储形式"></a>2.1 存储形式</h2><p><img src="图片2.png" alt="2"></p>
 <p>每一行代表一个servic服务组件的secret，任意时刻只存在三个secret，如红虚线框中。每个service的rotate secrets是由一个数组维护，同时每一个rotating secret都会包含一个过期时间。</p>
 <h2 id="2-2-创建"><a href="#2-2-创建" class="headerlink" title="2.2 创建"></a>2.2 创建</h2><p>rotating secrets是在monitor启动时，由authmonitor通过start_server创建<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">bool KeyServer::_check_rotating_secrets() &#123;</span><br><span class="line"> ...</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_AUTH);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MON);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_OSD);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MDS);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MGR);</span><br><span class="line"> ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>可以看出authmonitor会为auth、mon、osd、mds、mgr生成rotate secret，secret_id从1开始，其中auth service的过期时间是12小时，其他service的过期时间是1小时，其中auth service主要是用来对monclient请求更新其他service ticket时进行认证，刚开始的时候会生成三个时刻secret，previous、current、next分别代表过去、当前、未来可用于加密的secret。</p>
-<p><img src="markdown-img-paste-20220602220258759.png" alt="3"></p>
+<p><img src="图片3png" alt="3"></p>
 <h2 id="2-3-更新"><a href="#2-3-更新" class="headerlink" title="2.3 更新"></a>2.3 更新</h2><p>authmonitor在tick的时候会周期检查rotate secret有没有过期，过期就进行相应的调整，如果current rotate secret过期时间比当前时间小就表示已经过期，需要创建一个新的rotate secret，并将原来的current变成pre，原来的next变成current，新生成的作为next，以维持只保留三个secret。</p>
-<p><img src="markdown-img-paste-20220602220718678.png" alt="4"></p>
+<p><img src="图片4.png" alt="4"></p>
 <p>这里的过期时间由下面两个配置决定<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">auth_mon_ticket_ttl // auth 过期时长12小时</span><br><span class="line">auth_service_ticket_ttl // osd,mon,mds,mgr service服务过期时长1小时</span><br></pre></td></tr></table></figure></p>
 <p>假设monitor中osd rotate secret开始如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">id=1 expire_time=2022-05-25 11:36:26  // pre</span><br><span class="line">id=2 expire_time=2022-05-25 12:36:26  // current</span><br><span class="line">id=3 expire_time=2022-05-25 13:36:26  // next</span><br></pre></td></tr></table></figure></p>
 <p>上面的时间就是对应rotate secret的过期时间，当monitor的时间超过’2022-05-25 12:36:26’时，就会启动轮转更新<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">id=2 expire_time=2022-05-25 12:36:26  // pre</span><br><span class="line">id=3 expire_time=2022-05-25 13:36:26  // current</span><br><span class="line">id=4 expire_time=2022-05-25 14:36:26  // next</span><br></pre></td></tr></table></figure></p>
@@ -428,7 +428,7 @@
 <h1 id="4-‘部分关闭’Cephx"><a href="#4-‘部分关闭’Cephx" class="headerlink" title="4. ‘部分关闭’Cephx"></a>4. ‘部分关闭’Cephx</h1><p>有时候由于时间偏差或者其他原因导致客户端和service组件的连接认证失败问题，经常想关闭cephx，但又想使用用户认证，那能否部分关闭cephx。这里有两种想法：部分关auth三配置、延长过期时间</p>
 <h2 id="4-1-部分关auth三配置"><a href="#4-1-部分关auth三配置" class="headerlink" title="4.1 部分关auth三配置"></a>4.1 部分关auth三配置</h2><p>Ceph认证可以部分关闭吗，我们配置文件中经常会配这三个<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">auth_cluster_required = cephx</span><br><span class="line">auth_service_required = cephx</span><br><span class="line">auth_client_required = cephx</span><br></pre></td></tr></table></figure></p>
 <p>比如把auth_cluster_required设置成none，答案是绝对不能，这三个配置要么都设置为none，要么有设置为cephx。这三个配置总结一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">auth_client_requested主要用于client和osd、mds、mgr组件连接认证发送端。</span><br><span class="line">auth_service_requested主要用于client和osd、mds、mgr组件连接认证接收端。</span><br><span class="line">auth_cluster_requester主要用于mon、mds、mgr、osd组件连接认证发送端和接收端。</span><br></pre></td></tr></table></figure></p>
-<p><img src="markdown-img-paste-20220604161711491.png" alt="5"></p>
+<p><img src="图片5.png" alt="5"></p>
 <p>这三个相互依赖，如果开启了auth_client_required，就需要auth_service_required，service组件更新rotate secret就需要auth_cluster_required。</p>
 <h2 id="4-2-延长过期时间"><a href="#4-2-延长过期时间" class="headerlink" title="4.2 延长过期时间"></a>4.2 延长过期时间</h2><p>客户端和service组件的连接认证失败往往是客户端的ticket包含的rotate secret id比较老，或者service服务的rotate secret没有更新比较老，那如果把service secret过期时间延迟，比如一个rotate secret过期时长设置个1年，那1年内客户端和service组件都不需要更新。</p>
 <h3 id="4-2-1-配置调整"><a href="#4-2-1-配置调整" class="headerlink" title="4.2.1 配置调整"></a>4.2.1 配置调整</h3><p>配置主要更超时时长相关的ttl配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">auth_service_ticket_ttl = 31536000 // 1年</span><br></pre></td></tr></table></figure></p>
@@ -693,6 +693,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">openstack nova</a>
               </li>
              
@@ -701,15 +705,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack lvm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">Ceph rwl</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">cephfs</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -729,15 +733,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">C tcmu-runner</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">openstack glance</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -781,11 +781,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">rbd iscsi python</a>
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -821,19 +821,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">rbd openstack</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">Ceph Cephfs osdc</a>
               </li>
              
               <li class="article-tag-list-item">
