@@ -17,10 +17,10 @@
 <meta property="og:locale" content="default">
 <meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片1.png">
 <meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片2.png">
-<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片3png">
+<meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片3.png">
 <meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片4.png">
 <meta property="og:image" content="http://yoursite.com/2022/06/03/Ceph-auth-service-secret/图片5.png">
-<meta property="og:updated_time" content="2022-06-09T13:37:48.636Z">
+<meta property="og:updated_time" content="2022-06-09T13:42:32.611Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Ceph认证之service secret">
 <meta name="twitter:description" content="1. Ceph认证回顾上一篇ceph认证文章讲到客户端从monitor获取service ticket，然后使用tick访问service组件服务，service组件从monitor获取属于自己的service secret对ticket进行解密认证.  service secret内容比较多，值得我们用一篇文章详细介绍。 2. service secretservice secret是用来加解密">
@@ -187,7 +187,7 @@
 <p>每一行代表一个servic服务组件的secret，任意时刻只存在三个secret，如红虚线框中。每个service的rotate secrets是由一个数组维护，同时每一个rotating secret都会包含一个过期时间。</p>
 <h2 id="2-2-创建"><a href="#2-2-创建" class="headerlink" title="2.2 创建"></a>2.2 创建</h2><p>rotating secrets是在monitor启动时，由authmonitor通过start_server创建<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">bool KeyServer::_check_rotating_secrets() &#123;</span><br><span class="line"> ...</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_AUTH);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MON);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_OSD);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MDS);</span><br><span class="line"> added += _rotate_secret(CEPH_ENTITY_TYPE_MGR);</span><br><span class="line"> ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>可以看出authmonitor会为auth、mon、osd、mds、mgr生成rotate secret，secret_id从1开始，其中auth service的过期时间是12小时，其他service的过期时间是1小时，其中auth service主要是用来对monclient请求更新其他service ticket时进行认证，刚开始的时候会生成三个时刻secret，previous、current、next分别代表过去、当前、未来可用于加密的secret。</p>
-<p><img src="图片3png" alt="3"></p>
+<p><img src="图片3.png" alt="3"></p>
 <h2 id="2-3-更新"><a href="#2-3-更新" class="headerlink" title="2.3 更新"></a>2.3 更新</h2><p>authmonitor在tick的时候会周期检查rotate secret有没有过期，过期就进行相应的调整，如果current rotate secret过期时间比当前时间小就表示已经过期，需要创建一个新的rotate secret，并将原来的current变成pre，原来的next变成current，新生成的作为next，以维持只保留三个secret。</p>
 <p><img src="图片4.png" alt="4"></p>
 <p>这里的过期时间由下面两个配置决定<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">auth_mon_ticket_ttl // auth 过期时长12小时</span><br><span class="line">auth_service_ticket_ttl // osd,mon,mds,mgr service服务过期时长1小时</span><br></pre></td></tr></table></figure></p>
@@ -745,11 +745,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
+                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ceph osd</a>
+                <a href="javascript:void(0)" class="js-tag color3">openstack horizon</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -761,11 +761,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
+                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">k8s configmap</a>
+                <a href="javascript:void(0)" class="js-tag color1">k8s cephfs</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -777,6 +777,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">rbd</a>
               </li>
              
@@ -785,19 +789,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">openstack nova ceph</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">mysql</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
+                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">ceph iscsi rbd</a>
+                <a href="javascript:void(0)" class="js-tag color3">libvirt</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -821,11 +821,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
+                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">harbor docker ceph s3</a>
+                <a href="javascript:void(0)" class="js-tag color4">openstack nova cinder glance</a>
               </li>
              
               <li class="article-tag-list-item">
